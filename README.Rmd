@@ -1,0 +1,5 @@
+---
+output: github_document
+---
+
+# mlr3mbo - Configuration
