@@ -208,7 +208,7 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = nn
 
 # add jobs for optimizers
-optimizers = data.table(algorithm = "mlr3mbox")
+optimizers = data.table(algorithm = "mlr3mbo")
 
 for (i in seq_len(nrow(optimizers))) {
   algo_designs = setNames(list(optimizers[i, ]), nm = optimizers[i, ]$algorithm)

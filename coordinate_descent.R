@@ -83,11 +83,11 @@ evaluate = function(xdt, instance) {
   library(mlr3pipelines)
   library(mlr3misc)
   library(mlr3mbo) # @so_config
-  library(bbotk) # @localsearch
+  library(bbotk)
   library(paradox)
   library(R6)
   library(checkmate)
-#  reticulate::use_condaenv("/home/lschnei8/.conda/envs/env", required = TRUE)
+  #  reticulate::use_condaenv("/home/lschnei8/.conda/envs/env", required = TRUE)
   library(reticulate)
   library(yahpogym)
 
