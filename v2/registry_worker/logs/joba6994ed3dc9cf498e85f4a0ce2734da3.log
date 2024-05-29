@@ -1,0 +1,10 @@
+### [bt]: This is batchtools v0.9.17
+### [bt]: Starting calculation of 1 jobs
+### [bt]: Setting working directory to '/home/marc/repositories/mbo_config'
+### [bt]: Memory measurement disabled
+### [bt]: Starting job [batchtools job.id=3]
+### [bt]: Generating problem instance for problem 'test_3' ...
+### [bt]: Applying algorithm 'config_1' on problem 'test_3' for job 3 (seed = 23131) ...
+
+### [bt]: Job terminated successfully [batchtools job.id=3]
+### [bt]: Calculation finished!
