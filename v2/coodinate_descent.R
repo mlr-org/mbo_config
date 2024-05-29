@@ -4,6 +4,8 @@ library(data.table)
 library(paradox)
 library(bbotk)
 
+source("v2/OptimizerCoordinateDescent.R")
+
 unlink("v2/registry", recursive = TRUE)
 
 reg = makeExperimentRegistry(
@@ -54,7 +56,8 @@ addAlgorithm(
     acqf,
     acqf_ei_log,
     lambda,
-    acqopt
+    acqopt,
+    id
     ) {
     library(batchtools)
     library(mlr3misc)
@@ -173,37 +176,30 @@ addAlgorithm(
         random_interleave_iter = random_interleave_iter)
     }
 
-    best = optim_instance$archive$best()#[[instance$target]]
-    best
-    #data.table(best = best, scenario = instance$scenario, instance = instance$instance, target = instance$target, id = id, repl = repl)
+    target = optim_instance$archive$cols_y
+    best = optim_instance$archive$best()[[target]]
+    data.table(best = best, target = target, instance = job$prob.name, id = id, repl = job$repl)
   }
 )
 
-constants = ps(
-  reg = p_uty()
-)
+# optimization
+get_k = function(best, .instance, .budget, fs_average, fs_extrapolation) {
+  return(runif(1))
 
-objective = ObjectiveRFunDt$new(
-  fun = function(xdt, reg) {
+  fs_average = fs_average[list(.instance), , on ="instance"]
 
-    ades = list(
-      mbo = xdt
-    )
-    addExperiments(algo.designs = ades, repls = 1, reg = reg)
-
-    submitJobs(reg = reg)
-
-    waitForJobs(reg = reg)
-
-    res = reduceResultsDataTable(reg = reg)
-  },
-  domain = search_space,
-  codomain = ps(mean_k = p_dbl(tags = "maximize")),
-  constants = constants,
-  check_values = FALSE
-)
-
-objective$constants$set_values(reg = reg)
+  # assumes maximization
+  if (best > max(fs_average[["mean_best"]])) {
+    extrapolate = TRUE
+    k = fs_extrapolation[list(.instance), , on ="instance"][["model"]][[1L]](best)
+  } else {
+    extrapolate = FALSE
+    k = min(fs_average[mean_best >= best]$iter) # min k so that mean_best_fs[k] >= best_mbo[final]
+  }
+  k = k / budget_ # sample efficiency compared to fs
+  attr(k, "extrapolate") = extrapolate
+  k
+}
 
 search_space = ps(
   loop_function = p_fct(c("ego", "ego_log"), default = "ego"),
@@ -218,7 +214,99 @@ search_space = ps(
   acqopt = p_fct(c("RS_1000", "RS", "FS", "LS"), default = "RS_1000")
 )
 
-xdt = generate_design_random(search_space, 10)$data
+constants = ps(
+  reg = p_uty(),
+  fs_average = p_uty(),
+  fs_extrapolation = p_uty()
+)
+
+objective = ObjectiveRFunDt$new(
+  fun = function(xdt, reg, fs_average, fs_extrapolation) {
+    n_repls = 2
+    xdt[, id := .I]
+    budget = 1
+
+    ades = list(
+      mbo = xdt
+    )
+    addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
+
+    submitJobs(reg = reg)
+
+    waitForJobs(reg = reg)
+
+    res = reduceResultsDataTable(reg = reg)
+    res = rbindlist(res$result)
+
+    setorderv(res, col = "instance")
+    setorderv(res, col = "id")
+    setorderv(res, col = "repl")
+
+    # average best over replications and determine ks
+    agg = res[, .(mean_best = mean(best), raw_best = list(best), n_na = sum(is.na(best)), n = .N), by = .(id, instance)]
+    ks = map_dbl(seq_len(nrow(agg)), function(i) {
+      if (agg[i, ][["n"]] < n_repls) {
+        0
+      } else {
+        tryCatch(
+          get_k(
+            agg[i, ][["mean_best"]],
+            budget, #budget_ = instances[problem == agg[i, ][["problem"]]][["budget"]],
+            fs_average,
+            fs_extrapolation
+          ),
+          error = function(ec) 0
+        )
+      }
+    })
+    agg[, k := ks]
+
+    # average k over instances and determine mean_k
+    agg_k = agg[, .(mean_k = exp(mean(log(k))), raw_k = list(k), n_na = sum(is.na(k)), n = .N, raw_mean_best = list(mean_best)), by = .(id)]
+    agg_k[n < nrow(instances), mean_k := 0]
+    agg_k
+  },
+  domain = search_space,
+  codomain = ps(mean_k = p_dbl(tags = "maximize")),
+  constants = constants,
+  check_values = FALSE
+)
+
+objective$constants$set_values(
+  reg = reg
+  #fs_average = readRDS("/gscratch/lschnei8/results_yahpo_fs_average.rds")
+  #fs_extrapolation = readRDS("/gscratch/lschnei8/fs_extrapolation.rds")
+)
 
 
-objective$eval(xdt)
+if (FALSE) {
+  xdt = generate_design_random(search_space, 10)$data
+  init = data.table(loop_function = "ego", init = "random", init_size_fraction = "0.25", random_interleave = FALSE, random_interleave_iter = NA_character_, rf_type = "standard", acqf = "EI", acqf_ei_log = NA, lambda = NA_character_, acqopt = "RS_1000")
+  objective$eval(init)
+  objective$eval(xdt)
+}
+
+optim_instance = OptimInstanceSingleCrit$new(
+  objective = objective,
+  terminator = trm("none"),
+  check_values = FALSE
+)
+
+ init = data.table(
+  loop_function = "ego",
+  init = "random",
+  init_size_fraction = "0.25",
+  random_interleave = FALSE,
+  random_interleave_iter = NA_character_,
+  rf_type = "standard",
+  acqf = "EI",
+  acqf_ei_log = NA,
+  lambda = NA_character_,
+  acqopt = "RS_1000")
+
+optimizer = OptimizerCoordinateDescent$new()
+optimizer$param_set$values$max_gen = 5L
+
+optim_instance$eval_batch(init)
+optimizer$optimize(optim_instance)
+
