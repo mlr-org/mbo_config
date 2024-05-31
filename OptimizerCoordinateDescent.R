@@ -1,3 +1,6 @@
+library(R6)
+library(checkmate)
+
 OptimizerCoordinateDescent = R6Class("OptimizerCoordinateDescent", inherit = bbotk::Optimizer,
   public = list(
 
@@ -29,6 +32,7 @@ OptimizerCoordinateDescent = R6Class("OptimizerCoordinateDescent", inherit = bbo
         xdt = generate_design_random(inst$search_space, n = 1L)$data
         inst$eval_batch(xdt)
       }
+
       # check if .gen is already present, if yes continue from there
       if (inst$archive$n_evals > 0L & ".gen" %in% colnames(inst$archive$data)) {
         gen = max(inst$archive$data[[".gen"]], na.rm = TRUE)
