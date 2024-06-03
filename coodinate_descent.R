@@ -4,13 +4,13 @@ library(data.table)
 library(paradox)
 library(bbotk)
 
-source("v2/OptimizerCoordinateDescent.R")
+source("OptimizerCoordinateDescent.R")
 
-unlink("v2/registry", recursive = TRUE)
+unlink("registry", recursive = TRUE)
 
 reg = makeExperimentRegistry(
-  file.dir = "v2/registry",
-  conf.file = NA # slurm_wyoming_worker.tmpl
+  file.dir = "registry",
+  conf.file = "batchtools.conf.R",
 )
 
 # add problems
@@ -277,7 +277,6 @@ objective$constants$set_values(
   #fs_average = readRDS("/gscratch/lschnei8/results_yahpo_fs_average.rds")
   #fs_extrapolation = readRDS("/gscratch/lschnei8/fs_extrapolation.rds")
 )
-
 
 if (FALSE) {
   xdt = generate_design_random(search_space, 10)$data
