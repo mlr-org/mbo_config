@@ -6,10 +6,10 @@ library(bbotk)
 
 source("OptimizerCoordinateDescent.R")
 
-unlink("registry", recursive = TRUE)
+unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
 
 reg = makeExperimentRegistry(
-  file.dir = "registry",
+  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
   conf.file = "batchtools.conf.R",
 )
 
@@ -178,25 +178,25 @@ addAlgorithm(
 
     target = optim_instance$archive$cols_y
     best = optim_instance$archive$best()[[target]]
-    data.table(best = best, target = target, instance = job$prob.name, id = id, repl = job$repl)
+    data.table(best = best, target = target, problem = job$prob.name, id = id, repl = job$repl)
   }
 )
 
 # optimization
-get_k = function(best, .instance, .budget, fs_average, fs_extrapolation) {
-  return(runif(1))
+get_k = function(best, problem, budget, fs_average, fs_extrapolation) {
+  # return(runif(1))
 
-  fs_average = fs_average[list(.instance), , on ="instance"]
+  fs_average = fs_average[list(problem), , on = "problem", env = list(problem = problem)]
 
   # assumes maximization
   if (best > max(fs_average[["mean_best"]])) {
     extrapolate = TRUE
-    k = fs_extrapolation[list(.instance), , on ="instance"][["model"]][[1L]](best)
+    k = fs_extrapolation[list(problem), , on = "problem", env = list(problem = problem)][["model"]][[1L]](best)
   } else {
     extrapolate = FALSE
     k = min(fs_average[mean_best >= best]$iter) # min k so that mean_best_fs[k] >= best_mbo[final]
   }
-  k = k / budget_ # sample efficiency compared to fs
+  k = k / budget # sample efficiency compared to fs
   attr(k, "extrapolate") = extrapolate
   k
 }
@@ -243,7 +243,7 @@ objective = ObjectiveRFunDt$new(
     setorderv(res, col = "repl")
 
     # average best over replications and determine ks
-    agg = res[, .(mean_best = mean(best), raw_best = list(best), n_na = sum(is.na(best)), n = .N), by = .(id, instance)]
+    agg = res[, .(mean_best = mean(best), raw_best = list(best), n_na = sum(is.na(best)), n = .N), by = .(id, problem)]
     ks = map_dbl(seq_len(nrow(agg)), function(i) {
       if (agg[i, ][["n"]] < n_repls) {
         0
