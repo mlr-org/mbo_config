@@ -95,7 +95,6 @@ addAlgorithm(
 
 addExperiments(repls = 30)
 
-
 ids = getJobTable()[, list(job.id)]
 ids[, chunk := batchtools::chunk(job.id, chunk.size = 30, shuffle = FALSE)]
 

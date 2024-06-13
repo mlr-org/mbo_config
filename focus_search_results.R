@@ -22,6 +22,7 @@ results = reduceResultsList(done, function(result, job) {
   rm(data)
   rm(target)
   gc()
+  tab
 })
 
 message("Save results")

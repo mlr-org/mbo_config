@@ -159,8 +159,14 @@
     "bbotk": {
       "Package": "bbotk",
       "Version": "0.8.0",
-      "Source": "Repository",
-      "Repository": "CRAN",
+      "Source": "GitHub",
+      "RemoteType": "github",
+      "RemoteHost": "api.github.com",
+      "RemoteRepo": "bbotk",
+      "RemoteUsername": "mlr-org",
+      "RemotePkgRef": "mlr-org/bbotk@mbo_config",
+      "RemoteRef": "mbo_config",
+      "RemoteSha": "f710e03fc120ad946d9b1107e4706db768a599cc",
       "Requirements": [
         "R",
         "R6",
@@ -171,7 +177,7 @@
         "mlr3misc",
         "paradox"
       ],
-      "Hash": "f1b0a7cbc61ee25b239bb935a158bc48"
+      "Hash": "2a53744280d1be9e36f74818f374a3ff"
     },
     "boot": {
       "Package": "boot",
