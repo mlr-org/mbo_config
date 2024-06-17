@@ -3,6 +3,11 @@ library(mlr3misc)
 library(data.table)
 library(paradox)
 library(bbotk)
+library(reticulate)
+library(yahpogym)
+
+use_condaenv("yahpo_gym", required=TRUE)
+yahpo_gym = import("yahpo_gym")
 
 source("OptimizerCoordinateDescent.R")
 
@@ -10,34 +15,58 @@ unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = 
 
 reg = makeExperimentRegistry(
   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "batchtools.conf.R",
+  conf.file = "/home/mbecke16/mbo_config/batchtools.conf.R",
 )
 
 # add problems
-objective_branin = ObjectiveRFun$new(
-  fun = function(xs) {
-    branin(xs$x1, xs$x2)
-  },
-  domain = ps(
-    x1 = p_dbl(lower = -5, upper = 10),
-    x2 = p_dbl(lower = 0, upper = 15)
-  ),
-  codomain = ps(
-    y = p_dbl(tags = "minimize")
-  ),
+## yahpo
+loader_yahpo = function(scenario, instance, target, budget) {
+  library(reticulate)
+  library(yahpogym)
 
-  check_values = FALSE
-)
+  use_condaenv("yahpo_gym", required = TRUE)
+  yahpo_gym = import("yahpo_gym")
 
-objective_branin$eval(list(x1 = 1, x2 = 2))
+  benchmark = BenchmarkSet$new(scenario)
+  benchmark$subset_codomain(target)
+  objective = benchmark$get_objective(instance, multifidelity = FALSE)
 
-instances = list(branin = objective_branin)
+  OptimInstanceSingleCrit$new(
+    objective, 
+    search_space = benchmark$get_search_space(drop_fidelity_params = TRUE), 
+    terminator = trm("evals", n_evals = budget), 
+    check_values = FALSE)
+}
 
-iwalk(instances, function(instance, name) {
-  addProblem(
-    name = name,
-    data = instance,
-    seed = 1)
+benchmarks = yahpogym::list_benchmarks()
+scenarios_rbv2 = grep("^rbv2", names(benchmarks$configs), value = TRUE)
+
+walk(scenarios_rbv2, function(scenario) {
+  b = BenchmarkSet$new(scenario)
+  walk(b$instances[1:5], function(instance) { #!!!!!!!!!!
+    addProblem(
+      name = sprintf("%s_%s", scenario, instance),
+      data = list(
+        loader = loader_yahpo,
+        args = list(scenario = scenario, instance = instance, target = "acc", budget = 200)
+      )
+    )
+  })
+})
+
+scenarios_lcbench = grep("^lcbench", names(benchmarks$configs), value = TRUE)
+
+walk(scenarios_lcbench, function(scenario) {
+  b = BenchmarkSet$new(scenario)
+  walk(b$instances[1:5], function(instance) { #!!!!!!!!!!
+    addProblem(
+      name = sprintf("%s_%s", scenario, instance),
+      data = list(
+        loader = loader_yahpo,
+        args = list(scenario = scenario, instance = instance, target = "val_accuracy", budget = 200)
+      )
+    )
+  })
 })
 
 # add algorithms
@@ -68,15 +97,9 @@ addAlgorithm(
     library(mlr3mbo)
     library(mlr3pipelines)
 
-    n_evals = 10L
+    optim_instance = invoke(data$loader, .args = data$args)
 
-    optim_instance = OptimInstanceSingleCrit$new( # oi
-      objective = data,
-      terminator = trm("evals", n_evals = n_evals),
-      check_values = FALSE
-    )
-
-    init_design_size = ceiling(as.numeric(init_size_fraction) * n_evals)
+    init_design_size = ceiling(as.numeric(init_size_fraction) * data$args$budget)
     init_design = if (init == "random") {
       generate_design_random(optim_instance$search_space, n = init_design_size)$data
     } else if (init == "lhs") {
@@ -183,15 +206,22 @@ addAlgorithm(
 )
 
 # optimization
-get_k = function(best, problem, budget, fs_average, fs_extrapolation) {
-  # return(runif(1))
+get_k = function(best, .problem, budget, fs_average, fs_extrapolation) {
+  fs_average = fs_average[list(.problem), , on = "problem"]
+  fs_extrapolation = fs_extrapolation[list(.problem), , on = "problem"]
 
-  fs_average = fs_average[list(problem), , on = "problem", env = list(problem = problem)]
+  estimate_iter = function(mean_best, intercept, iter, max_iter) {
+    iter = ceiling((mean_best - intercept) / iter)
+    if (!isTRUE(iter > max_iter)) {
+      iter = max_iter + 1
+    }
+    iter
+  }
 
   # assumes maximization
   if (best > max(fs_average[["mean_best"]])) {
     extrapolate = TRUE
-    k = fs_extrapolation[list(problem), , on = "problem", env = list(problem = problem)][["model"]][[1L]](best)
+    k = estimate_iter(best, fs_extrapolation[, intercept], fs_extrapolation[, iter], fs_extrapolation[, max_iter])
   } else {
     extrapolate = FALSE
     k = min(fs_average[mean_best >= best]$iter) # min k so that mean_best_fs[k] >= best_mbo[final]
@@ -224,38 +254,40 @@ objective = ObjectiveRFunDt$new(
   fun = function(xdt, reg, fs_average, fs_extrapolation) {
     n_repls = 2
     xdt[, id := .I]
-    budget = 1
+    budget = 200
 
     ades = list(
       mbo = xdt
     )
     addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
 
-    submitJobs(reg = reg)
+    job_ids = submitJobs(reg = reg)$job.id
 
     waitForJobs(reg = reg)
 
-    res = reduceResultsDataTable(reg = reg)
-    res = rbindlist(res$result)
+    res = rbindlist(reduceResultsList(ids = job_ids, reg = reg))
 
-    setorderv(res, col = "instance")
-    setorderv(res, col = "id")
-    setorderv(res, col = "repl")
+    #setorderv(res, col = "problem")
+    #setorderv(res, col = "id")
+    #setorderv(res, col = "repl")
 
     # average best over replications and determine ks
     agg = res[, .(mean_best = mean(best), raw_best = list(best), n_na = sum(is.na(best)), n = .N), by = .(id, problem)]
-    ks = map_dbl(seq_len(nrow(agg)), function(i) {
+
+
+    ks = map_dbl(seq_row(agg), function(i) {
       if (agg[i, ][["n"]] < n_repls) {
         0
       } else {
         tryCatch(
           get_k(
-            agg[i, ][["mean_best"]],
-            budget, #budget_ = instances[problem == agg[i, ][["problem"]]][["budget"]],
-            fs_average,
-            fs_extrapolation
+            best = agg[i, ][["mean_best"]],
+            .problem = agg[i, ][["problem"]],
+            budget = budget,
+            fs_average = fs_average,
+            fs_extrapolation = fs_extrapolation
           ),
-          error = function(ec) 0
+         error = function(ec) 0
         )
       }
     })
@@ -263,7 +295,8 @@ objective = ObjectiveRFunDt$new(
 
     # average k over instances and determine mean_k
     agg_k = agg[, .(mean_k = exp(mean(log(k))), raw_k = list(k), n_na = sum(is.na(k)), n = .N, raw_mean_best = list(mean_best)), by = .(id)]
-    agg_k[n < nrow(instances), mean_k := 0]
+    # if no k on all instances, set to
+    agg_k[n < length(reg$problems), mean_k := 0]
     agg_k
   },
   domain = search_space,
@@ -273,13 +306,13 @@ objective = ObjectiveRFunDt$new(
 )
 
 objective$constants$set_values(
-  reg = reg
-  #fs_average = readRDS("/gscratch/lschnei8/results_yahpo_fs_average.rds")
-  #fs_extrapolation = readRDS("/gscratch/lschnei8/fs_extrapolation.rds")
+  reg = reg,
+  fs_average = fread("/gscratch/mbecke16/mbo_config/focus_search/focus_search_average.gz"),
+  fs_extrapolation = fread("/gscratch/mbecke16/mbo_config/focus_search/focus_search_extrapolation.gz")
 )
 
 if (FALSE) {
-  xdt = generate_design_random(search_space, 10)$data
+  xdt = generate_design_random(search_space, 1)$data
   init = data.table(loop_function = "ego", init = "random", init_size_fraction = "0.25", random_interleave = FALSE, random_interleave_iter = NA_character_, rf_type = "standard", acqf = "EI", acqf_ei_log = NA, lambda = NA_character_, acqopt = "RS_1000")
   objective$eval(init)
   objective$eval(xdt)
@@ -308,4 +341,6 @@ optimizer$param_set$values$max_gen = 5L
 
 optim_instance$eval_batch(init)
 optimizer$optimize(optim_instance)
+
+saveRDS(optim_instance, "coordinate_descent.rds")
 

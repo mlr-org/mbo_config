@@ -249,7 +249,8 @@ objective = ObjectiveRFunDt$new(
 
     # average k over instances and determine mean_k
     agg_k = agg[, .(mean_k = exp(mean(log(k))), raw_k = list(k), n_na = sum(is.na(k)), n = .N, raw_mean_best = list(mean_best)), by = .(id)]
-    agg_k[n < nrow(instances), mean_k := 0]
+    # if no k on all instances, set to 0
+    agg_k[n < length(reg$problems), mean_k := 0]
     agg_k
   },
   domain = search_space,
