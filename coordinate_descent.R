@@ -1,3 +1,5 @@
+#Sys.setenv(DEBUGME = "batchtools")
+
 library(batchtools)
 library(mlr3misc)
 library(data.table)
@@ -11,10 +13,12 @@ yahpo_gym = import("yahpo_gym")
 
 source("OptimizerCoordinateDescent.R")
 
-unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
+# gscratch/mbecke16/mbo_config/registry_coordinate_descen
+
+unlink("registry_coordinate_descent", recursive = TRUE)
 
 reg = makeExperimentRegistry(
-  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+  file.dir = "registry_coordinate_descent",
   conf.file = "/home/mbecke16/mbo_config/batchtools.conf.R",
 )
 
@@ -88,6 +92,9 @@ addAlgorithm(
     acqopt,
     id
     ) {
+
+    message("Test")
+
     library(batchtools)
     library(mlr3misc)
     library(data.table)
@@ -263,7 +270,7 @@ objective = ObjectiveRFunDt$new(
 
     job_ids = submitJobs(reg = reg)$job.id
 
-    waitForJobs(reg = reg)
+    waitForJobs(ids = job_ids, reg = reg)
 
     res = rbindlist(reduceResultsList(ids = job_ids, reg = reg))
 

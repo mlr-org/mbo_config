@@ -30,14 +30,15 @@ log.file = fs::path_expand(log.file)
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=<%= resources$ncpus %>
 #SBATCH --mem-per-cpu=<%= resources$memory %>
-#SBATCH -A eap-larsko
-#SBATCH -p mb
+#SBATCH --account=eap-larsko
+#SBATCH --partition=mb
 <%= if (!is.null(resources$partition)) sprintf(paste0("#SBATCH --partition='", resources$partition, "'")) %>
 <%= if (array.jobs) sprintf("#SBATCH --array=1-%i", nrow(jobs)) else "" %>
 
 ## Initialize work environment like
 ## source /etc/profile
 ## module add ...
+source modules
 
 ## Export value of DEBUGME environemnt var to slave
 export DEBUGME=<%= Sys.getenv("DEBUGME") %>

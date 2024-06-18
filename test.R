@@ -1,13 +1,18 @@
+message("Start")
+
+Sys.setenv(DEBUGME = "batchtools")
+
 library(batchtools)
 library(mlr3misc)
 library(data.table)
 library(paradox)
 
-unlink("v2/registry", recursive = TRUE)
+unlink("registry_v2", recursive = TRUE)
+
 
 reg = makeExperimentRegistry(
-  file.dir = "v2/registry",
-  conf.file = NA # slurm_wyoming_worker.tmpl
+  file.dir = "registry_v2",
+  conf.file = "batchtools.conf.R"
 )
 
 instances = runif(10)
