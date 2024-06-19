@@ -190,3 +190,5 @@ results_yahpo_fs_average.rds
 registry*/
 yahpo_data/
 focus_search_results.log
+focus_search_average.gz
+focus_search_extrapolation.gz

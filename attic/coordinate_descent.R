@@ -6,7 +6,7 @@ library(mlr3learners)
 library(mlr3pipelines)
 library(mlr3misc)
 library(mlr3mbo) # @so_config
-library(bbotk)
+library(bbotk)wurde das neue paradox von irgendjemanden ein bisserl reviewt?
 library(paradox)
 library(R6)
 library(checkmate)
