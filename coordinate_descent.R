@@ -341,7 +341,7 @@ optim_instance = OptimInstanceSingleCrit$new(
 
 optimizer = OptimizerCoordinateDescent$new()
 optimizer$param_set$values$max_gen = 5L
-optimizer$param_set$rds_name = "/gscratch/mbecke16/mbo_config/cd_instance.rds"
+optimizer$param_set$values$rds_name = "/gscratch/mbecke16/mbo_config/cd_instance.rds"
 
 optim_instance$eval_batch(init)
 optimizer$optimize(optim_instance)
