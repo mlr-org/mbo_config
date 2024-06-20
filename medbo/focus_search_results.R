@@ -39,7 +39,7 @@ walk(reg$problems, function(.problem) {
 
   results = rbindlist(results, fill = TRUE)
   results_average = results[, list(mean_best = mean(best), se_best = sd(best) / sqrt(.N)), by = list(problem, iter)]
-  saveRDS(results_average, sprintf("/gscratch/mbecke16/mbo_config/focus_search/focus_search_average_%s.rds", .problem))
+  saveRDS(results_average, sprintf("/gscratch/mbecke16/mbo_config/focus_search/2focus_search_average_%s.rds", .problem))
 
   # extrapolation
   tmp = results_average
@@ -83,8 +83,8 @@ walk(reg$problems, function(.problem) {
     theme_minimal() +
     theme(legend.position = "bottom")
   
-  ggsave(sprintf("/gscratch/mbecke16/mbo_config/focus_search/focus_search_extrapolation_%s.pdf", .problem))
+  ggsave(sprintf("/gscratch/mbecke16/mbo_config/focus_search/2focus_search_extrapolation_%s.pdf", .problem))
 
-  saveRDS(list(problem = .problem, coefs = coefs, max_iter = max_iter), sprintf("/gscratch/mbecke16/mbo_config/focus_search/focus_search_extrapolation_%s.rds", .problem))
+  saveRDS(list(problem = .problem, coefs = coefs, max_iter = max_iter), sprintf("/gscratch/mbecke16/mbo_config/focus_search/2focus_search_extrapolation_%s.rds", .problem))
 })
 

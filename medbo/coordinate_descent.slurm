@@ -9,6 +9,6 @@
 #SBATCH --time=72:00:00
 #SBATCH --partition=mb
 
-source modules
+source /home/mbecke16/mbo_config/medbo/modules
 
-Rscript coordinate_descent.R
+Rscript /home/mbecke16/mbo_config/coordinate_descent.R

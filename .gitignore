@@ -192,3 +192,5 @@ yahpo_data/
 focus_search_results.log
 focus_search_average.gz
 focus_search_extrapolation.gz
+*.log
+pseudo_code.txt
