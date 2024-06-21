@@ -9,6 +9,6 @@
 #SBATCH --time=72:00:00
 #SBATCH --partition=teton
 
-source beartooth/modules
+source /home/mbecke16/mbo_config/beartooth/modules
 
-Rscript beartooth/coordinate_descent.R
+Rscript /home/mbecke16/mbo_config/coordinate_descent.R
