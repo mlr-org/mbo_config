@@ -71,7 +71,6 @@ OptimizerCoordinateDescent = R6Class("OptimizerCoordinateDescent", inherit = bbo
             set(xdt, j = ".gen", value = gen)
             set(xdt, i = nrow(xdt), j = ".param", value = "incumbent")
             set(xdt, j = "incumbent", value = list(inst$archive$best()[, c(inst$archive$cols_x, inst$archive$cols_y), with = FALSE]))
-            set(xdt, j = "eval", value = seq(inst$archive$n_evals + 1L, inst$archive$n_evals + nrow(xdt))) # make experiments unique to avoid skipping
             inst$eval_batch(xdt)
             incumbent = inst$archive$best()[, inst$archive$cols_x, with = FALSE]
             saveRDS(inst, file = self$param_set$values$rds_name)

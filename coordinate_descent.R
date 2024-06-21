@@ -93,7 +93,7 @@ addAlgorithm(
     lambda,
     acqopt,
     id,
-    eval
+    config_hash
     ) {
 
     library(batchtools)
@@ -262,6 +262,7 @@ objective = ObjectiveRFunDt$new(
   fun = function(xdt, reg, fs_average, fs_extrapolation) {
     n_repls = 5
     xdt[, id := .I]
+    set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt))) # make experiments unique to avoid skipping
     budget = 200
 
     ades = list(
@@ -336,8 +337,7 @@ optim_instance = OptimInstanceSingleCrit$new(
   acqf = "EI",
   acqf_ei_log = NA,
   lambda = NA_character_,
-  acqopt = "RS_1000",
-  eval = 1)
+  acqopt = "RS_1000")
 
 optimizer = OptimizerCoordinateDescent$new()
 optimizer$param_set$values$max_gen = 5L
@@ -347,4 +347,3 @@ optim_instance$eval_batch(init)
 optimizer$optimize(optim_instance)
 
 saveRDS(optim_instance, "/gscratch/mbecke16/mbo_config/coordinate_descent.rds")
-
