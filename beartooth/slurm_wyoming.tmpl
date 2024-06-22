@@ -38,6 +38,7 @@ log.file = fs::path_expand(log.file)
 ## Initialize work environment like
 ## source /etc/profile
 ## module add ...
+source /home/mbecke16/mbo_config/beartooth/modules
 
 ## Export value of DEBUGME environemnt var to slave
 export DEBUGME=<%= Sys.getenv("DEBUGME") %>
