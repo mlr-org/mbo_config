@@ -15,12 +15,12 @@ unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = 
 
 reg = makeExperimentRegistry(
   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "/home/mbecke16/mbo_config/medbo/batchtools.conf.R",
+  conf.file = "/home/mbecke16/mbo_config/medbo/coordinate_descent/batchtools.conf.R",
 )
 
 # reg = loadRegistry(
 #   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-#   conf.file = "/home/mbecke16/mbo_config/medbo/batchtools.conf.R",
+#   conf.file = "/home/mbecke16/mbo_config/medbo/coordinate_descent/batchtools.conf.R",
 #   writeable = FALSE
 # )
 
@@ -49,7 +49,7 @@ scenarios_rbv2 = grep("^rbv2", names(benchmarks$configs), value = TRUE)
 
 walk(scenarios_rbv2, function(scenario) {
   b = BenchmarkSet$new(scenario)
-  walk(b$instances[1:4], function(instance) { #!!!!!!!!!!
+  walk(b$instances[1:11], function(instance) { #!!!!!!!!!!
     addProblem(
       name = sprintf("%s_%s", scenario, instance),
       data = list(
@@ -64,7 +64,7 @@ scenarios_lcbench = grep("^lcbench", names(benchmarks$configs), value = TRUE)
 
 walk(scenarios_lcbench, function(scenario) {
   b = BenchmarkSet$new(scenario)
-  walk(b$instances[1:4], function(instance) { #!!!!!!!!!!
+  walk(b$instances[1:11], function(instance) { #!!!!!!!!!!
     addProblem(
       name = sprintf("%s_%s", scenario, instance),
       data = list(
@@ -74,6 +74,10 @@ walk(scenarios_lcbench, function(scenario) {
     )
   })
 })
+
+# medbo 
+# Scenarios * Instances * Replications * Configs
+# 8 * 11 * 5 * 4 = 1760
 
 # add algorithms
 addAlgorithm(
@@ -89,7 +93,6 @@ addAlgorithm(
     random_interleave_iter,
     rf_type,
     acqf,
-    acqf_ei_log,
     lambda,
     acqopt,
     id,
@@ -178,11 +181,7 @@ addAlgorithm(
     acq_optimizer$param_set$values$catch_errors = FALSE
 
     acq_function = if (acqf == "EI") {
-      if (isTRUE(acqf_ei_log)) {
-        AcqFunctionLogEI$new()
-      } else {
-        AcqFunctionEI$new()
-      }
+      AcqFunctionEI$new()
     } else if (acqf == "CB") {
       AcqFunctionCB$new(lambda = as.numeric(lambda))
     } else if (acqf == "PI") {
@@ -247,7 +246,7 @@ search_space = ps(
   random_interleave_iter = p_fct(c("2", "5", "10"), depends = random_interleave == TRUE, default = "10"),
   rf_type = p_fct(c("standard", "extratrees", "smaclike_boot", "smaclike_no_boot"), default = "standard"),
   acqf = p_fct(c("EI", "CB", "PI", "Mean"), default = "EI"),
-  acqf_ei_log = p_lgl(depends = loop_function == "ego_log" && acqf == "EI", default = FALSE),
+  # acqf_ei_log = p_lgl(depends = loop_function == "ego_log" && acqf == "EI", default = FALSE),
   lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB", default = "1"),
   acqopt = p_fct(c("RS_1000", "RS", "FS", "LS"), default = "RS_1000")
 )
@@ -272,6 +271,16 @@ objective = ObjectiveRFunDt$new(
 
     job_ids = submitJobs(reg = reg)$job.id
     waitForJobs(ids = job_ids, reg = reg)
+
+    while(TRUE) {
+      if (length(findExpired()$job.id)) {
+        message("Resubmitting expired jobs")
+        resubmitted_ids = submitJobs(ids = findExpired()$job.id, reg = reg)
+        waitForJobs(ids = resubmitted_ids, reg = reg)
+      } else {
+        break
+      }
+    }
 
     res = rbindlist(reduceResultsList(ids = intersect(job_ids, findDone()$job.id), reg = reg))
 
@@ -316,7 +325,7 @@ objective$constants$set_values(
 
 if (FALSE) {
   xdt = generate_design_random(search_space, 1)$data
-  init = data.table(loop_function = "ego", init = "random", init_size_fraction = "0.25", random_interleave = FALSE, random_interleave_iter = NA_character_, rf_type = "standard", acqf = "EI", acqf_ei_log = NA, lambda = NA_character_, acqopt = "RS_1000")
+  init = data.table(loop_function = "ego", init = "random", init_size_fraction = "0.25", random_interleave = FALSE, random_interleave_iter = NA_character_, rf_type = "standard", acqf = "EI", lambda = NA_character_, acqopt = "RS_1000")
   objective$eval(init)
   objective$eval(xdt)
 }
@@ -335,12 +344,11 @@ optim_instance = OptimInstanceSingleCrit$new(
   random_interleave_iter = NA_character_,
   rf_type = "standard",
   acqf = "EI",
-  acqf_ei_log = NA,
   lambda = NA_character_,
   acqopt = "RS_1000")
 
 optimizer = OptimizerCoordinateDescent$new()
-optimizer$param_set$values$max_gen = 5L
+optimizer$param_set$values$max_gen = 3L
 optimizer$param_set$values$rds_name = "/gscratch/mbecke16/mbo_config/cd_instance.rds"
 
 optim_instance$eval_batch(init)

@@ -6,9 +6,6 @@ module load libxml2/2.10.3
 module load miniconda3/24.3.0
 module load icu4c/67.1
 
-eval "$(ssh-agent -s)"
-ssh-add ~/.ssh/id_ed25519
-
 # ----------------------
 # Git Aliases
 # ----------------------
