@@ -11,7 +11,7 @@ yahpo_gym = import("yahpo_gym")
 
 source("OptimizerCoordinateDescent.R")
 
-unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
+# unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
 
 reg = makeExperimentRegistry(
   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
@@ -267,15 +267,19 @@ objective = ObjectiveRFunDt$new(
     ades = list(
       mbo = xdt
     )
-    addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
+    ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
 
-    job_ids = submitJobs(reg = reg)$job.id
+    ids[, chunk := batchtools::chunk(job.id, chunk.size = 96, shuffle = FALSE)]
+
+    job_ids = submitJobs(ids = ids, reg = reg)$job.id
     waitForJobs(ids = job_ids, reg = reg)
 
     while(TRUE) {
       if (length(findExpired()$job.id)) {
         message("Resubmitting expired jobs")
-        resubmitted_ids = submitJobs(ids = findExpired()$job.id, reg = reg)
+        expired_ids = findExpired()
+        expired_ids[, chunk := batchtools::chunk(job.id, chunk.size = 96, shuffle = FALSE)]
+        resubmitted_ids = submitJobs(ids = expired_ids, reg = reg)
         waitForJobs(ids = resubmitted_ids, reg = reg)
       } else {
         break
