@@ -11,7 +11,7 @@ yahpo_gym = import("yahpo_gym")
 
 source("OptimizerCoordinateDescent.R")
 
-# unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
+unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
 
 reg = makeExperimentRegistry(
   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
@@ -37,7 +37,7 @@ loader_yahpo = function(scenario, instance, target, budget) {
   benchmark$subset_codomain(target)
   objective = benchmark$get_objective(instance, multifidelity = FALSE)
 
-  OptimInstanceSingleCrit$new(
+  oi(
     objective,
     search_space = benchmark$get_search_space(drop_fidelity_params = TRUE),
     terminator = trm("evals", n_evals = budget),
@@ -47,9 +47,9 @@ loader_yahpo = function(scenario, instance, target, budget) {
 benchmarks = yahpogym::list_benchmarks()
 scenarios_rbv2 = grep("^rbv2", names(benchmarks$configs), value = TRUE)
 
-walk(scenarios_rbv2, function(scenario) {
+walk(scenarios_rbv2[1], function(scenario) {
   b = BenchmarkSet$new(scenario)
-  walk(b$instances[1:11], function(instance) { #!!!!!!!!!!
+  walk(b$instances[1], function(instance) { #!!!!!!!!!!
     addProblem(
       name = sprintf("%s_%s", scenario, instance),
       data = list(
@@ -64,7 +64,7 @@ scenarios_lcbench = grep("^lcbench", names(benchmarks$configs), value = TRUE)
 
 walk(scenarios_lcbench, function(scenario) {
   b = BenchmarkSet$new(scenario)
-  walk(b$instances[1:11], function(instance) { #!!!!!!!!!!
+  walk(b$instances[1], function(instance) { #!!!!!!!!!!
     addProblem(
       name = sprintf("%s_%s", scenario, instance),
       data = list(
@@ -75,21 +75,35 @@ walk(scenarios_lcbench, function(scenario) {
   })
 })
 
-# medbo 
+# medbo
 # Scenarios * Instances * Replications * Configs
 # 8 * 11 * 5 * 4 = 1760
 
 # add algorithms
+search_space = ps(
+  log_scale = p_lgl(),
+  init = p_fct(c("random", "lhs", "sobol")),
+  init_size_fraction = p_fct(c(0.05, 0.10, 0.25), trafo = as.numeric),
+  random_interleave = p_fct(c(0, 2, 5, 10), trafo = as.numeric),
+  rf_type = p_fct(c("standard", "extratrees", "smaclike_boot", "smaclike_no_boot")),
+  acqf = p_fct(c("EI", "CB", "PI", "Mean")),
+  lambda = p_fct(c(1, 3, 10), depends = acqf == "CB", trafo = as.numeric),
+  acqopt = p_fct(c("RS_1000", "RS", "FS", "LS"))
+)
+
+# epsilon_decay = p_lgl()
+# lambda decay = p_lgl()
+# surrogate = p_fct(c("km", "random_forest", "extratrees", "smaclike_boot", "smaclike_no_boot"), default = "standard")
+
 addAlgorithm(
   name = "mbo",
   fun = function(
     data,
     job,
     instance,
-    loop_function,
+    log_scale,
     init,
     init_size_fraction,
-    random_interleave,
     random_interleave_iter,
     rf_type,
     acqf,
@@ -121,9 +135,7 @@ addAlgorithm(
 
     optim_instance$eval_batch(init_design)
 
-    random_interleave_iter = if (random_interleave) as.numeric(random_interleave_iter) else 0L
-
-    learner = LearnerRegrRangerCustom$new()
+    learner = LearnerRegrRangerMbonew()
     learner$predict_type = "se"
     learner$param_set$values$keep.inbag = TRUE
 
@@ -160,7 +172,7 @@ addAlgorithm(
       po("imputeoor", multiplier = 3, affect_columns = selector_type(c("integer", "numeric", "character", "factor", "ordered"))) %>>%
       po("colapply", applicator = as.factor, affect_columns = selector_type("character")) %>>%
       learner))
-    surrogate$param_set$values$catch_errors = FALSE
+    surrogate$param_set$values$catch_errors = TRUE
 
     acq_optimizer = if (acqopt == "RS_1000") {
       AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
@@ -180,7 +192,9 @@ addAlgorithm(
     }
     acq_optimizer$param_set$values$catch_errors = FALSE
 
-    acq_function = if (acqf == "EI") {
+    acq_function = if (acqf == "EI" && log_scale) {
+      AcqFunctionLogEI$new()
+    } else if (acqf == "EI" && !log_scale) {
       AcqFunctionEI$new()
     } else if (acqf == "CB") {
       AcqFunctionCB$new(lambda = as.numeric(lambda))
@@ -190,20 +204,22 @@ addAlgorithm(
       AcqFunctionMean$new()
     }
 
-    if (loop_function == "ego") {
+    if (!log_scale) {
       bayesopt_ego(
         optim_instance,
         surrogate = surrogate,
         acq_function = acq_function,
         acq_optimizer = acq_optimizer,
-        random_interleave_iter = random_interleave_iter)
-    } else if (loop_function == "ego_log") {
+        random_interleave_iter = random_interleave_iter,
+        init_design_size = init_design_size)
+    } else {
       bayesopt_ego_log(
         optim_instance,
         surrogate = surrogate,
         acq_function = acq_function,
         acq_optimizer = acq_optimizer,
-        random_interleave_iter = random_interleave_iter)
+        random_interleave_iter = random_interleave_iter,
+        init_design_size = init_design_size)
     }
 
     target = optim_instance$archive$cols_y
@@ -238,18 +254,15 @@ get_k = function(best, .problem, budget, fs_average, fs_extrapolation) {
   k
 }
 
-search_space = ps(
-  loop_function = p_fct(c("ego", "ego_log"), default = "ego"),
-  init = p_fct(c("random", "lhs", "sobol"), default = "random"),
-  init_size_fraction = p_fct(c("0.05", "0.10", "0.25"), default = "0.25"),
-  random_interleave = p_lgl(default = FALSE),
-  random_interleave_iter = p_fct(c("2", "5", "10"), depends = random_interleave == TRUE, default = "10"),
-  rf_type = p_fct(c("standard", "extratrees", "smaclike_boot", "smaclike_no_boot"), default = "standard"),
-  acqf = p_fct(c("EI", "CB", "PI", "Mean"), default = "EI"),
-  # acqf_ei_log = p_lgl(depends = loop_function == "ego_log" && acqf == "EI", default = FALSE),
-  lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB", default = "1"),
-  acqopt = p_fct(c("RS_1000", "RS", "FS", "LS"), default = "RS_1000")
-)
+init = data.table(
+  log_scale = FALSE,
+  init = "random",
+  init_size_fraction = 0.25,
+  random_interleave_iter = 0,
+  rf_type = "standard",
+  acqf = "EI",
+  lambda = NA_character_,
+  acqopt = "RS_1000")
 
 constants = ps(
   reg = p_uty(),
@@ -327,33 +340,31 @@ objective$constants$set_values(
   fs_extrapolation = fread("focus_search_extrapolation.gz")
 )
 
-if (FALSE) {
-  xdt = generate_design_random(search_space, 1)$data
-  init = data.table(loop_function = "ego", init = "random", init_size_fraction = "0.25", random_interleave = FALSE, random_interleave_iter = NA_character_, rf_type = "standard", acqf = "EI", lambda = NA_character_, acqopt = "RS_1000")
-  objective$eval(init)
-  objective$eval(xdt)
-}
+callback_backup = callback_batch("bbotk.backup",
+  label = "Backup Archive Callback",
+  man = "bbotk::bbotk.backup",
 
-optim_instance = OptimInstanceSingleCrit$new(
-  objective = objective,
-  terminator = trm("none"),
-  check_values = FALSE
+  on_optimizer_after_eval = function(callback, context) {
+    start_time = Sys.time()
+    tmp_file = tempfile(fileext = ".rds")
+    saveRDS(context$instance$archive$data, tmp_file)
+    unlink(callback$state$path)
+    file.rename(tmp_file, callback$state$path)
+    message(sprintf("Saving intermediate results took %s seconds", difftime(Sys.time(), start_time, units = "s")))
+  }
 )
 
- init = data.table(
-  loop_function = "ego",
-  init = "random",
-  init_size_fraction = "0.25",
-  random_interleave = FALSE,
-  random_interleave_iter = NA_character_,
-  rf_type = "standard",
-  acqf = "EI",
-  lambda = NA_character_,
-  acqopt = "RS_1000")
+callback_backup$state$path = "intermediate_instance.rds"
 
-optimizer = OptimizerCoordinateDescent$new()
-optimizer$param_set$values$max_gen = 3L
-optimizer$param_set$values$rds_name = "/gscratch/mbecke16/mbo_config/cd_instance.rds"
+optim_instance = oi(
+  objective = objective,
+  terminator = trm("none"),
+  search_space = search_space,
+  check_values = FALSE,
+  callbacks = list(callback_backup)
+)
+
+optimizer = OptimizerBatchCoordinateDescent$new()
 
 optim_instance$eval_batch(init)
 optimizer$optimize(optim_instance)

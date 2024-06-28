@@ -1,23 +1,19 @@
 library(R6)
 library(checkmate)
+library(data.table)
+library(mlr3misc)
 
-OptimizerCoordinateDescent = R6Class("OptimizerCoordinateDescent", inherit = bbotk::Optimizer,
+OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
+  inherit = bbotk::OptimizerBatch,
   public = list(
 
     #' @description
     #' Creates a new instance of this [R6][R6::R6Class] class.
     initialize = function() {
-      param_set = ps(
-        n_coordinate_tryouts = p_int(lower = 1L, default = 10L, tags = "required"),
-        max_gen = p_int(lower = 1L, default = 10L, tags = "required"),
-        rds_name = p_uty(default = "cd_instance.rds", tags = "required")
-      )
-      param_set$values = list(n_coordinate_tryouts = 10L, max_gen = 10L, rds_name = "cd_instance.rds")
-
       super$initialize(
         id = "coordinate_descent",
-        param_set = param_set,
-        param_classes = c("ParamLgl", "ParamInt", "ParamDbl", "ParamFct"),
+        param_set = ps(),
+        param_classes = c("ParamLgl", "ParamFct"),
         properties = c("single-crit", "dependencies"),
         label = "Coordinate Descent",
         man = ""
@@ -27,98 +23,76 @@ OptimizerCoordinateDescent = R6Class("OptimizerCoordinateDescent", inherit = bbo
 
   private = list(
     .optimize = function(inst) {
-      n_coordinate_tryouts = self$param_set$values$n_coordinate_tryouts
-      if (inst$archive$n_evals == 0L) {
-        xdt = generate_design_random(inst$search_space, n = 1L)$data
-        inst$eval_batch(xdt)
+      parameters = inst$search_space$ids()
+
+      if (!inst$archive$n_evals) {
+        # evaluate initial design
+        inital_xdt = generate_design_random(inst$search_space, n = 1L)$data
+        inst$eval_batch(inital_xdt)
       }
 
-      # check if .gen is already present, if yes continue from there
-      if (inst$archive$n_evals > 0L & ".gen" %in% colnames(inst$archive$data)) {
-        gen = max(inst$archive$data[[".gen"]], na.rm = TRUE)
+      if (inst$archive$n_evals > 1L) {
+        # restore from previous state
+        n_batches = inst$archive$n_batch
+
+        # check if search space is already fully explored
+        if (n_batches == inst$search_space$length + 1) return()
+
+        # get explored parameters from incumbents
+        parameters_explored = map_chr(seq(2, n_batches), function(batch) inst$archive$best(batch = batch)$parameter)
+        parameters = parameters[parameters %nin% parameters_explored]
+
+        # set incumbent to best configuration of last batch
+        incumbent = inst$archive$best(batch = n_batches)[, inst$archive$cols_x, with = FALSE]
       } else {
-        gen = 0L
-        set(inst$archive$data, j = ".gen", value = gen)  # 0 for first batch
+        # fresh state
+        # set incumbent to initial design
+        incumbent = inst$archive$data[1, inst$archive$cols_x, with = FALSE]
       }
 
-      y_col = inst$archive$cols_y
-      y_col_orig = paste0(y_col, "_orig")
+      # iterate over all parameters
+      for (i in seq_along(parameters)) {
 
-      inst$archive$data[.gen == gen, (y_col_orig) := get(y_col)]
+        xdt = map_dtr(inst$search_space$subspaces(ids = parameters), function(subset) {
+          param_id = subset$ids()
+          param_levels = subset$levels[[1]]
 
-      incumbent = inst$archive$best()[, inst$archive$cols_x, with = FALSE]
+          # copy incumbent n times where n is the number of levels of the active parameter
+          xdt_param = incumbent[rep(1, length(param_levels)), ]
+          set(xdt_param, j = param_id, value = param_levels)
 
-      repeat {
-        gen = gen + 1L
-        for (param_id in shuffle(inst$search_space$ids())) {
-          if (!is.na(incumbent[[param_id]])) {
-            xdt = get_xdt_coordinate(copy(incumbent), param = inst$search_space$params[[param_id]], n_coordinate_tryouts = n_coordinate_tryouts)
-            # previously inactive parameters can now be active and need a value
-            if (inst$search_space$has_deps & param_id %in% inst$search_space$deps$on) {
-              deps = inst$search_space$deps[on == param_id, ]
-              for (i in seq_len(nrow(deps))) {
-                to_replace = which(map_lgl(xdt[[param_id]], function(x) deps$cond[[i]]$test(x)))
-                if (test_r6(inst$search_space$params[[deps$id[[i]]]]$default, classes = "NoDefault")) {
-                  set(xdt, i = to_replace, j = deps$id[[i]], value = sample_random(inst$search_space$params[[deps$id[[i]]]], n = length(to_replace)))  # random
-                } else {
-                  set(xdt, i = to_replace, j = deps$id[[i]], value = inst$search_space$params[[deps$id[[i]]]]$default)  # default
-                }
-              }
+          # activate parameters
+          if (inst$search_space$has_deps && param_id %in% inst$search_space$deps$on) {
+            # get dependencies that are on the active parameter
+            deps = inst$search_space$deps[on == param_id]
+
+            for (j in seq_row(deps)) {
+              # find parameter that depend on the active parameter and are not set
+              to_replace = which(map_lgl(xdt_param[[param_id]], function(x) paradox:::condition_test(deps$cond[[j]], x)) & is.na(xdt_param[[deps$id[[j]]]]))
+              if (!length(to_replace)) next
+              # copy the incumbent with active parameter n times where n is the number of levels of the dependent parameter
+              tmp_xdt = xdt_param[to_replace, ]
+              levels = inst$search_space$subspaces(ids = deps$id[[j]])[[1]]$levels[[1]]
+              tmp_xdt = tmp_xdt[rep(1, length(levels)), ]
+              set(tmp_xdt, j = deps$id[[j]], value = levels)
+              xdt_param = rbindlist(list(xdt_param, tmp_xdt))
             }
-            xdt = Design$new(inst$search_space, data = xdt, remove_dupl = TRUE)$data  # fixes potentially broken dependencies
-            set(xdt, j = ".param", value = param_id)
-            xdt = rbind(xdt, incumbent, fill = TRUE)  # also reevaluate the incumbent to see how noisy evaluations are
-            set(xdt, j = ".gen", value = gen)
-            set(xdt, i = nrow(xdt), j = ".param", value = "incumbent")
-            set(xdt, j = "incumbent", value = list(inst$archive$best()[, c(inst$archive$cols_x, inst$archive$cols_y), with = FALSE]))
-            inst$eval_batch(xdt)
-            incumbent = inst$archive$best()[, inst$archive$cols_x, with = FALSE]
-            saveRDS(inst, file = self$param_set$values$rds_name)
           }
-        }
 
-        # after each gen, update target evaluations of incumbents that have been evaluated multiple times by their mean
-        tmp = copy(inst$archive$data)
-        hashes = as.numeric(as.factor(map_chr(seq_len(nrow(tmp)), function(i) paste0(tmp[i, inst$archive$cols_x, with = FALSE], collapse = "_"))))
-        tmp[, hash := hashes]
-        tmp[.gen == gen, (y_col_orig) := get(y_col)]
-        tmp[, n_incumbent_repls := .N, by = .(hash)]
-        tmp[, (y_col) := mean(get(y_col_orig)), by = .(hash)]
-        inst$archive$data = tmp
-        incumbent = inst$archive$best()[, inst$archive$cols_x, with = FALSE]
+          # deactivate parameters
+          xdt_param = Design$new(inst$search_space, data = xdt_param, remove_dupl = TRUE)$data
+          set(xdt_param, j = "parameter", value = param_id)
+          xdt_param
+        })
 
-        if (gen >= self$param_set$values$max_gen) {
-          break
-        }
+        set(xdt, j = "iteration", value = i)
+
+        inst$eval_batch(xdt)
+
+        incumbent = inst$archive$best(batch = i + 1L)
+        parameters = parameters[parameters %nin% incumbent$parameter]
+        incumbent = incumbent[, inst$archive$cols_x, with = FALSE]
       }
     }
   )
 )
-
-get_xdt_coordinate = function(incumbent, param, n_coordinate_tryouts) {
-  if (param$class == "ParamDbl") {
-    x = runif(n = n_coordinate_tryouts, min = param$lower, max = param$upper)
-  } else if (param$class == "ParamInt") {
-    levels = setdiff(seq(param$lower, param$upper, by = 1L), incumbent[[param$id]])
-    n_coordinate_tryouts = min(n_coordinate_tryouts, length(levels))
-    x = sample(levels, size = n_coordinate_tryouts, replace = FALSE)
-  } else {
-    n_coordinate_tryouts = min(n_coordinate_tryouts, param$nlevels - 1L)
-    x = sample(x = setdiff(param$levels, incumbent[[param$id]]), size = n_coordinate_tryouts, replace = FALSE)
-  }
-  xdt = incumbent[rep(1L, n_coordinate_tryouts), ]
-  set(xdt, j = param$id, value = x)
-  xdt
-}
-
-sample_random = function(param, n) {
-  if (param$class == "ParamDbl") {
-    x = runif(n = n, min = param$lower, max = param$upper)
-  } else if (param$class == "ParamInt") {
-    levels = seq(param$lower, param$upper, by = 1L)
-    x = sample(levels, size = n, replace = TRUE)
-  } else {
-    x = sample(param$levels, size = n, replace = TRUE)
-  }
-  x
-}
