@@ -1,1 +1,9 @@
-renv::install("mlr-org/mlr3mbo@so_config_2")
+pak::pak(c(
+    "mlr-org/mlr3mbo@so_config_2", 
+    "batchtools", 
+    "be-marc/yahpo_gym/yahpo_gym_r", 
+    "lhs", 
+    "ranger", 
+    "R.utils", 
+    "mlr3learners",
+    "mlr3pipelines"))

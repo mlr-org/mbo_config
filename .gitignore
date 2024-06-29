@@ -195,3 +195,5 @@ focus_search_extrapolation.gz
 *.log
 pseudo_code.txt
 coordinate_descent.rds
+cluster_test
+logs
