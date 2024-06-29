@@ -3,7 +3,7 @@ module use /home/mbecke16/mf/
 module load arcc/1.0
 module load gcc/12.2.0
 module load curl/7.85.0
-module load r/4.2.2
+module load r/4.4.0
 module load libxml2/2.10.1
 module load miniconda3
 module load icu4c
