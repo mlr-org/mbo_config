@@ -47,9 +47,9 @@ loader_yahpo = function(scenario, instance, target, budget) {
 benchmarks = yahpogym::list_benchmarks()
 scenarios_rbv2 = grep("^rbv2", names(benchmarks$configs), value = TRUE)
 
-walk(scenarios_rbv2[1], function(scenario) {
+walk(scenarios_rbv2[1:4], function(scenario) {
   b = BenchmarkSet$new(scenario)
-  walk(b$instances[1], function(instance) { #!!!!!!!!!!
+  walk(b$instances[1:4], function(instance) { #!!!!!!!!!!
     addProblem(
       name = sprintf("%s_%s", scenario, instance),
       data = list(
@@ -60,20 +60,21 @@ walk(scenarios_rbv2[1], function(scenario) {
   })
 })
 
-scenarios_lcbench = grep("^lcbench", names(benchmarks$configs), value = TRUE)
+# FIXME: yahpo error
+# scenarios_lcbench = grep("^lcbench", names(benchmarks$configs), value = TRUE)
 
-walk(scenarios_lcbench, function(scenario) {
-  b = BenchmarkSet$new(scenario)
-  walk(b$instances[1], function(instance) { #!!!!!!!!!!
-    addProblem(
-      name = sprintf("%s_%s", scenario, instance),
-      data = list(
-        loader = loader_yahpo,
-        args = list(scenario = scenario, instance = instance, target = "val_accuracy", budget = 200)
-      )
-    )
-  })
-})
+# walk(scenarios_lcbench, function(scenario) {
+#   b = BenchmarkSet$new(scenario)
+#   walk(b$instances[1:4], function(instance) { #!!!!!!!!!!
+#     addProblem(
+#       name = sprintf("%s_%s", scenario, instance),
+#       data = list(
+#         loader = loader_yahpo,
+#         args = list(scenario = scenario, instance = instance, target = "val_accuracy", budget = 200)
+#       )
+#     )
+#   })
+# })
 
 # medbo
 # Scenarios * Instances * Replications * Configs
@@ -84,7 +85,7 @@ search_space = ps(
   log_scale = p_lgl(),
   init = p_fct(c("random", "lhs", "sobol")),
   init_size_fraction = p_fct(c(0.05, 0.10, 0.25), trafo = as.numeric),
-  random_interleave = p_fct(c(0, 2, 5, 10), trafo = as.numeric),
+  random_interleave_iter = p_fct(c(0, 2, 5, 10), trafo = as.numeric),
   rf_type = p_fct(c("standard", "extratrees", "smaclike_boot", "smaclike_no_boot")),
   acqf = p_fct(c("EI", "CB", "PI", "Mean")),
   lambda = p_fct(c(1, 3, 10), depends = acqf == "CB", trafo = as.numeric),
@@ -122,6 +123,10 @@ addAlgorithm(
     library(mlr3mbo)
     library(mlr3pipelines)
 
+    random_interleave_iter = as.numeric(random_interleave_iter)
+    init_size_fraction = as.numeric(init_size_fraction)
+    lambda = as.numeric(lambda)
+
     optim_instance = invoke(data$loader, .args = data$args)
 
     init_design_size = ceiling(as.numeric(init_size_fraction) * data$args$budget)
@@ -135,7 +140,7 @@ addAlgorithm(
 
     optim_instance$eval_batch(init_design)
 
-    learner = LearnerRegrRangerMbonew()
+    learner = LearnerRegrRangerMbo$new()
     learner$predict_type = "se"
     learner$param_set$values$keep.inbag = TRUE
 
@@ -257,8 +262,8 @@ get_k = function(best, .problem, budget, fs_average, fs_extrapolation) {
 init = data.table(
   log_scale = FALSE,
   init = "random",
-  init_size_fraction = 0.25,
-  random_interleave_iter = 0,
+  init_size_fraction = "0.25",
+  random_interleave_iter = "0",
   rf_type = "standard",
   acqf = "EI",
   lambda = NA_character_,
@@ -346,7 +351,7 @@ callback_backup = callback_batch("bbotk.backup",
 
   on_optimizer_after_eval = function(callback, context) {
     start_time = Sys.time()
-    tmp_file = tempfile(fileext = ".rds")
+    tmp_file = tempfile(tmpdir = dirname(callback$state$path), fileext = ".rds")
     saveRDS(context$instance$archive$data, tmp_file)
     unlink(callback$state$path)
     file.rename(tmp_file, callback$state$path)
@@ -354,7 +359,7 @@ callback_backup = callback_batch("bbotk.backup",
   }
 )
 
-callback_backup$state$path = "intermediate_instance.rds"
+callback_backup$state$path = "/gscratch/mbecke16/mbo_config/intermediate_instance.rds"
 
 optim_instance = oi(
   objective = objective,
