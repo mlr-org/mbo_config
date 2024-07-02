@@ -58,32 +58,48 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
           param_levels = subset$levels[[1]]
 
           # copy incumbent n times where n is the number of levels of the active parameter
-          xdt_param = incumbent[rep(1, length(param_levels)), ]
-          set(xdt_param, j = param_id, value = param_levels)
+          xdt_subspace = incumbent[rep(1, length(param_levels)), ]
+          set(xdt_subspace, j = param_id, value = param_levels)
 
-          # activate parameters
+          # activate dependent parameters and try all levels of them
           if (inst$search_space$has_deps && param_id %in% inst$search_space$deps$on) {
             # get dependencies that are on the active parameter
             deps = inst$search_space$deps[on == param_id]
 
-            for (j in seq_row(deps)) {
-              # find parameter that depend on the active parameter and are not set
-              to_replace = which(map_lgl(xdt_param[[param_id]], function(x) paradox:::condition_test(deps$cond[[j]], x)) & is.na(xdt_param[[deps$id[[j]]]]))
-              if (!length(to_replace)) next
-              # copy the incumbent with active parameter n times where n is the number of levels of the dependent parameter
-              tmp_xdt = xdt_param[to_replace, ]
-              levels = inst$search_space$subspaces(ids = deps$id[[j]])[[1]]$levels[[1]]
-              tmp_xdt = tmp_xdt[rep(1, length(levels)), ]
-              set(tmp_xdt, j = deps$id[[j]], value = levels)
-              xdt_param = rbindlist(list(xdt_param, tmp_xdt))
+            for (ii in seq_row(deps)) {
+              id = deps[ii, id]
+              on = deps[ii, on]
+              cond = deps[ii, cond][[1]]
+
+              # find configuration where the dependency is satisfied
+              xdt_dep = xdt_subspace[list(cond$rhs), , on = on]
+
+              # skip if the dependent parameter is not NA
+              if (!is.na(xdt_dep[[id]])) next
+
+              # copy the configuration n times where n is the number of levels of the dependent parameter
+              levels = inst$search_space$subspaces(ids = id)[[1]]$levels[[1]]
+              xdt_dep  = xdt_dep [rep(1, length(levels)), ]
+
+              # set the dependent parameter to all levels
+              set(xdt_dep, j = id, value = levels)
+
+              # remove configurations where the dependency is satisfied but the dependent parameter is NA
+              xdt_subspace = xdt_subspace[!list(cond$rhs), , on = on]
+
+              # merge the configurations
+              xdt_subspace = rbindlist(list(xdt_subspace, xdt_dep))
             }
           }
 
-          # deactivate parameters
-          xdt_param = Design$new(inst$search_space, data = xdt_param, remove_dupl = TRUE)$data
-          set(xdt_param, j = "parameter", value = param_id)
-          xdt_param
+          # deactivate parameters with unsatisfiable dependencies
+          xdt_subspace = Design$new(inst$search_space, data = xdt_subspace, remove_dupl = TRUE)$data
+          set(xdt_subspace, j = "parameter", value = param_id)
+          xdt_subspace
         })
+        # revaluate incumbent
+        set(incumbent, j = "parameter", value = "incumbent")
+        xdt = rbindlist(list(incumbent, xdt))
 
         set(xdt, j = "iteration", value = i)
 

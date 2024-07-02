@@ -28,10 +28,10 @@ loader_yahpo = function(scenario, instance, target, budget) {
   benchmark$subset_codomain(target)
   objective = benchmark$get_objective(instance, multifidelity = FALSE)
 
-  OptimInstanceSingleCrit$new(
-    objective, 
-    search_space = benchmark$get_search_space(drop_fidelity_params = TRUE), 
-    terminator = trm("evals", n_evals = budget), 
+  oi(
+    objective,
+    search_space = benchmark$get_search_space(drop_fidelity_params = TRUE),
+    terminator = trm("evals", n_evals = budget),
     check_values = FALSE)
 }
 
@@ -99,8 +99,8 @@ ids = getJobTable()[, list(job.id)]
 ids[, chunk := batchtools::chunk(job.id, chunk.size = 30, shuffle = FALSE)]
 
 resources = list(
-  walltime = 3600 * 6, 
-  memory = 4000, 
+  walltime = 3600 * 6,
+  memory = 4000,
   ncpus = 2)
 
 submitJobs(ids, resources = resources)

@@ -14,9 +14,9 @@ loader_branin = function(budget) {
     check_values = FALSE
   )
 
-  OptimInstanceSingleCrit$new(
-    objective, 
-    terminator = trm("evals", n_evals = budget), 
+  oi(
+    objective,
+    terminator = trm("evals", n_evals = budget),
     check_values = FALSE)
 }
 
