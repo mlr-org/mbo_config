@@ -84,11 +84,11 @@ walk(scenarios_rbv2[1:4], function(scenario) {
 search_space = ps(
   log_scale = p_lgl(),
   init = p_fct(c("random", "lhs", "sobol")),
-  init_size_fraction = p_fct(c(0.05, 0.10, 0.25), trafo = as.numeric),
-  random_interleave_iter = p_fct(c(0, 2, 5, 10), trafo = as.numeric),
+  init_size_fraction = p_fct(c("0.05", "0.10", "0.25")),
+  random_interleave_iter = p_fct(c("0", "2", "5", "10")),
   rf_type = p_fct(c("standard", "extratrees", "smaclike_boot", "smaclike_no_boot")),
   acqf = p_fct(c("EI", "CB", "PI", "Mean")),
-  lambda = p_fct(c(1, 3, 10), depends = acqf == "CB", trafo = as.numeric),
+  lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
   acqopt = p_fct(c("RS_1000", "RS", "FS", "LS"))
 )
 
