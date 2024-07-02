@@ -15,14 +15,14 @@ unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = 
 
 reg = makeExperimentRegistry(
   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "/home/mbecke16/mbo_config/medbo/coordinate_descent/batchtools.conf.R",
+  conf.file = "/home/mbecke16/mbo_config/beartooth/coordinate_descent/batchtools.conf.R",
 )
 
-# reg = loadRegistry(
-#   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-#   conf.file = "/home/mbecke16/mbo_config/medbo/coordinate_descent/batchtools.conf.R",
-#   writeable = FALSE
-# )
+reg = loadRegistry(
+  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+  conf.file = "/home/mbecke16/mbo_config/beartooth/coordinate_descent/batchtools.conf.R",
+  writeable = FALSE
+)
 
 # add problems
 ## yahpo
@@ -189,7 +189,7 @@ addAlgorithm(
       batch_size = ceiling((20000L / n_repeats) / (1 + maxit)) # 1000L
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 20000L))
     } else if (acqopt == "LS") {
-      optimizer = OptimizerChain$new(list(opt("local_search", n_points = 100L), opt("random_search", batch_size = 1000L)), terminators = list(trm("evals", n_evals = 10000L), trm("evals", n_evals = 10000L)))
+      optimizer = OptimizerBatchChain$new(list(opt("local_search", n_points = 100L), opt("random_search", batch_size = 1000L)), terminators = list(trm("evals", n_evals = 10000L), trm("evals", n_evals = 10000L)))
       acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 20000L))
       acq_optimizer$param_set$values$warmstart = TRUE
       acq_optimizer$param_set$values$warmstart_size = "all"
