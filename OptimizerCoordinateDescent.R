@@ -24,6 +24,7 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
   private = list(
     .optimize = function(inst) {
       parameters = inst$search_space$ids()
+      iterations = length(parameters)
 
       if (!inst$archive$n_evals) {
         # evaluate initial design
@@ -48,10 +49,11 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
         # fresh state
         # set incumbent to initial design
         incumbent = inst$archive$data[1, inst$archive$cols_x, with = FALSE]
+        
       }
 
       # iterate over all parameters
-      for (i in seq_along(parameters)) {
+      for (i in seq(inst$archive$n_batch + 1, iterations + 1)) {
 
         xdt = map_dtr(inst$search_space$subspaces(ids = parameters), function(subset) {
           param_id = subset$ids()
@@ -105,7 +107,8 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
 
         inst$eval_batch(xdt)
 
-        incumbent = inst$archive$best(batch = i + 1L)
+        top_2 = inst$archive$best(batch = i, n_select = 2L)
+        incumbent = if (top_2[1, parameter] == "incumbent") top_2[2, ] else top_2[1, ]
         parameters = parameters[parameters %nin% incumbent$parameter]
         incumbent = incumbent[, inst$archive$cols_x, with = FALSE]
       }

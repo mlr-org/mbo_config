@@ -15,14 +15,14 @@ unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = 
 
 reg = makeExperimentRegistry(
   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "/home/mbecke16/mbo_config/beartooth/coordinate_descent/batchtools.conf.R",
+  conf.file = "/home/mbecke16/mbo_config/medbo/coordinate_descent/batchtools.conf.R",
 )
 
-reg = loadRegistry(
-  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "/home/mbecke16/mbo_config/beartooth/coordinate_descent/batchtools.conf.R",
-  writeable = FALSE
-)
+# reg = loadRegistry(
+#   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+#   conf.file = "/home/mbecke16/mbo_config/medbo/coordinate_descent/batchtools.conf.R",
+#   writeable = TRUE
+# )
 
 # add problems
 ## yahpo
@@ -47,9 +47,9 @@ loader_yahpo = function(scenario, instance, target, budget) {
 benchmarks = yahpogym::list_benchmarks()
 scenarios_rbv2 = grep("^rbv2", names(benchmarks$configs), value = TRUE)
 
-walk(scenarios_rbv2[1:4], function(scenario) {
+walk(scenarios_rbv2, function(scenario) {
   b = BenchmarkSet$new(scenario)
-  walk(b$instances[1:4], function(instance) { #!!!!!!!!!!
+  walk(b$instances[1:10], function(instance) {
     addProblem(
       name = sprintf("%s_%s", scenario, instance),
       data = list(
@@ -369,9 +369,27 @@ optim_instance = oi(
   callbacks = list(callback_backup)
 )
 
-optimizer = OptimizerBatchCoordinateDescent$new()
+if (file.exists(callback_backup$state$path)) {
+  data = readRDS(callback_backup$state$path)
+  optim_instance$archive$data = data
+} else {
+  optim_instance$eval_batch(init)
+}
 
-optim_instance$eval_batch(init)
+optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$optimize(optim_instance)
 
 saveRDS(optim_instance, "/gscratch/mbecke16/mbo_config/coordinate_descent.rds")
+
+
+# agg_k
+# data = copy(inst$archive$data)
+
+
+# set(data, i = 56:77,  j = "id", value = agg_k$id)
+# set(data, i = 56:77,  j = "mean_k", value = agg_k$mean_k)
+# set(data, i = 56:77,  j = "raw_k", value = agg_k$raw_k)
+# set(data, i = 56:77,  j = "n_na", value = agg_k$n_na)
+# set(data, i = 56:77,  j = "n", value = agg_k$n)
+# set(data, i = 56:77,  j = "raw_mean_best", value = agg_k$raw_mean_best)
+# set(data, i = 56:77,  j = "iteration", value = 3)
