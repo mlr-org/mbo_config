@@ -1,0 +1,48 @@
+---
+title: "mlr3mbo Config"
+format:
+  html:
+    toc: true
+    html-math-method: katex
+---
+
+```{r}
+#| include: false
+
+library(data.table)
+
+archive = fread("archive.csv")
+setorderv(archive, c("batch_nr", "mean_k"))
+setcolorder(archive, c("batch_nr", "mean_k", "parameter"))
+archive = archive[parameter != "lambda"]
+```
+
+# Optimization Path
+
+```{r}
+#| echo: false
+#| column: page
+tab = archive[, -c("raw_k", "raw_mean_best", "id", "n_na", "n", "iteration", "timestamp")]
+tab = tab[parameter != "incumbent"][, tail(.SD, 1), by=batch_nr]
+
+knitr::kable(tab, digits = 2)
+```
+
+```{r}
+#| echo: false
+#| column: page
+tab = archive[batch_nr == 8, -c("raw_k", "raw_mean_best", "id", "n_na", "n", "iteration", "timestamp")]
+knitr::kable(tab, digits = 2)
+```
+
+# Archive
+
+```{r}
+#| echo: false
+#| column: page
+tab = archive[, -c("raw_k", "raw_mean_best", "id", "n_na", "n", "iteration", "timestamp")]
+
+knitr::kable(tab, digits = 2, row.names = TRUE)
+```
+
+

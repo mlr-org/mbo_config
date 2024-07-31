@@ -1,15 +1,10 @@
-module use /home/mbecke16/mf/
-
 module load arcc/1.0
-module load gcc/12.2.0
-module load curl/7.85.0
+module load gcc/13.2.0
+module load curl/8.4.0
 module load r/4.4.0
-module load libxml2/2.10.1
-module load miniconda3
-module load icu4c
-
-export LD_LIBRARY_PATH=/home/mbecke16/software/hiredis/lib:$LD_LIBRARY_PATH
-PATH=$PATH:/home/mbecke16/.local/bin
+module load libxml2/2.10.3
+module load miniconda3/24.3.0
+module load icu4c/67.1
 
 # ----------------------
 # Git Aliases
@@ -54,3 +49,6 @@ alias gsts='git stash save'
 # ----------------------
 # Git log find by commit message
 function glf() { git log --all --grep="$1"; }
+
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519

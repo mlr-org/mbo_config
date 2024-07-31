@@ -9,6 +9,6 @@
 #SBATCH --time=72:00:00
 #SBATCH --partition=mb
 
-source modules
+source /home/mbecke16/mbo_config/modules
 
-Rscript test.R
+Rscript /home/mbecke16/mbo_config/coordinatedescent/coordinate_descent.R
