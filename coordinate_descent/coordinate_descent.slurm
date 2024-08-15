@@ -11,4 +11,4 @@
 
 source /home/mbecke16/mbo_config/modules
 
-Rscript /home/mbecke16/mbo_config/coordinatedescent/coordinate_descent.R
+Rscript /home/mbecke16/mbo_config/coordinate_descent/coordinate_descent.R

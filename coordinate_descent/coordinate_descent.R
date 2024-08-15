@@ -15,14 +15,16 @@ unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = 
 
 reg = makeExperimentRegistry(
   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "/home/mbecke16/mbo_config/medbo/coordinate_descent/batchtools.conf.R",
+  conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
 )
 
-# reg = loadRegistry(
-#   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-#   conf.file = "/home/mbecke16/mbo_config/medbo/coordinate_descent/batchtools.conf.R",
-#   writeable = TRUE
-# )
+reg = loadRegistry(
+  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+  conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
+  writeable = TRUE
+)
+
+set.seed(7832)
 
 # add problems
 ## yahpo
@@ -44,41 +46,22 @@ loader_yahpo = function(scenario, instance, target, budget) {
     check_values = FALSE)
 }
 
-benchmarks = yahpogym::list_benchmarks()
-scenarios_rbv2 = grep("^rbv2", names(benchmarks$configs), value = TRUE)
 
-walk(scenarios_rbv2, function(scenario) {
-  b = BenchmarkSet$new(scenario)
-  walk(b$instances[1:10], function(instance) {
+rbv2 = fread("random_search/rbv2_instances.csv")
+rbv2[, instance := as.character(instance)]
+rbv2 = rbv2[, .SD[sample(.N, 2)], by = scenario]
+
+pwalk(rbv2, function(scenario, instance) {
+  walk(c("acc", "bac", "auc", "logloss"), function(target) {
     addProblem(
-      name = sprintf("%s_%s", scenario, instance),
+      name = sprintf("%s_%s_%s", scenario, instance, target),
       data = list(
         loader = loader_yahpo,
-        args = list(scenario = scenario, instance = instance, target = "acc", budget = 200)
+        args = list(scenario = scenario, instance = instance, target = target, budget = 200)
       )
     )
   })
 })
-
-# FIXME: yahpo error
-# scenarios_lcbench = grep("^lcbench", names(benchmarks$configs), value = TRUE)
-
-# walk(scenarios_lcbench, function(scenario) {
-#   b = BenchmarkSet$new(scenario)
-#   walk(b$instances[1:4], function(instance) { #!!!!!!!!!!
-#     addProblem(
-#       name = sprintf("%s_%s", scenario, instance),
-#       data = list(
-#         loader = loader_yahpo,
-#         args = list(scenario = scenario, instance = instance, target = "val_accuracy", budget = 200)
-#       )
-#     )
-#   })
-# })
-
-# medbo
-# Scenarios * Instances * Replications * Configs
-# 8 * 11 * 5 * 4 = 1760
 
 # add algorithms
 search_space = ps(
@@ -89,11 +72,11 @@ search_space = ps(
   rf_type = p_fct(c("standard", "extratrees", "smaclike_boot", "smaclike_no_boot")),
   acqf = p_fct(c("EI", "CB", "PI", "Mean")),
   lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
-  acqopt = p_fct(c("RS_1000", "RS", "FS", "LS"))
+  acqopt = p_fct(c("RS_1000", "RS", "FS", "LS")),
+  epsilon_decay = p_lgl(depends = acqf == "EI"),
+  lambda_decay = p_lgl(depends = acqf == "CB")
 )
 
-# epsilon_decay = p_lgl()
-# lambda decay = p_lgl()
 # surrogate = p_fct(c("km", "random_forest", "extratrees", "smaclike_boot", "smaclike_no_boot"), default = "standard")
 
 addAlgorithm(
@@ -110,6 +93,8 @@ addAlgorithm(
     acqf,
     lambda,
     acqopt,
+    epsilon_decay,
+    lambda_decay,
     id,
     config_hash
     ) {
@@ -189,8 +174,7 @@ addAlgorithm(
       batch_size = ceiling((20000L / n_repeats) / (1 + maxit)) # 1000L
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 20000L))
     } else if (acqopt == "LS") {
-      optimizer = OptimizerBatchChain$new(list(opt("local_search", n_points = 100L), opt("random_search", batch_size = 1000L)), terminators = list(trm("evals", n_evals = 10000L), trm("evals", n_evals = 10000L)))
-      acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 20000L))
+      acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 100L), terminator = trm("evals", n_evals = 20000L))
       acq_optimizer$param_set$values$warmstart = TRUE
       acq_optimizer$param_set$values$warmstart_size = "all"
       acq_optimizer
@@ -207,6 +191,26 @@ addAlgorithm(
       AcqFunctionPI$new()
     } else if (acqf == "Mean") {
       AcqFunctionMean$new()
+    }
+
+    if (isTRUE(epsilon_decay)) {
+      callback_decay_epsilon = callback_batch("mlr3mbo.decay_epsilon",
+        on_optimization_end = function(callback, context) {
+          epsilon = context$instance$objective$constants$get_values()[["epsilon"]]
+          context$instance$objective$constants$set_values("epsilon" = epsilon * 0.95)
+        }
+      )
+      acq_function$callbacks = list(callback_decay_epsilon)
+    }
+
+    if (isTRUE(lambda_decay)) {
+      callback_decay_lambda = callback_batch("mlr3mbo.decay_lambda",
+        on_optimization_end = function(callback, context) {
+          lambda = context$instance$objective$constants$get_values()[["lambda"]]
+          context$instance$objective$constants$set_values("lambda" = lambda * 0.9)
+        }
+      )
+      acq_function$callbacks = list(callback_decay_lambda)
     }
 
     if (!log_scale) {
@@ -227,37 +231,19 @@ addAlgorithm(
         init_design_size = init_design_size)
     }
 
-    target = optim_instance$archive$cols_y
-    best = optim_instance$archive$best()[[target]]
-    data.table(best = best, target = target, problem = job$prob.name, id = id, repl = job$repl)
+    score = optim_instance$archive$best()[[job$problem$data$args$target]]
+
+    data.table(
+      id = id,
+      replication = job$repl,
+      problem = job$problem$name,
+      instance = job$problem$data$args$instance,
+      scenario = job$problem$data$args$scenario,
+      target = job$problem$data$args$target,
+      score = score
+    )
   }
 )
-
-# optimization
-get_k = function(best, .problem, budget, fs_average, fs_extrapolation) {
-  fs_average = fs_average[list(.problem), , on = "problem"]
-  fs_extrapolation = fs_extrapolation[list(.problem), , on = "problem"]
-
-  estimate_iter = function(mean_best, intercept, iter, max_iter) {
-    iter = ceiling((mean_best - intercept) / iter)
-    if (!isTRUE(iter > max_iter)) {
-      iter = max_iter + 1
-    }
-    iter
-  }
-
-  # assumes maximization
-  if (best > max(fs_average[["mean_best"]])) {
-    extrapolate = TRUE
-    k = estimate_iter(best, fs_extrapolation[, intercept], fs_extrapolation[, iter], fs_extrapolation[, max_iter])
-  } else {
-    extrapolate = FALSE
-    k = min(fs_average[mean_best >= best]$iter) # min k so that mean_best_fs[k] >= best_mbo[final]
-  }
-  k = k / budget # sample efficiency compared to fs
-  attr(k, "extrapolate") = extrapolate
-  k
-}
 
 init = data.table(
   log_scale = FALSE,
@@ -267,20 +253,26 @@ init = data.table(
   rf_type = "standard",
   acqf = "EI",
   lambda = NA_character_,
-  acqopt = "RS_1000")
+  acqopt = "RS_1000",
+  epsilon_decay = FALSE,
+  lambda_decay = NA)
 
 constants = ps(
   reg = p_uty(),
-  fs_average = p_uty(),
-  fs_extrapolation = p_uty()
+  rs_result = p_uty(),
+  rs_result_200 = p_uty()
 )
 
 objective = ObjectiveRFunDt$new(
-  fun = function(xdt, reg, fs_average, fs_extrapolation) {
-    n_repls = 5
+  fun = function(
+    xdt, 
+    reg, 
+    rs_result,
+    rs_result_200
+    ) {
+    n_repls = 10
     xdt[, id := .I]
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt))) # make experiments unique to avoid skipping
-    budget = 200
 
     ades = list(
       mbo = xdt
@@ -306,31 +298,28 @@ objective = ObjectiveRFunDt$new(
 
     res = rbindlist(reduceResultsList(ids = intersect(job_ids, findDone()$job.id), reg = reg))
 
-    # average best over replications and determine ks
-    agg = res[, .(mean_best = mean(best), raw_best = list(best), n_na = sum(is.na(best)), n = .N), by = .(id, problem)]
+    # average best over replications
+    agg = res[, list(
+      mean_score = mean(score), 
+      raw_score = list(score),
+      n_na = sum(is.na(score)), 
+      n = .N,
+      target = target), by = list(id, problem)]
 
-    ks = map_dbl(seq_row(agg), function(i) {
-      if (agg[i, ][["n"]] < n_repls) {
-        0
-      } else {
-        tryCatch(
-          get_k(
-            best = agg[i, ][["mean_best"]],
-            .problem = agg[i, ][["problem"]],
-            budget = budget,
-            fs_average = fs_average,
-            fs_extrapolation = fs_extrapolation
-          ),
-         error = function(ec) 0
-        )
-      }
+    # determine k
+    ks = pmap_dbl(agg, function(problem, mean_score, ...) {
+      .problem = problem
+      score_min = rs_result_200[list(.problem), score, on = "problem"]
+      score_max = rs_result[list(.problem), score, on = "problem"]
+
+      (score_min - mean_score) / (score_min - score_max)
     })
-    agg[, k := ks]
+    set(agg, j = "k", value = ks)
 
-    # average k over instances and determine mean_k
-    agg_k = agg[, .(mean_k = exp(mean(log(k))), raw_k = list(k), n_na = sum(is.na(k)), n = .N, raw_mean_best = list(mean_best)), by = .(id)]
-    # if no k on all instances, set to
-    agg_k[n < length(reg$problems), mean_k := 0]
+    # average k over problems
+    agg_k = agg[, .(mean_k = mean(k), raw_k = list(k), n_na = sum(is.na(k)), n = .N, raw_mean_score = list(mean_score)), by = .(id)]
+    # if no k on all instances, set to -Inf
+    agg_k[n < length(reg$problems), mean_k := -Inf]
     agg_k
   },
   domain = search_space,
@@ -341,8 +330,8 @@ objective = ObjectiveRFunDt$new(
 
 objective$constants$set_values(
   reg = reg,
-  fs_average = fread("focus_search_average.gz"),
-  fs_extrapolation = fread("focus_search_extrapolation.gz")
+  rs_result = fread("random_search/random_search_results.csv"),
+  rs_result_200 = fread("random_search/random_search_200_results.csv")
 )
 
 callback_backup = callback_batch("bbotk.backup",
@@ -381,15 +370,4 @@ optimizer$optimize(optim_instance)
 
 saveRDS(optim_instance, "/gscratch/mbecke16/mbo_config/coordinate_descent.rds")
 
-
-# agg_k
-# data = copy(inst$archive$data)
-
-
-# set(data, i = 56:77,  j = "id", value = agg_k$id)
-# set(data, i = 56:77,  j = "mean_k", value = agg_k$mean_k)
-# set(data, i = 56:77,  j = "raw_k", value = agg_k$raw_k)
-# set(data, i = 56:77,  j = "n_na", value = agg_k$n_na)
-# set(data, i = 56:77,  j = "n", value = agg_k$n)
-# set(data, i = 56:77,  j = "raw_mean_best", value = agg_k$raw_mean_best)
-# set(data, i = 56:77,  j = "iteration", value = 3)
+job_table = unnest(getJobTable(), "algo.pars")

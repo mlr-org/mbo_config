@@ -3,6 +3,7 @@ library(bbotk)
 library(mlr3misc)
 library(reticulate)
 library(yahpogym)
+library(data.table)
 
 use_condaenv("yahpo_gym", required=TRUE)
 yahpo_gym = import("yahpo_gym")
@@ -11,13 +12,15 @@ unlink("/gscratch/mbecke16/mbo_config/registry_random_search", recursive = TRUE)
 
 reg = makeExperimentRegistry(
   file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
-  conf.file = "/home/mbecke16/mbo_config/registry_random_search/batchtools.conf.R",
+  conf.file = "random_search/batchtools.conf.R",
 )
 
-reg = makeExperimentRegistry(
-  file.dir = "registry_random_search",
-  conf.file = NA
+reg = loadRegistry(
+  file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
+  conf.file = "random_search/batchtools.conf.R",
+  writeable = TRUE
 )
+
 
 # add problems
 ## yahpo
@@ -67,6 +70,7 @@ addAlgorithm(
     ) {
 
     library(bbotk)
+    library(mlr3misc)
 
     optim_instance = invoke(data$loader, .args = data$args)
 
@@ -78,18 +82,16 @@ addAlgorithm(
 
 ids = addExperiments(repls = 1, reg = reg)
 
-testJob(1)
+# submitJobs(ids = 1)
+
+# # testJob(1)
 
 ids[, chunk := batchtools::chunk(job.id, chunk.size = 100, shuffle = FALSE)]
 job_ids = submitJobs(ids = ids, reg = reg)$job.id
 waitForJobs(ids = job_ids, reg = reg)
 
-# # collect results
 
-# reduceResultsList(ids = 1, fun = function(result, job) {
-#   map(seq(1, 1e6, by = 200), function(i) {
-#     result$archive$data[seq(i, i + 199)]
-#   })
-# })
+job_ids = submitJobs(ids = findExpired(), reg = reg)$job.id
 
 
+submitJobs(ids = findErrors(), reg = reg)$job.id
