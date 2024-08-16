@@ -80,7 +80,7 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
               # get levels of depedent parameters
               ids = deps[rhs == .rhs, id]
               levels = inst$search_space$levels[ids]
-              values = expand.grid(levels)
+              values = expand.grid(levels, stringsAsFactors = FALSE)
 
               # copy the configuration n times where n is the number of levels of the dependent parameters
               xdt_dep  = xdt_dep[rep(1, nrow(values)), ]
@@ -93,10 +93,6 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
 
             xdt_subspace = rbindlist(list(xdt_subspace[!deps$rhs, , on = param_id], xdt_deps))
           }
-
-          # fix factors
-          # cols = inst$search_space$ids(class = "ParamFct")
-          # xdt_subspace[, (cols) := map(.SD, as.factor), .SDcols = cols]
 
           # deactivate parameters with unsatisfiable dependencies
           xdt_subspace = Design$new(inst$search_space, data = xdt_subspace, remove_dupl = TRUE)$data
