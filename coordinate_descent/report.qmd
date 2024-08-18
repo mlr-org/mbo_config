@@ -1,0 +1,115 @@
+---
+title: "2024-08-17 Coordinate Descent"
+format: html
+---
+
+```{r}
+options(datatable.print.nrows = 1000)
+
+library(data.table)
+library(ggplot2)
+
+instance = readRDS("coordinate_descent/2024_08_17_coordinate_descent.rds")
+data = instance$archive$data
+data[, config := .I]
+
+rs_result = fread("random_search/random_search_results.csv")
+rs_200_result = fread("random_search/random_search_200_results.csv")
+rs_result[, instance := as.character(instance)]
+setnames(rs_result, "score", "rs_score")
+rs_200_result[, instance := as.character(instance)]
+setnames(rs_200_result, "score", "rs_200_score")
+
+set.seed(7832)
+rbv2 = unique(fread("random_search/rbv2_instances.csv"))
+rbv2[, instance := as.character(instance)]
+rbv2 = rbv2[, .SD[sample(.N, 2)], by = scenario]
+rbv2 = rbv2[rep(seq(1, 12), each = 40)]
+rbv2[, target := rep(rep(c("acc", "bac", "auc", "logloss"), each = 10), 12)]
+
+rbv2 = merge(rbv2, rs_result[, c("instance", "scenario", "target", "rs_score"), with = FALSE], by = c("instance", "scenario", "target"), sort = FALSE)
+rbv2 = merge(rbv2, rs_200_result[, c("instance", "scenario", "target", "rs_200_score"), with = FALSE], by = c("instance", "scenario", "target"), sort = FALSE)
+rbv2
+```
+
+```{r}
+data[, c(instance$archive$cols_x, instance$archive$cols_y, "config", "batch_nr"), with = FALSE]
+```
+
+# Worst
+
+```{r}
+data[order(mean_k), c(instance$archive$cols_x, instance$archive$cols_y, "config", "batch_nr"), with = FALSE]
+```
+
+# Best
+
+```{r}
+data[order(-mean_k), c(instance$archive$cols_x, instance$archive$cols_y, "config", "batch_nr"), with = FALSE]
+```
+
+# Worst 5
+
+## Config 8
+
+```{r}
+add_instance = function(data, rbv2) {
+  rbv2 = copy(rbv2)
+  raw_k = data[, raw_k]
+  raw_mean_score = data[, raw_mean_score]
+  rbv2[, raw_k := raw_k]
+  rbv2[, raw_mean_score := raw_mean_score]
+  rbv2[order(raw_k), ]
+}
+
+knitr::kable(add_instance(data[config == 8, ], rbv2), digits = 5)
+```
+
+## Config 24
+
+```{r}
+knitr::kable(add_instance(data[config == 24], rbv2), digits = 5)
+```
+
+## Config 18
+
+```{r}
+add_instance(data[config == 18, raw_k], rbv2)
+```
+
+## Config 88
+
+```{r}
+add_instance(data[config == 88, raw_k], rbv2)
+```
+
+## Config 49
+
+```{r}
+add_instance(data[config == 49, raw_k], rbv2)
+```
+
+## Config 79
+
+```{r}
+add_instance(data[config == 79, raw_k], rbv2)
+```
+
+## Config 20
+
+```{r}
+add_instance(data[config == 20, raw_k], rbv2)
+```
+
+## Config 78
+
+```{r}
+add_instance(data[config == 78, raw_k], rbv2)
+```
+
+## Config 50
+
+```{r}
+add_instance(data[config == 50, raw_k], rbv2)
+```
+
