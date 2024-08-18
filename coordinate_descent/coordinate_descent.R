@@ -138,24 +138,24 @@ addAlgorithm(
       learner$param_set$values$splitrule = "extratrees"
       learner$param_set$values$num.random.splits = 1L
       learner$param_set$values$num.trees = 1000L
-    } else if (rf_type == "smaclike_boot") {
+    } else if (rf_type == "smaclike_simple") {
       learner$param_set$values$se.method = "simple"
-      learner$param_set$values$splitrule = "extratrees"
-      learner$param_set$values$num.random.splits = 1L
+      learner$param_set$values$splitrule = "variance"
       learner$param_set$values$num.trees = 10L
       learner$param_set$values$replace = TRUE
       learner$param_set$values$sample.fraction = 1
-      learner$param_set$values$min.node.size = 1
-      learner$param_set$values$mtry.ratio = 1
-    } else if (rf_type == "smaclike_no_boot") {
-      learner$param_set$values$se.method = "simple"
-      learner$param_set$values$splitrule = "extratrees"
-      learner$param_set$values$num.random.splits = 1L
+      learner$param_set$values$min.node.size = 3
+      learner$param_set$values$min.bucket = 3
+      learner$param_set$values$mtry.ratio = 5/6
+    } else if (rf_type == "smaclike_law_of_total_variance") {
+      learner$param_set$values$se.method = "law_of_total_variance"
+      learner$param_set$values$splitrule = "variance"
       learner$param_set$values$num.trees = 10L
-      learner$param_set$values$replace = FALSE
+      learner$param_set$values$replace = TRUE
       learner$param_set$values$sample.fraction = 1
-      learner$param_set$values$min.node.size = 1
-      learner$param_set$values$mtry.ratio = 1
+      learner$param_set$values$min.node.size = 3
+      learner$param_set$values$min.bucket = 3
+      learner$param_set$values$mtry.ratio = 5/6
     }
 
     surrogate = SurrogateLearner$new(GraphLearner$new(po("imputesample", affect_columns = selector_type("logical")) %>>%
@@ -265,8 +265,8 @@ constants = ps(
 
 objective = ObjectiveRFunDt$new(
   fun = function(
-    xdt, 
-    reg, 
+    xdt,
+    reg,
     rs_result,
     rs_result_200
     ) {
@@ -300,9 +300,9 @@ objective = ObjectiveRFunDt$new(
 
     # average best over replications
     agg = res[, list(
-      mean_score = mean(score), 
+      mean_score = mean(score),
       raw_score = list(score),
-      n_na = sum(is.na(score)), 
+      n_na = sum(is.na(score)),
       n = .N,
       target = target), by = list(id, problem)]
 
