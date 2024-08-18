@@ -231,25 +231,25 @@ addAlgorithm(
       acq_function$callbacks = list(callback_decay_lambda)
     }
 
-    # if (!log_scale) {
-    #   bayesopt_ego(
-    #     optim_instance,
-    #     surrogate = surrogate,
-    #     acq_function = acq_function,
-    #     acq_optimizer = acq_optimizer,
-    #     random_interleave_iter = random_interleave_iter,
-    #     init_design_size = init_design_size)
-    # } else {
-    #   bayesopt_ego_log(
-    #     optim_instance,
-    #     surrogate = surrogate,
-    #     acq_function = acq_function,
-    #     acq_optimizer = acq_optimizer,
-    #     random_interleave_iter = random_interleave_iter,
-    #     init_design_size = init_design_size)
-    # }
+    if (!log_scale) {
+      bayesopt_ego(
+        optim_instance,
+        surrogate = surrogate,
+        acq_function = acq_function,
+        acq_optimizer = acq_optimizer,
+        random_interleave_iter = random_interleave_iter,
+        init_design_size = init_design_size)
+    } else {
+      bayesopt_ego_log(
+        optim_instance,
+        surrogate = surrogate,
+        acq_function = acq_function,
+        acq_optimizer = acq_optimizer,
+        random_interleave_iter = random_interleave_iter,
+        init_design_size = init_design_size)
+    }
 
-    # score = optim_instance$archive$best()[[job$problem$data$args$target]]
+    score = optim_instance$archive$best()[[job$problem$data$args$target]]
 
     data.table(
       id = id,
@@ -258,7 +258,7 @@ addAlgorithm(
       instance = job$problem$data$args$instance,
       scenario = job$problem$data$args$scenario,
       target = job$problem$data$args$target,
-      score = runif(1) #score
+      score = score
     )
   }
 )

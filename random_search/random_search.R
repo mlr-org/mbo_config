@@ -8,18 +8,18 @@ library(data.table)
 use_condaenv("yahpo_gym", required=TRUE)
 yahpo_gym = import("yahpo_gym")
 
-unlink("/gscratch/mbecke16/mbo_config/registry_random_search", recursive = TRUE)
+# unlink("/gscratch/mbecke16/mbo_config/registry_random_search", recursive = TRUE)
 
-reg = makeExperimentRegistry(
-  file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
-  conf.file = "random_search/batchtools.conf.R",
-)
-
-# reg = loadRegistry(
+# reg = makeExperimentRegistry(
 #   file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
 #   conf.file = "random_search/batchtools.conf.R",
-#   writeable = TRUE
 # )
+
+reg = loadRegistry(
+  file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
+  conf.file = "random_search/batchtools.conf.R",
+  writeable = TRUE
+)
 
 
 # add problems
