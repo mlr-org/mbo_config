@@ -18,11 +18,11 @@ reg = makeExperimentRegistry(
   conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
 )
 
-reg = loadRegistry(
-  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
-  writeable = TRUE
-)
+# reg = loadRegistry(
+#   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+#   conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
+#   writeable = TRUE
+# )
 
 set.seed(7832)
 
@@ -47,7 +47,7 @@ loader_yahpo = function(scenario, instance, target, budget) {
 }
 
 
-rbv2 = fread("random_search/rbv2_instances.csv")
+rbv2 = unique(fread("random_search/rbv2_instances.csv"))
 rbv2[, instance := as.character(instance)]
 rbv2 = rbv2[, .SD[sample(.N, 2)], by = scenario]
 
@@ -175,8 +175,8 @@ addAlgorithm(
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 20000L))
     } else if (acqopt == "LS") {
       acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 20000L), terminator = trm("evals", n_evals = 30000L))
-      acq_optimizer$param_set$values$warmstart = TRUE
-      acq_optimizer$param_set$values$warmstart_size = "all"
+      #acq_optimizer$param_set$values$warmstart = TRUE
+      #acq_optimizer$param_set$values$warmstart_size = "all"
       acq_optimizer
     }
     acq_optimizer$param_set$values$catch_errors = FALSE
@@ -369,5 +369,3 @@ optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$optimize(optim_instance)
 
 saveRDS(optim_instance, "/gscratch/mbecke16/mbo_config/coordinate_descent.rds")
-
-job_table = unnest(getJobTable(), "algo.pars")
