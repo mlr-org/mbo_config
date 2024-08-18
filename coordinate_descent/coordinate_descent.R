@@ -106,17 +106,6 @@ addAlgorithm(
     config_hash
     ) {
 
-
-    return(data.table(
-      id = id,
-      replication = job$repl,
-      problem = job$problem$name,
-      instance = job$problem$data$args$instance,
-      scenario = job$problem$data$args$scenario,
-      target = job$problem$data$args$target,
-      score = runif(1) #score
-    ))
-
     library(batchtools)
     library(mlr3misc)
     library(data.table)
