@@ -76,7 +76,7 @@ search_space = ps(
   init = p_fct(c("random", "lhs", "sobol")),
   init_size_fraction = p_fct(c("0.05", "0.10", "0.25")),
   random_interleave_iter = p_fct(c("0", "2", "5", "10")),
-  rf_type = p_fct(c("standard", "extratrees", "smaclike_boot", "smaclike_no_boot")),
+  rf_type = p_fct(c("standard", "extratrees", "smaclike_simple", "smaclike_law_of_total_variance")),
   acqf = p_fct(c("EI", "CB", "PI", "Mean")),
   lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
   acqopt = p_fct(c("RS_1000", "RS", "FS", "LS")),
@@ -84,7 +84,7 @@ search_space = ps(
   lambda_decay = p_lgl(depends = acqf == "CB")
 )
 
-# surrogate = p_fct(c("km", "random_forest", "extratrees", "smaclike_boot", "smaclike_no_boot"), default = "standard")
+# NOTE: other surrogates
 
 addAlgorithm(
   name = "mbo",
@@ -181,9 +181,7 @@ addAlgorithm(
       batch_size = ceiling((20000L / n_repeats) / (1 + maxit)) # 1000L
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 20000L))
     } else if (acqopt == "LS") {
-      acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 20000L), terminator = trm("evals", n_evals = 30000L))
-      #acq_optimizer$param_set$values$warmstart = TRUE
-      #acq_optimizer$param_set$values$warmstart_size = "all"
+      acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 10000L), terminator = trm("evals", n_evals = 20000L))
       acq_optimizer
     }
     acq_optimizer$param_set$values$catch_errors = FALSE
@@ -201,10 +199,11 @@ addAlgorithm(
     }
 
     if (isTRUE(epsilon_decay)) {
+      acq_function$constants$values$epsilon = 0.1
       callback_decay_epsilon = callback_batch("mlr3mbo.decay_epsilon",
         on_optimization_end = function(callback, context) {
           epsilon = context$instance$objective$constants$get_values()[["epsilon"]]
-          context$instance$objective$constants$set_values("epsilon" = epsilon * 0.95)
+          context$instance$objective$constants$set_values("epsilon" = epsilon * 0.99)
         }
       )
       acq_function$callbacks = list(callback_decay_epsilon)
@@ -214,7 +213,7 @@ addAlgorithm(
       callback_decay_lambda = callback_batch("mlr3mbo.decay_lambda",
         on_optimization_end = function(callback, context) {
           lambda = context$instance$objective$constants$get_values()[["lambda"]]
-          context$instance$objective$constants$set_values("lambda" = lambda * 0.9)
+          context$instance$objective$constants$set_values("lambda" = lambda * 0.99)
         }
       )
       acq_function$callbacks = list(callback_decay_lambda)
