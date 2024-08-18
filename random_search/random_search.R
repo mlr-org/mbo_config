@@ -15,11 +15,11 @@ reg = makeExperimentRegistry(
   conf.file = "random_search/batchtools.conf.R",
 )
 
-reg = loadRegistry(
-  file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
-  conf.file = "random_search/batchtools.conf.R",
-  writeable = TRUE
-)
+# reg = loadRegistry(
+#   file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
+#   conf.file = "random_search/batchtools.conf.R",
+#   writeable = TRUE
+# )
 
 
 # add problems
@@ -49,6 +49,23 @@ walk(scenarios_rbv2, function(scenario) {
   b = BenchmarkSet$new(scenario)
   walk(b$instances, function(instance) {
     walk(c("acc", "bac", "auc", "logloss"), function(target) {
+      addProblem(
+        name = sprintf("%s_%s_%s", scenario, instance, target),
+        data = list(
+          loader = loader_yahpo,
+          args = list(scenario = scenario, instance = instance, target = target, budget = 1e6)
+        )
+      )
+    })
+  })
+})
+
+scenarios_lcbench = grep("^lcbench", names(benchmarks$configs), value = TRUE)
+
+walk(scenarios_lcbench, function(scenario) {
+  b = BenchmarkSet$new(scenario)
+  walk(b$instances, function(instance) {
+    walk(c("val_accuracy", "val_cross_entropy", "val_balanced_accuracy"), function(target) {
       addProblem(
         name = sprintf("%s_%s_%s", scenario, instance, target),
         data = list(

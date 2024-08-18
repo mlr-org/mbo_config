@@ -11,18 +11,25 @@ yahpo_gym = import("yahpo_gym")
 
 source("OptimizerCoordinateDescent.R")
 
-unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
+# unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
+
+# reg = makeExperimentRegistry(
+#   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+#   conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
+# )
+
+unlink("registry_coordinate_descent", recursive = TRUE)
 
 reg = makeExperimentRegistry(
-  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
+  file.dir = "registry_coordinate_descent",
+  conf.file = NA,
 )
 
-reg = loadRegistry(
-  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
-  writeable = TRUE
-)
+# reg = loadRegistry(
+#   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+#   conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
+#   writeable = TRUE
+# )
 
 set.seed(7832)
 
@@ -47,12 +54,12 @@ loader_yahpo = function(scenario, instance, target, budget) {
 }
 
 
-rbv2 = fread("random_search/rbv2_instances.csv")
+rbv2 = unique(fread("random_search/rbv2_instances.csv"))
 rbv2[, instance := as.character(instance)]
-rbv2 = rbv2[, .SD[sample(.N, 2)], by = scenario]
+rbv2 = rbv2[, .SD[sample(.N, 2)], by = scenario][1]
 
 pwalk(rbv2, function(scenario, instance) {
-  walk(c("acc", "bac", "auc", "logloss"), function(target) {
+  walk(c("acc"), function(target) {
     addProblem(
       name = sprintf("%s_%s_%s", scenario, instance, target),
       data = list(
@@ -98,6 +105,17 @@ addAlgorithm(
     id,
     config_hash
     ) {
+
+
+    return(data.table(
+      id = id,
+      replication = job$repl,
+      problem = job$problem$name,
+      instance = job$problem$data$args$instance,
+      scenario = job$problem$data$args$scenario,
+      target = job$problem$data$args$target,
+      score = runif(1) #score
+    ))
 
     library(batchtools)
     library(mlr3misc)
@@ -175,8 +193,8 @@ addAlgorithm(
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 20000L))
     } else if (acqopt == "LS") {
       acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 20000L), terminator = trm("evals", n_evals = 30000L))
-      acq_optimizer$param_set$values$warmstart = TRUE
-      acq_optimizer$param_set$values$warmstart_size = "all"
+      #acq_optimizer$param_set$values$warmstart = TRUE
+      #acq_optimizer$param_set$values$warmstart_size = "all"
       acq_optimizer
     }
     acq_optimizer$param_set$values$catch_errors = FALSE
@@ -213,25 +231,25 @@ addAlgorithm(
       acq_function$callbacks = list(callback_decay_lambda)
     }
 
-    if (!log_scale) {
-      bayesopt_ego(
-        optim_instance,
-        surrogate = surrogate,
-        acq_function = acq_function,
-        acq_optimizer = acq_optimizer,
-        random_interleave_iter = random_interleave_iter,
-        init_design_size = init_design_size)
-    } else {
-      bayesopt_ego_log(
-        optim_instance,
-        surrogate = surrogate,
-        acq_function = acq_function,
-        acq_optimizer = acq_optimizer,
-        random_interleave_iter = random_interleave_iter,
-        init_design_size = init_design_size)
-    }
+    # if (!log_scale) {
+    #   bayesopt_ego(
+    #     optim_instance,
+    #     surrogate = surrogate,
+    #     acq_function = acq_function,
+    #     acq_optimizer = acq_optimizer,
+    #     random_interleave_iter = random_interleave_iter,
+    #     init_design_size = init_design_size)
+    # } else {
+    #   bayesopt_ego_log(
+    #     optim_instance,
+    #     surrogate = surrogate,
+    #     acq_function = acq_function,
+    #     acq_optimizer = acq_optimizer,
+    #     random_interleave_iter = random_interleave_iter,
+    #     init_design_size = init_design_size)
+    # }
 
-    score = optim_instance$archive$best()[[job$problem$data$args$target]]
+    # score = optim_instance$archive$best()[[job$problem$data$args$target]]
 
     data.table(
       id = id,
@@ -240,7 +258,7 @@ addAlgorithm(
       instance = job$problem$data$args$instance,
       scenario = job$problem$data$args$scenario,
       target = job$problem$data$args$target,
-      score = score
+      score = runif(1) #score
     )
   }
 )
@@ -348,7 +366,7 @@ callback_backup = callback_batch("bbotk.backup",
   }
 )
 
-callback_backup$state$path = "/gscratch/mbecke16/mbo_config/intermediate_instance.rds"
+callback_backup$state$path = "intermediate_instance.rds"
 
 optim_instance = oi(
   objective = objective,
@@ -369,5 +387,3 @@ optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$optimize(optim_instance)
 
 saveRDS(optim_instance, "/gscratch/mbecke16/mbo_config/coordinate_descent.rds")
-
-job_table = unnest(getJobTable(), "algo.pars")
