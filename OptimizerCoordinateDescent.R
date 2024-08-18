@@ -53,7 +53,7 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
         # fresh state
         # set incumbent to initial design
         incumbent = inst$archive$data[1, inst$archive$cols_x, with = FALSE]
-        
+
       }
 
       # iterate over all parameters
@@ -80,7 +80,7 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
               # get levels of depedent parameters
               ids = deps[rhs == .rhs, id]
               levels = inst$search_space$levels[ids]
-              values = expand.grid(levels)
+              values = expand.grid(levels, stringsAsFactors = FALSE)
 
               # copy the configuration n times where n is the number of levels of the dependent parameters
               xdt_dep  = xdt_dep[rep(1, nrow(values)), ]
@@ -88,15 +88,11 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
               # set the dependent parameters to all levels
               set(xdt_dep, j = ids, value = values)
 
-              xdt_dep   
+              xdt_dep
             })
 
             xdt_subspace = rbindlist(list(xdt_subspace[!deps$rhs, , on = param_id], xdt_deps))
           }
-
-          # fix factors
-          # cols = inst$search_space$ids(class = "ParamFct")
-          # xdt_subspace[, (cols) := map(.SD, as.factor), .SDcols = cols]
 
           # deactivate parameters with unsatisfiable dependencies
           xdt_subspace = Design$new(inst$search_space, data = xdt_subspace, remove_dupl = TRUE)$data
@@ -108,12 +104,13 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
         xdt = rbindlist(list(incumbent, xdt))
 
         set(xdt, j = "iteration", value = i)
+        browser()
         inst$eval_batch(xdt)
 
         # dont go in the direction of the incumbent
         top_2 = inst$archive$best(batch = i, n_select = 2L)
         incumbent = if (top_2[1, parameter] == "incumbent") top_2[2, ] else top_2[1, ]
-        
+
         # remove parameter from list of parameters to be evaluated
         parameters = parameters[parameters %nin% incumbent$parameter]
         incumbent = incumbent[, inst$archive$cols_x, with = FALSE]
