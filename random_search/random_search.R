@@ -8,23 +8,24 @@ library(data.table)
 use_condaenv("yahpo_gym", required=TRUE)
 yahpo_gym = import("yahpo_gym")
 
-# unlink("/gscratch/mbecke16/mbo_config/registry_random_search", recursive = TRUE)
+unlink("/gscratch/mbecke16/mbo_config/registry_random_search", recursive = TRUE)
 
-# reg = makeExperimentRegistry(
-#   file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
-#   conf.file = "random_search/batchtools.conf.R",
-# )
-
-reg = loadRegistry(
+reg = makeExperimentRegistry(
   file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
   conf.file = "random_search/batchtools.conf.R",
-  writeable = TRUE
 )
 
+# reg = loadRegistry(
+#   file.dir = "/gscratch/mbecke16/mbo_config/registry_random_search",
+#   conf.file = "random_search/batchtools.conf.R",
+#   writeable = TRUE
+# )
 
 # add problems
 ## yahpo
 loader_yahpo = function(scenario, instance, target, budget) {
+  renv::load(".")
+
   library(reticulate)
   library(yahpogym)
 
@@ -98,17 +99,9 @@ addAlgorithm(
 )
 
 ids = addExperiments(repls = 1, reg = reg)
-
-# submitJobs(ids = 1)
-
-# # testJob(1)
-
 ids[, chunk := batchtools::chunk(job.id, chunk.size = 100, shuffle = FALSE)]
 job_ids = submitJobs(ids = ids, reg = reg)$job.id
 waitForJobs(ids = job_ids, reg = reg)
 
-
-job_ids = submitJobs(ids = findExpired(), reg = reg)$job.id
-
-
-submitJobs(ids = findErrors(), reg = reg)$job.id
+# submitJobs(ids = findExpired(), reg = reg)$job.id
+# submitJobs(ids = findErrors(), reg = reg)$job.id

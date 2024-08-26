@@ -104,7 +104,7 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
         xdt = rbindlist(list(incumbent, xdt))
 
         set(xdt, j = "iteration", value = i)
-        browser()
+
         inst$eval_batch(xdt)
 
         # dont go in the direction of the incumbent

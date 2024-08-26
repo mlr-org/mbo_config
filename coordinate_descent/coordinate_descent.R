@@ -11,25 +11,25 @@ yahpo_gym = import("yahpo_gym")
 
 source("OptimizerCoordinateDescent.R")
 
-# unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
-
-# reg = makeExperimentRegistry(
-#   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-#   conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
-# )
-
-unlink("registry_coordinate_descent", recursive = TRUE)
+unlink("/gscratch/mbecke16/mbo_config/registry_coordinate_descent", recursive = TRUE)
 
 reg = makeExperimentRegistry(
-  file.dir = "registry_coordinate_descent",
-  conf.file = NA,
+  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+  conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
 )
 
-# reg = loadRegistry(
-#   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-#   conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
-#   writeable = TRUE
+# unlink("registry_coordinate_descent", recursive = TRUE)
+
+# reg = makeExperimentRegistry(
+#   file.dir = "registry_coordinate_descent",
+#   conf.file = NA,
 # )
+
+reg = loadRegistry(
+  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+  conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
+  writeable = TRUE
+)
 
 set.seed(7832)
 
@@ -53,13 +53,29 @@ loader_yahpo = function(scenario, instance, target, budget) {
     check_values = FALSE)
 }
 
+instances = fread("random_search/instances.csv")
+instances[, instance := as.character(instance)]
+rbv2 = instances[grep("rbv2", scenario)]
+lcbench = instances[grep("lcbench", scenario)]
 
-rbv2 = unique(fread("random_search/rbv2_instances.csv"))
-rbv2[, instance := as.character(instance)]
-rbv2 = rbv2[, .SD[sample(.N, 2)], by = scenario][1]
+#rbv2 = rbv2[, .SD[sample(.N, min(.N, 16))], by = scenario]
 
 pwalk(rbv2, function(scenario, instance) {
-  walk(c("acc"), function(target) {
+  walk(c("acc", "bac", "auc", "logloss"), function(target) {
+    addProblem(
+      name = sprintf("%s_%s_%s", scenario, instance, target),
+      data = list(
+        loader = loader_yahpo,
+        args = list(scenario = scenario, instance = instance, target = target, budget = 200)
+      )
+    )
+  })
+})
+
+#lcbench = lcbench[, .SD[sample(.N, min(.N, 16))], by = scenario]
+
+pwalk(lcbench, function(scenario, instance) {
+  walk(c("val_accuracy", "val_balanced_accuracy", "val_cross_entropy"), function(target) {
     addProblem(
       name = sprintf("%s_%s_%s", scenario, instance, target),
       data = list(
@@ -105,6 +121,8 @@ addAlgorithm(
     id,
     config_hash
     ) {
+
+    renv::load(".")
 
     library(batchtools)
     library(mlr3misc)
@@ -182,8 +200,6 @@ addAlgorithm(
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 20000L))
     } else if (acqopt == "LS") {
       acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 20000L), terminator = trm("evals", n_evals = 30000L))
-      #acq_optimizer$param_set$values$warmstart = TRUE
-      #acq_optimizer$param_set$values$warmstart_size = "all"
       acq_optimizer
     }
     acq_optimizer$param_set$values$catch_errors = FALSE
@@ -277,7 +293,7 @@ objective = ObjectiveRFunDt$new(
     rs_result,
     rs_result_200
     ) {
-    n_repls = 10
+    n_repls = 1
     xdt[, id := .I]
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt))) # make experiments unique to avoid skipping
 
@@ -316,7 +332,7 @@ objective = ObjectiveRFunDt$new(
     # determine k
     ks = pmap_dbl(agg, function(problem, mean_score, ...) {
       .problem = problem
-      score_min = rs_result_200[list(.problem), score, on = "problem"]
+      score_min = rs_result_200[list(.problem), mean_score, on = "problem"]
       score_max = rs_result[list(.problem), score, on = "problem"]
 
       (score_min - mean_score) / (score_min - score_max)
@@ -355,7 +371,7 @@ callback_backup = callback_batch("bbotk.backup",
   }
 )
 
-callback_backup$state$path = "intermediate_instance.rds"
+callback_backup$state$path = "/gscratch/mbecke16/mbo_config/intermediate_instance.rds"
 
 optim_instance = oi(
   objective = objective,

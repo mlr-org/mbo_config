@@ -6,7 +6,7 @@ renv::install("pak")
 pak::pak(c(
   "mlr-org/mlr3mbo@so_config_2", 
   "batchtools", 
-  "be-marc/yahpo_gym/yahpo_gym_r", 
+  "slds-lmu/yahpo_gym/yahpo_gym_r", 
   "lhs", 
   "ranger", 
   "R.utils", 
