@@ -199,11 +199,7 @@ addAlgorithm(
       batch_size = ceiling((20000L / n_repeats) / (1 + maxit)) # 1000L
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 20000L))
     } else if (acqopt == "LS") {
-<<<<<<< HEAD
       acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 20000L), terminator = trm("evals", n_evals = 30000L))
-=======
-      acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 10000L), terminator = trm("evals", n_evals = 20000L))
->>>>>>> f8ce0ccd6bc672803bac20fa20958615d46d0a5e
       acq_optimizer
     }
     acq_optimizer$param_set$values$catch_errors = FALSE
