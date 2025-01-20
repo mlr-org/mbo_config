@@ -4,12 +4,12 @@ renv::settings$r.version("4.4.0")
 renv::install("pak")
 
 pak::pak(c(
-  "mlr-org/mlr3mbo@so_config_2", 
-  "batchtools", 
-  "slds-lmu/yahpo_gym/yahpo_gym_r", 
-  "lhs", 
-  "ranger", 
-  "R.utils", 
+  "mlr-org/mlr3mbo@so_config_2",
+  "batchtools",
+  "slds-lmu/yahpo_gym/yahpo_gym_r",
+  "lhs",
+  "ranger",
+  "R.utils",
   "mlr3learners",
   "mlr3pipelines",
   "mlr-org/bbotk"))
@@ -29,9 +29,9 @@ reticulate::conda_install(envname = "yahpo_gym", pip = TRUE, packages = "'git+ht
 
 reticulate::use_condaenv("yahpo_gym", required=TRUE)
 library("yahpogym")
-init_local_config(data_path = "yahpo_data")
+init_local_config(data_path = "~/yahpo_data")
 
-# reticulate::use_condaenv("yahpo_gym", required=TRUE)
-# library("yahpogym")
-# b = BenchmarkSet$new("iaml_glmnet")
-# obj = b$get_objective("40981", multifidelity = FALSE)
+reticulate::use_condaenv("yahpo_gym", required=TRUE)
+library("yahpogym")
+b = BenchmarkSet$new("iaml_glmnet")
+obj = b$get_objective("40981", multifidelity = FALSE)

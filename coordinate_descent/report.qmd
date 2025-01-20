@@ -1,115 +1,145 @@
 ---
-title: "2024-08-17 Coordinate Descent"
-format: html
+title: "MBO Config"
+format:
+  html:
+    embed-resources: true
 ---
 
 ```{r}
+#| include: false
 options(datatable.print.nrows = 1000)
 
 library(data.table)
 library(ggplot2)
+library(mlr3misc)
+library(gt)
+library(here)
+library(dplyr)
 
-instance = readRDS("coordinate_descent/2024_08_17_coordinate_descent.rds")
-data = instance$archive$data
-data[, config := .I]
+archive = readRDS(here("coordinate_descent/2024_09_02_intermediate_instance.rds"))
 
-rs_result = fread("random_search/random_search_results.csv")
-rs_200_result = fread("random_search/random_search_200_results.csv")
-rs_result[, instance := as.character(instance)]
-setnames(rs_result, "score", "rs_score")
-rs_200_result[, instance := as.character(instance)]
-setnames(rs_200_result, "score", "rs_200_score")
+summary = rbindlist(map(seq(nrow(archive)), function(i) {
+  data.table(
+    min_k = min(archive$raw_k[[i]]),
+    q05 = quantile(archive$raw_k[[i]], 0.05),
+    median_k = median(archive$raw_k[[i]]),
+    q95 = quantile(archive$raw_k[[i]], 0.95),
+    max_k = max(archive$raw_k[[i]]))
+}))
 
-set.seed(7832)
-rbv2 = unique(fread("random_search/rbv2_instances.csv"))
-rbv2[, instance := as.character(instance)]
-rbv2 = rbv2[, .SD[sample(.N, 2)], by = scenario]
-rbv2 = rbv2[rep(seq(1, 12), each = 40)]
-rbv2[, target := rep(rep(c("acc", "bac", "auc", "logloss"), each = 10), 12)]
+archive = archive[, -c("raw_k", "raw_mean_score", "n_na", "n", "missing_instances", "x_domain", "timestamp", "iteration", "id"), with = FALSE]
 
-rbv2 = merge(rbv2, rs_result[, c("instance", "scenario", "target", "rs_score"), with = FALSE], by = c("instance", "scenario", "target"), sort = FALSE)
-rbv2 = merge(rbv2, rs_200_result[, c("instance", "scenario", "target", "rs_200_score"), with = FALSE], by = c("instance", "scenario", "target"), sort = FALSE)
-rbv2
+archive = cbind(archive, summary)
+
+archive[, rank := rank(-mean_k), by = batch_nr]
+
+set(archive, i = 1L, j = "parameter", value = "start_config")
+
+archive[, improvement := .SD[parameter == "incumbent", mean_k] < mean_k, by = batch_nr]
 ```
 
+# Setup
+
+Coordinate descent on configurations of the `mlr3mbo` package (see search space).
+Each mbo configuration runs on 1286 instances from yahpogym (rbv2 and lcbench) with a budget of 200 iterations.
+When the performance of the mbo run is the same as a random search with 200 iterations, the configuration scores 0.
+When the performance of the mbo run is the same as a random search with 1,000,000 iterations, the score is 1.
+The score is averaged over all instances.
+
 ```{r}
-data[, c(instance$archive$cols_x, instance$archive$cols_y, "config", "batch_nr"), with = FALSE]
+#| eval: false
+
+search_space = ps(
+  log_scale = p_lgl(),
+  init = p_fct(c("random", "lhs", "sobol")),
+  init_size_fraction = p_fct(c("0.05", "0.10", "0.25")),
+  random_interleave_iter = p_fct(c("0", "2", "5", "10")),
+  rf_type = p_fct(c("standard", "extratrees", "smaclike_simple", "smaclike_law_of_total_variance")),
+  acqf = p_fct(c("EI", "CB", "PI", "Mean")),
+  lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
+  acqopt = p_fct(c("RS_1000", "RS", "FS", "LS")),
+  epsilon_decay = p_lgl(depends = acqf == "EI"),
+  lambda_decay = p_lgl(depends = acqf == "CB")
+)
 ```
 
-# Worst
+
 
 ```{r}
-data[order(mean_k), c(instance$archive$cols_x, instance$archive$cols_y, "config", "batch_nr"), with = FALSE]
-```
+#| echo: false
+#| column: screen
+#| label: tbl-mbo
+#| tbl-cap: |
+#|  Result of the coordinate descent.
+#|  Each row is the evaluation of a configuration on 1286 instances.
+#|  The green rows are the best performing configuration in each generation.
+#|  The orange rows are the re-evalation of the incumbent configuration.
+#|  The group rank is the rank of the configuration in the generation.
+#|  The min and max score are the minimum and maximum score archived on the 1286 instances.
+#|  The parameter column indicates which parameter was changed.
+#|  The subheadings show the batch number and the parameter that was changed.
+#|  Bold mean scores are better than the incumbent.
 
-# Best
-
-```{r}
-data[order(-mean_k), c(instance$archive$cols_x, instance$archive$cols_y, "config", "batch_nr"), with = FALSE]
-```
-
-# Worst 5
-
-## Config 8
-
-```{r}
-add_instance = function(data, rbv2) {
-  rbv2 = copy(rbv2)
-  raw_k = data[, raw_k]
-  raw_mean_score = data[, raw_mean_score]
-  rbv2[, raw_k := raw_k]
-  rbv2[, raw_mean_score := raw_mean_score]
-  rbv2[order(raw_k), ]
-}
-
-knitr::kable(add_instance(data[config == 8, ], rbv2), digits = 5)
-```
-
-## Config 24
-
-```{r}
-knitr::kable(add_instance(data[config == 24], rbv2), digits = 5)
-```
-
-## Config 18
-
-```{r}
-add_instance(data[config == 18, raw_k], rbv2)
-```
-
-## Config 88
-
-```{r}
-add_instance(data[config == 88, raw_k], rbv2)
-```
-
-## Config 49
-
-```{r}
-add_instance(data[config == 49, raw_k], rbv2)
-```
-
-## Config 79
-
-```{r}
-add_instance(data[config == 79, raw_k], rbv2)
-```
-
-## Config 20
-
-```{r}
-add_instance(data[config == 20, raw_k], rbv2)
-```
-
-## Config 78
-
-```{r}
-add_instance(data[config == 78, raw_k], rbv2)
-```
-
-## Config 50
-
-```{r}
-add_instance(data[config == 50, raw_k], rbv2)
+as_tibble(archive) %>%
+ group_by(batch_nr, parameter) %>%
+  gt() %>%
+  tab_style(
+    style = list(
+      cell_fill(color = "#F9E3D6")
+      ),
+    locations = cells_body(
+      rows = parameter == "incumbent"
+    )
+  ) %>%
+  tab_style(
+    style = list(
+      cell_fill(color = "#90ee90")
+      ),
+    locations = cells_body(
+      rows = rank == 1
+    )
+  ) %>%
+  tab_style(
+    style = list(
+      cell_text(weight = "bold")
+      ),
+    locations = cells_body(
+      columns = mean_k,
+      rows = improvement == TRUE
+    )
+  ) %>%
+  tab_style(
+    style = cell_text(weight = "bold"),
+    locations = cells_row_groups()
+  ) %>%
+  fmt_number(
+    columns = c("min_k", "q05", "median_k", "q95", "max_k", "mean_k"),
+    decimals = 2
+  ) %>%
+  cols_label(
+    log_scale = "Log Scale",
+    init = "Init",
+    init_size_fraction = "Init Size Fraction",
+    random_interleave_iter = "Interleave",
+    rf_type = "RF Type",
+    acqf = "Acqf",
+    lambda = "Lambda",
+    acqopt = "Acqopt",
+    epsilon_decay = "Epsilon Decay",
+    lambda_decay = "Lambda Decay",
+    mean_k = "Mean Score",
+    batch_nr = "Batch",
+    parameter = "Parameter",
+    min_k = "Min Score",
+    q05 = "Q.05 Score",
+    median_k = "Median Score",
+    q95 = "Q.95 Score",
+    max_k = "Max Score",
+    rank = "Group Rank"
+  ) %>% tab_row_group(
+    label = "numbered",
+    rows = matches("^[0-9]")
+  ) %>%
+  cols_hide("improvement")
 ```
 
