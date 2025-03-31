@@ -25,11 +25,11 @@ reg = makeExperimentRegistry(
 #   conf.file = NA,
 # )
 
-reg = loadRegistry(
-  file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
-  conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
-  writeable = TRUE
-)
+# reg = loadRegistry(
+#   file.dir = "/gscratch/mbecke16/mbo_config/registry_coordinate_descent",
+#   conf.file = "/home/mbecke16/mbo_config/coordinate_descent/batchtools.conf.R",
+#   writeable = TRUE
+# )
 
 set.seed(7832)
 
@@ -294,7 +294,7 @@ objective = ObjectiveRFunDt$new(
     rs_result,
     rs_result_200
     ) {
-    n_repls = 1
+    n_repls = 5
     xdt[, id := .I]
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt))) # make experiments unique to avoid skipping
 
@@ -303,7 +303,7 @@ objective = ObjectiveRFunDt$new(
     )
     ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
 
-    ids[, chunk := batchtools::chunk(job.id, chunk.size = 96, shuffle = FALSE)]
+    ids[, chunk := batchtools::chunk(job.id, chunk.size = 1000, shuffle = FALSE)]
 
     job_ids = submitJobs(ids = ids, reg = reg)$job.id
     waitForJobs(ids = job_ids, reg = reg)
@@ -341,9 +341,16 @@ objective = ObjectiveRFunDt$new(
     set(agg, j = "k", value = ks)
 
     # average k over problems
-    agg_k = agg[, .(mean_k = mean(k), raw_k = list(k), n_na = sum(is.na(k)), n = .N, raw_mean_score = list(mean_score)), by = .(id)]
+    agg_k = agg[, list(
+      mean_k = mean(k), 
+      raw_k = list(set_names(k, problem)), 
+      n_na = sum(is.na(k)), 
+      n = .N, 
+      raw_mean_score = list(set_names(mean_score, problem)), 
+      missing_instances = list(setdiff(reg$problems, problem))),
+      by = .(id)]
     # if no k on all instances, set to -Inf
-    agg_k[n < length(reg$problems), mean_k := -Inf]
+    agg_k[n < length(reg$problems) - 5, mean_k := -Inf]
     agg_k
   },
   domain = search_space,
