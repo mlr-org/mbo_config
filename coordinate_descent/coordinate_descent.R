@@ -38,6 +38,7 @@ set.seed(7832)
 loader_yahpo = function(scenario, instance, target, budget) {
   library(reticulate)
   library(yahpogym)
+  library(bbotk)
 
   use_condaenv("yahpo_gym", required = TRUE)
   yahpo_gym = import("yahpo_gym")
