@@ -1,2 +1,5 @@
-yahpo_venv
-smac_venv
+yahpo_venv/
+smac_venv/
+renv/
+.Rprofile
+*.rds

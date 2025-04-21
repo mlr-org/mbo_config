@@ -63,7 +63,7 @@ def target_function(config, seed, scenario, instance, target_variable, factor, f
         input_path = f.name
 
     script_path = "/glade/u/home/lschneider/mbo_config/competitors/subprocess_yahpo.py"
-    venv_path = "/glade/u/home/lschneider/yahpo_venv/bin/python"
+    venv_path = "/glade/u/home/lschneider/mbo_config/yahpo_venv/bin/python"
 
     cmd = [
         venv_path, script_path,

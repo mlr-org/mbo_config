@@ -7,7 +7,7 @@ library(paradox)
 library(R6)
 library(checkmate)
 
-reticulate::use_virtualenv("/glade/u/home/lschneider/yahpo_venv", required = TRUE)
+reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
 library(reticulate)
 yahpo_gym = import("yahpo_gym")
 
@@ -26,7 +26,7 @@ saveRegistry(reg)
 # reg = loadRegistry("/glade/derecho/scratch/lschneider/yahpo_rs")
 
 rs_wrapper = function(job, data, instance, ...) {
-  reticulate::use_virtualenv("/glade/u/home/lschneider/yahpo_venv", required = TRUE)
+  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
   library(yahpogym)
   logger = lgr::get_logger("bbotk")
   logger$set_threshold("warn")
