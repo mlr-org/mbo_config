@@ -62,7 +62,7 @@ def target_function(config, seed, scenario, instance, target_variable, factor, f
         json.dump(input_data, f)
         input_path = f.name
 
-    script_path = "/glade/u/home/lschneider/mbo_config/competitors/subprocess_yahpo.py"
+    script_path = "/glade/u/home/lschneider/mbo_config/subprocess_yahpo.py"
     venv_path = "/glade/u/home/lschneider/mbo_config/yahpo_venv/bin/python"
 
     cmd = [
