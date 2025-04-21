@@ -1,4 +1,2 @@
-README.html
-cd_instance.rds
-fs_extrapolation.rds
-results_yahpo_fs_average.rds
+yahpo_venv
+smac_venv
