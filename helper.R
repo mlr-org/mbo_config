@@ -1,3 +1,7 @@
+determine_budget = function(d) {
+  ceiling(20 + 40 * sqrt(d))
+}
+
 make_optim_instance = function(instance) {
   benchmark = BenchmarkSet$new(instance$scenario, instance = instance$instance)
   benchmark$subset_codomain(instance$target)
@@ -6,6 +10,9 @@ make_optim_instance = function(instance) {
   if (instance$benchmark == "pure_numeric") {
     objective = fix_objective_domain_constants_pure_numeric(instance$scenario, objective=objective)
     search_space = get_search_space_pure_numeric(instance$scenario)
+  }
+  if (instance$budget != determine_budget(search_space$length)) {
+    stop("Incorrect budget.")
   }
   optim_instance = OptimInstanceBatchSingleCrit$new(objective, search_space = search_space, terminator = trm("evals", n_evals = instance$budget))
   optim_instance
@@ -20,6 +27,9 @@ make_optim_instance_rs = function(instance) {
   if (instance$benchmark == "pure_numeric") {
     objective = fix_objective_domain_constants_pure_numeric(instance$scenario, objective=objective)
     search_space = get_search_space_pure_numeric(instance$scenario)
+  }
+  if (instance$budget != determine_budget(search_space$length)) {
+    stop("Incorrect budget.")
   }
   optim_instance = OptimInstanceBatchSingleCrit$new(objective, search_space = search_space, terminator = trm("evals", n_evals = rs_budget))
   optim_instance

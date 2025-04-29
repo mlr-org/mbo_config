@@ -44,7 +44,7 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
     ),
     target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
     direction = rep("maximize", 13L),
-    budget = rep(c(126L, 90L, 134L, 110L, 170L), c(3L, 2L, 2L, 2L, 4L)),
+    budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L)),
     benchmark = YAHPO_BENCHMARK
   )
 } else if (YAHPO_BENCHMARK == "mixed") {
@@ -63,7 +63,7 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
     ),
     target_variable = rep(c("val_accuracy", "acc"), c(4L, 16L)),
     direction = rep("maximize", 20L),
-    budget = rep(c(126L, 250L, 90L, 134L, 110L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
+    budget = rep(c(126L, 250L, 90L, 110L, 134L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
     benchmark = YAHPO_BENCHMARK
   )
 }
