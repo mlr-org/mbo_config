@@ -99,7 +99,7 @@ fix_objective_domain_constants_pure_numeric = function(scenario, objective) {
     objective$constants = constants
 
     domain = objective$domain
-    params = setdiff(domain$ids(), "num.impute.selected.cpo")
+    params = setdiff(domain$ids(), c("num.impute.selected.cpo", "respect.unordered.factors", "splitrule", "num.random.splits"))
     domain = domain$subset(params)
     objective$domain = domain
   } else if (scenario == "rbv2_xgboost") {
@@ -116,7 +116,7 @@ fix_objective_domain_constants_pure_numeric = function(scenario, objective) {
     objective$constants = constants
 
     domain = objective$domain
-    params = setdiff(domain$ids(), "num.impute.selected.cpo")
+    params = setdiff(domain$ids(), c("num.impute.selected.cpo", "booster", "rate_drop", "skip_drop"))
     domain = domain$subset(params)
     objective$domain = domain
   }
