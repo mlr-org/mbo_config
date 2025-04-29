@@ -9,11 +9,13 @@ library(paradox)
 library(R6)
 library(checkmate)
 
+YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
+
 reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
 library(reticulate)
 yahpo_gym = import("yahpo_gym")
 
-packages = c("data.table", "mlr3", "mlr3misc", "mlr3mbo", "mlr3pipelines", "bbotk", "paradox", "R6", "checkmate")
+packages = c("data.table", "mlr3", "mlr3learners", "mlr3misc", "mlr3mbo", "mlr3pipelines", "bbotk", "paradox", "ranger", "R6", "checkmate")
 
 root = here::here()
 experiments_dir = file.path(root)
@@ -23,9 +25,11 @@ for (source_file in source_files) {
   source(source_file)
 }
 
-reg = makeExperimentRegistry("/glade/derecho/scratch/lschneider/yahpo_mlr3mbo", packages = packages, source = source_files)
+
+registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/lschneider/yahpo_YAHPO_BENCHMARK_mlr3mbo")
+reg = makeExperimentRegistry(registry_name, packages = packages, source = source_files)
 saveRegistry(reg)
-# reg = loadRegistry("/glade/derecho/scratch/lschneider/yahpo_mlr3mbo")
+# reg = loadRegistry(registry_name)
 
 mlr3mbo_wrapper = function(job, data, instance, ...) {
   reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
@@ -38,11 +42,11 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
 
   log_scale = TRUE
   init = "sobol"
-  init_size_fraction = 0.25
-  random_interleave_iter = 0
+  init_size_fraction = "0.25"
+  random_interleave_iter = "0"
   rf_type = "standard"
   acqf = "EI"
-  lambda = NA_real_
+  lambda = NA_character_
   acqopt = "RS"
   epsilon_decay = FALSE
   lambda_decay = NA
@@ -94,23 +98,33 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
     learner$param_set$values$mtry.ratio = 5/6
   }
 
-  surrogate = SurrogateLearner$new(GraphLearner$new(po("imputesample", affect_columns = selector_type("logical")) %>>%
-    po("imputeoor", multiplier = 3, affect_columns = selector_type(c("integer", "numeric", "character", "factor", "ordered"))) %>>%
-    po("colapply", applicator = as.factor, affect_columns = selector_type("character")) %>>%
-    learner))
+  surrogate = SurrogateLearner$new(
+    #GraphLearner$new(
+    #  po("colapply", applicator = as.factor, affect_columns = selector_type("character")) %>>%
+    #  po("imputesample", affect_columns = selector_type("logical")) %>>%
+    #  po("imputeoor", multiplier = 3, affect_columns = selector_type(c("integer", "numeric", "character", "factor", "ordered"))) %>>%
+    #  po("fixfactors", affect_columns = selector_type(c("character", "factor", "ordered")), droplevels = TRUE) %>>%
+    #  po("imputesample", id = "final_imputesample", affect_columns = selector_type(c("character", "factor", "ordered"))) %>>%
+    #  learner
+    #)
+    GraphLearner$new(
+      ppl("robustify", learner = learner, impute_missings = TRUE, factors_to_numeric = FALSE, ordered_action = "ignore", character_action = "factor", POSIXct_action = "ignore") %>>%
+      learner
+    )
+  )
   surrogate$param_set$values$catch_errors = FALSE
 
   acq_optimizer = if (acqopt == "RS_1000") {
     AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
   } else if (acqopt == "RS") {
-    AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 20000L))
+    AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 30000L))
   } else if (acqopt == "FS") {
-    n_repeats = 2L
+    n_repeats = 3L
     maxit = 9L
-    batch_size = ceiling((20000L / n_repeats) / (1 + maxit)) # 1000L
-    AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 20000L))
+    batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
+    AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
   } else if (acqopt == "LS") {
-    acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 20000L), terminator = trm("evals", n_evals = 30000L))
+    acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 10000L), terminator = trm("evals", n_evals = 30000L))
     acq_optimizer
   }
   acq_optimizer$param_set$values$catch_errors = FALSE
@@ -172,28 +186,48 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
 # add algorithms
 addAlgorithm("mlr3mbo", fun = mlr3mbo_wrapper)
 
-setup = data.table(
-  scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
-  instance = c(
-      "167168", "189873", "189906",
-      "CIFAR10",
-      "375", "458",
-      "14", "40499",
-      "16", "42",
-      "12", "1501", "16", "40499",
-      "1053", "1457", "1063", "1479", "15", "1468"
-  ),
-  target_variable = rep(c("val_accuracy", "acc"), c(4L, 16L)),
-  direction = rep("maximize", 20L),
-  budget = rep(c(126L, 250L, 90L, 134L, 110L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L))
-)
+if (YAHPO_BENCHMARK == "pure_numeric") {
+  setup = data.table(
+    scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
+    instance = c(
+        "167168", "189873", "189906",
+        "375", "458",
+        "14", "40499",
+        "16", "42",
+        "12", "1501", "16", "40499"
+    ),
+    target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
+    direction = rep("maximize", 13L),
+    budget = rep(c(126L, 90L, 134L, 110L, 170L), c(3L, 2L, 2L, 2L, 4L)),
+    benchmark = YAHPO_BENCHMARK
+  )
+} else if (YAHPO_BENCHMARK == "mixed") {
+    stop("TBD")
+} else if (YAHPO_BENCHMARK == "") {
+    setup = data.table(
+    scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
+    instance = c(
+        "167168", "189873", "189906",
+        "CIFAR10",
+        "375", "458",
+        "14", "40499",
+        "16", "42",
+        "12", "1501", "16", "40499",
+        "1053", "1457", "1063", "1479", "15", "1468"
+    ),
+    target_variable = rep(c("val_accuracy", "acc"), c(4L, 16L)),
+    direction = rep("maximize", 20L),
+    budget = rep(c(126L, 250L, 90L, 134L, 110L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
+    benchmark = YAHPO_BENCHMARK
+  )
+}
 
 setup[, id := seq_len(.N)]
 
 # add problems
 prob_designs = map(seq_len(nrow(setup)), function(i) {
   prob_id = paste0(setup[i, ]$scenario, "_", setup[i, ]$instance, "_", setup[i, ]$target_variable)
-  addProblem(prob_id, data = list(scenario = setup[i, ]$scenario, instance = setup[i, ]$instance, target_variable = setup[i, ]$target_variable, budget = setup[i, ]$budget, on_integer_scale = setup[i, ]$on_integer_scale))
+  addProblem(prob_id, data = list(scenario = setup[i, ]$scenario, instance = setup[i, ]$instance, target_variable = setup[i, ]$target_variable, direction = setup[i, ]$direction, budget = setup[i, ]$budget))
   setNames(list(setup[i, ]), nm = prob_id)
 })
 prob_names = sapply(prob_designs, names)
@@ -215,27 +249,38 @@ for (i in seq_len(nrow(optimizers))) {
 }
 
 jobs = findJobs()
-resources.default = list(walltime = 3600L * 1L, memory = 4000L, ntasks = 1L, ncpus = 1L, nodes = 1L)
+resources.default = list(walltime = 3600L * 3L, memory = 4000L, ntasks = 1L, ncpus = 1L, nodes = 1L)
 submitJobs(jobs, resources = resources.default)
 
 done = findDone()
 results = reduceResultsList(done, function(result, job) {
-  data = result
+  data = result$archive$data
   pars = job$pars
   target_variable = pars$prob.pars$target_variable
   tmp = data[, eval(target_variable), with = FALSE]
   colnames(tmp) = "target"
   tmp[, orig_direction := pars$prob.pars$direction]
+  if (pars$prob.pars$direction == "maximize") {
+    tmp[, target := - target]
+  }
   tmp[, best := cummin(target)]
   tmp[, method := pars$algo.pars$algorithm]
+  tmp[, benchmark := pars$prob.pars$benchmark]
   tmp[, scenario := pars$prob.pars$scenario]
   tmp[, instance := pars$prob.pars$instance]
   tmp[, target_variable := pars$prob.pars$target_variable]
+  tmp[, budget := pars$prob.pars$budget]
   tmp[, problem := paste0(scenario, "_", instance, "_", target_variable)]
   tmp[, repl := job$repl]
   tmp[, iter := seq_len(.N)]
   tmp
 })
 results = rbindlist(results, fill = TRUE)
-saveRDS(results, "yahpo_mlr3mbo_raw.rds")
+if (YAHPO_BENCHMARK == "pure_numeric") {
+  saveRDS(results, "yahpo_pure_numeric_mlr3mbo_raw.rds")
+} else if (YAHPO_BENCHMARK == "mixed") {
+  stop("TBD")
+} else if (YAHPO_BENCHMARK == "") {
+  saveRDS(results, "yahpo_mlr3mbo_raw.rds")
+}
 

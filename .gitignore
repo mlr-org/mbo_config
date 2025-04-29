@@ -3,3 +3,5 @@ smac_venv/
 renv/
 .Rprofile
 *.rds
+.RData
+.Rhistory
