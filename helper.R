@@ -65,6 +65,7 @@ fix_objective_domain_constants_pure_numeric = function(scenario, objective) {
     objective$constants = constants
 
     domain = objective$domain
+    domain$deps = data.table()
     params = setdiff(domain$ids(), "num.impute.selected.cpo")
     domain = domain$subset(params)
     objective$domain = domain
@@ -80,6 +81,7 @@ fix_objective_domain_constants_pure_numeric = function(scenario, objective) {
     objective$constants = constants
 
     domain = objective$domain
+    domain$deps = data.table()
     params = setdiff(domain$ids(), "num.impute.selected.cpo")
     domain = domain$subset(params)
     objective$domain = domain
@@ -99,6 +101,7 @@ fix_objective_domain_constants_pure_numeric = function(scenario, objective) {
     objective$constants = constants
 
     domain = objective$domain
+    domain$deps = data.table()
     params = setdiff(domain$ids(), c("num.impute.selected.cpo", "respect.unordered.factors", "splitrule", "num.random.splits"))
     domain = domain$subset(params)
     objective$domain = domain
@@ -116,6 +119,7 @@ fix_objective_domain_constants_pure_numeric = function(scenario, objective) {
     objective$constants = constants
 
     domain = objective$domain
+    domain$deps = data.table()
     params = setdiff(domain$ids(), c("num.impute.selected.cpo", "booster", "rate_drop", "skip_drop"))
     domain = domain$subset(params)
     objective$domain = domain
