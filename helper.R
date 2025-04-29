@@ -110,19 +110,19 @@ rbv2_ranger_search_space_pure_numeric = ps(
 rbv2_xgboost_search_space_pure_numeric = ps(
   #booster = "gbtree"
   nrounds = p_dbl(lower = 2, upper = 8, tags = c("int", "log"), trafo = function(x) as.integer(round(exp(x)))),
-  eta = p_dbl(lower = -7, upper = 0, tags = "log", trafo = function(x) exp(x), depends = booster %in% c("dart", "gbtree")),
-  gamma = p_dbl(lower = -10, upper = 2, tags = "log", trafo = function(x) exp(x), depends = booster %in% c("dart", "gbtree")),
+  eta = p_dbl(lower = -7, upper = 0, tags = "log", trafo = function(x) exp(x)),
+  gamma = p_dbl(lower = -10, upper = 2, tags = "log", trafo = function(x) exp(x)),
   lambda = p_dbl(lower = -7, upper = 7, tags = "log", trafo = function(x) exp(x)),
   alpha = p_dbl(lower = -7, upper = 7, tags = "log", trafo = function(x) exp(x)),
   subsample = p_dbl(lower = 0.1, upper = 1),
   max_depth = p_dbl(lower = 1, upper = 15, tags = "int", trafo = function(x) as.integer(round(x))),
-  min_child_weight = p_dbl(lower = 1, upper = 5, tags = "log", trafo = function(x) exp(x), depends = booster %in% c("dart", "gbtree")),
+  min_child_weight = p_dbl(lower = 1, upper = 5, tags = "log", trafo = function(x) exp(x)),
   colsample_bytree = p_dbl(lower = 0.01, upper = 1),
   colsample_bylevel = p_dbl(lower = 0.01, upper = 1),
   # rate_drop = p_dbl(lower = 0, upper = 1, depends = booster == "dart"),
   # skip_drop = p_dbl(lower = 0, upper = 1, depends = booster == "dart"),
   trainsize = p_dbl(lower = 0.03, upper = 1, tags = "budget"),
-  repl = p_int(lower = 1L, upper = 10L, tags = "budget"),
+  repl = p_int(lower = 1L, upper = 10L, tags = "budget")
   # num.impute.selected.cpo = "impute.mean"
   # task_id
 )
