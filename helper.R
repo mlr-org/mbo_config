@@ -34,6 +34,18 @@ get_search_space_pure_numeric = function(scenario) {
     search_space = rbv2_glmnet_search_space_pure_numeric
     params = setdiff(search_space$ids(), c("trainsize", "repl"))
     search_space = search_space$subset(params)
+  } else if (scenario == "rbv2_rpart") {
+    search_space = rbv2_rpart_search_space_pure_numeric
+    params = setdiff(search_space$ids(), c("trainsize", "repl"))
+    search_space = search_space$subset(params)
+  } else if (scenario == "rbv2_ranger") {
+    search_space = rbv2_ranger_search_space_pure_numeric
+    params = setdiff(search_space$ids(), c("trainsize", "repl"))
+    search_space = search_space$subset(params)
+  } else if (scenario == "rbv2_xgboost") {
+    search_space = rbv2_xgboost_search_space_pure_numeric
+    params = setdiff(search_space$ids(), c("trainsize", "repl"))
+    search_space = search_space$subset(params)
   }
   search_space
 }
@@ -50,6 +62,57 @@ fix_objective_domain_constants_pure_numeric = function(scenario, objective) {
       )
     )
     constants$set_values("num.impute.selected.cpo" = "impute.mean")
+    objective$constants = constants
+
+    domain = objective$domain
+    params = setdiff(domain$ids(), "num.impute.selected.cpo")
+    domain = domain$subset(params)
+    objective$domain = domain
+  } else if (scenario == "rbv2_rpart") {
+    constants = objective$constants
+    constants = ps_union(
+      list(
+        constants,
+        ps(num.impute.selected.cpo = p_fct(levels = c("impute.mean", "impute.median", "impute.hist")))
+      )
+    )
+    constants$set_values("num.impute.selected.cpo" = "impute.mean")
+    objective$constants = constants
+
+    domain = objective$domain
+    params = setdiff(domain$ids(), "num.impute.selected.cpo")
+    domain = domain$subset(params)
+    objective$domain = domain
+  } else if (scenario == "rbv2_ranger") {
+    constants = objective$constants
+    constants = ps_union(
+      list(
+        constants,
+        ps(num.impute.selected.cpo = p_fct(levels = c("impute.mean", "impute.median", "impute.hist")),
+           respect.unordered.factors = p_fct(levels = c("ignore", "order", "partition")),
+           splitrule = p_fct(levels = c("gini", "extratrees")))
+      )
+    )
+    constants$set_values("num.impute.selected.cpo" = "impute.mean")
+    constants$set_values("respect.unordered.factors" = "ignore")
+    constants$set_values("splitrule" = "gini")
+    objective$constants = constants
+
+    domain = objective$domain
+    params = setdiff(domain$ids(), "num.impute.selected.cpo")
+    domain = domain$subset(params)
+    objective$domain = domain
+  } else if (scenario == "rbv2_xgboost") {
+    constants = objective$constants
+    constants = ps_union(
+      list(
+        constants,
+        ps(num.impute.selected.cpo = p_fct(levels = c("impute.mean", "impute.median", "impute.hist")),
+           booster = p_fct(levels = c("gblinear", "gbtree", "dart")))
+      )
+    )
+    constants$set_values("num.impute.selected.cpo" = "impute.mean")
+    constants$set_values("booster" = "gbtree")
     objective$constants = constants
 
     domain = objective$domain
