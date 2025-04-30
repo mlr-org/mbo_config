@@ -28,7 +28,7 @@ log.file = fs::path_expand(log.file)
 <%= if (array.jobs) sprintf("#PBS -J 1-%i", nrow(jobs)) else "" %>
 
 ## Setup temporary directory
-export TMPDIR=/glade/scratch/$USER/tmp
+export TMPDIR=/glade/derecho/scratch/$USER/tmp
 mkdir -p "$TMPDIR"
 
 ## Load required environment modules

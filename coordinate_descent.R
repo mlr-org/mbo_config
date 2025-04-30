@@ -9,8 +9,6 @@ library(paradox)
 library(R6)
 library(checkmate)
 
-print(parallel::detectCores())
-
 YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
 
 reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
@@ -28,9 +26,21 @@ for (source_file in source_files) {
 }
 
 registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/lschneider/yahpo_YAHPO_BENCHMARK_coordinate_descent")
-#reg = makeExperimentRegistry(registry_name, conf.file = "batchtools.conf.coordinate_descent.R", packages = packages, source = source_files)
-#saveRegistry(reg)
-reg = loadRegistry(registry_name, conf.file = "batchtools.conf.coordinate_descent.R", writeable = TRUE)
+if (!file.exists(file.path(registry_name, "registry.rds"))) {
+  reg = makeExperimentRegistry(
+    file.dir = registry_name,
+    conf.file = "batchtools.conf.coordinate_descent.R",
+    packages = packages,
+    source = source_files
+  )
+  saveRegistry(reg)
+} else {
+  reg = loadRegistry(
+    file.dir = registry_name,
+    conf.file = "batchtools.conf.coordinate_descent.R",
+    writeable = TRUE
+  )
+}
 
 source("OptimizerCoordinateDescent.R")
 
@@ -191,7 +201,7 @@ addAlgorithm(
     } else if (acqopt == "RS") {
       AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 30000L))
     } else if (acqopt == "FS") {
-      n_repeats = 3L
+      n_repeats = 5L
       maxit = 9L
       batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
@@ -294,14 +304,13 @@ objective = ObjectiveRFunDt$new(
     reg,
     rs_reference
     ) {
-    n_repls = 1L
+    n_repls = 3L
     xdt[, id := .I]
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
 
     ades = list(mbo = xdt)
     ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
     #ids[, chunk := batchtools::chunk(job.id, chunk.size = 96L, shuffle = FALSE)]
-
     job_ids = submitJobs(ids = ids, reg = reg)$job.id
     waitForJobs(ids = job_ids, reg = reg)
 
@@ -341,8 +350,6 @@ objective = ObjectiveRFunDt$new(
       raw_mean_score = list(set_names(mean_score, problem)),
       missing_instances = list(setdiff(reg$problems, problem))),
       by = .(id)]
-    # if no meta score on all instances, set to -Inf
-    agg_meta_score[n < length(reg$problems), mean_meta_score := -Inf]
     agg_meta_score
   },
   domain = search_space,
@@ -379,7 +386,8 @@ callback_backup = callback_batch("bbotk.backup",
   }
 )
 
-callback_backup$state$path = "/glade/derecho/scratch/lschneider/intermediate_instance.rds"
+state_path = "/glade/derecho/scratch/lschneider/YAHPO_BENCHMARK_intermediate_instance.rds"
+callback_backup$state$path = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = state_path)
 
 optim_instance = oi(
   objective = objective,
@@ -399,4 +407,5 @@ if (file.exists(callback_backup$state$path)) {
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$optimize(optim_instance)
 
-saveRDS(optim_instance, "/glade/derecho/scratch/lschneider/coordinate_descent.rds")
+save_path = "/glade/derecho/scratch/lschneider/coordinate_descent.rds")
+saveRDS(optim_instance, gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = save_path)

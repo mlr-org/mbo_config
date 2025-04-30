@@ -9,7 +9,7 @@
 #PBS -o coordinate_descent.log
 
 ## Setup temporary directory
-export TMPDIR=/glade/scratch/lschneider/tmp
+export TMPDIR=/glade/derecho/scratch/lschneider/tmp
 mkdir -p "$TMPDIR"
 
 ## Load required environment modules
