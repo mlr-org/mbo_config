@@ -1,10 +1,11 @@
 library(batchtools)
+library(paradox)
 library(mlr3misc)
 library(data.table)
 
 YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
 
-packages = c("data.table")
+packages = c("data.table", "paradox")
 
 root = here::here()
 experiments_dir = file.path(root)
@@ -43,6 +44,7 @@ addAlgorithm("smac4bb", fun = smac4bb_wrapper)
 
 if (YAHPO_BENCHMARK == "pure_numeric") {
   setup = data.table(
+    benchmark = YAHPO_BENCHMARK,
     scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
     instance = c(
         "167168", "189873", "189906",
@@ -53,13 +55,13 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
     ),
     target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
     direction = rep("maximize", 13L),
-    budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L)),
-    benchmark = YAHPO_BENCHMARK
+    budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L))
   )
 } else if (YAHPO_BENCHMARK == "mixed") {
     stop("TBD")
 } else if (YAHPO_BENCHMARK == "") {
     setup = data.table(
+    benchmark = YAHPO_BENCHMARK,
     scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
     instance = c(
         "167168", "189873", "189906",
@@ -72,8 +74,7 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
     ),
     target_variable = rep(c("val_accuracy", "acc"), c(4L, 16L)),
     direction = rep("maximize", 20L),
-    budget = rep(c(126L, 250L, 90L, 110L, 134L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
-    benchmark = YAHPO_BENCHMARK
+    budget = rep(c(126L, 250L, 90L, 110L, 134L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L))
   )
 }
 
@@ -82,7 +83,7 @@ setup[, id := seq_len(.N)]
 # add problems
 prob_designs = map(seq_len(nrow(setup)), function(i) {
   prob_id = paste0(setup[i, ]$scenario, "_", setup[i, ]$instance, "_", setup[i, ]$target_variable)
-  addProblem(prob_id, data = list(scenario = setup[i, ]$scenario, instance = setup[i, ]$instance, target_variable = setup[i, ]$target_variable, direction = setup[i, ]$direction, budget = setup[i, ]$budget))
+  addProblem(prob_id, data = list(benchmark = setup[i, ]$benchmark, scenario = setup[i, ]$scenario, instance = setup[i, ]$instance, target_variable = setup[i, ]$target_variable, direction = setup[i, ]$direction, budget = setup[i, ]$budget))
   setNames(list(setup[i, ]), nm = prob_id)
 })
 prob_names = sapply(prob_designs, names)
