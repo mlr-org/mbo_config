@@ -28,9 +28,9 @@ for (source_file in source_files) {
 }
 
 registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/lschneider/yahpo_YAHPO_BENCHMARK_coordinate_descent")
-reg = makeExperimentRegistry(registry_name, conf.file = "batchtools.conf.coordinate_descent.R", packages = packages, source = source_files)
-saveRegistry(reg)
-# reg = loadRegistry(registry_name)
+#reg = makeExperimentRegistry(registry_name, conf.file = "batchtools.conf.coordinate_descent.R", packages = packages, source = source_files)
+#saveRegistry(reg)
+reg = loadRegistry(registry_name, conf.file = "batchtools.conf.coordinate_descent.R", writeable = TRUE)
 
 source("OptimizerCoordinateDescent.R")
 
