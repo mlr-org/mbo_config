@@ -1,0 +1,26 @@
+#!/bin/bash
+
+#PBS -N coordinate_descent
+#PBS -A WYOM0202
+#PBS -q main
+#PBS -l select=2:ncpus=128:mpiprocs=128:mem=256GB
+#PBS -l walltime=12:00:00
+#PBS -j oe
+#PBS -o coordinate_descent.log
+
+## Setup temporary directory
+export TMPDIR=/glade/scratch/$USER/tmp
+mkdir -p "$TMPDIR"
+
+## Load required environment modules
+ml conda
+conda activate r-4.3
+
+## Export relevant environment variables
+export DEBUGME=<%= Sys.getenv("DEBUGME") %>
+export OMP_NUM_THREADS=<%= resources$omp.threads %>
+export OPENBLAS_NUM_THREADS=<%= resources$blas.threads %>
+export MKL_NUM_THREADS=<%= resources$blas.threads %>
+
+## Execute job
+Rscript coordinate_descent.R

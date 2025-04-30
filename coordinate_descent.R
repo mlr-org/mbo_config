@@ -9,6 +9,8 @@ library(paradox)
 library(R6)
 library(checkmate)
 
+print(parallel::detectCores())
+
 YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
 
 reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
