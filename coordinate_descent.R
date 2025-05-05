@@ -407,5 +407,5 @@ if (file.exists(callback_backup$state$path)) {
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$optimize(optim_instance)
 
-save_path = "/glade/derecho/scratch/lschneider/coordinate_descent.rds")
+save_path = "/glade/derecho/scratch/lschneiderYAHPO_BENCHMARK_coordinate_descent.rds"
 saveRDS(optim_instance, gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = save_path)
