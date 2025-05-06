@@ -1,7 +1,10 @@
 yahpo_venv/
 smac_venv/
+hebo_venv/
 renv/
 .Rprofile
 *.rds
 .RData
 .Rhistory
+*.html
+__pycache__/

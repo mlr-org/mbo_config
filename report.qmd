@@ -13,8 +13,9 @@ library(data.table)
 library(ggplot2)
 library(mlr3misc)
 library(dplyr)
+library(gt)
 
-archive = readRDS("intermediate_instance.rds")
+archive = readRDS("pure_numeric_intermediate_instance.rds")
 
 other_stats = rbindlist(map(seq(nrow(archive)), function(i) {
   data.table(
@@ -22,7 +23,7 @@ other_stats = rbindlist(map(seq(nrow(archive)), function(i) {
     q05_meta_score = quantile(archive$raw_meta_score[[i]], 0.05),
     median_meta_score = median(archive$raw_meta_score[[i]]),
     q95_meta_score = quantile(archive$raw_meta_score[[i]], 0.95),
-    median_meta_score = max(archive$raw_meta_score[[i]]))
+    max_meta_score = max(archive$raw_meta_score[[i]]))
 }))
 
 archive = archive[, -c("raw_meta_score", "raw_mean_score", "n_na", "n", "missing_instances", "x_domain", "timestamp", "iteration", "id"), with = FALSE]
@@ -102,7 +103,7 @@ as_tibble(archive) %>%
       cell_text(weight = "bold")
       ),
     locations = cells_body(
-      columns = mean_k,
+      columns = mean_meta_score,
       rows = improvement == TRUE
     )
   ) %>%
@@ -137,8 +138,5 @@ as_tibble(archive) %>%
   ) %>% tab_row_group(
     label = "numbered",
     rows = matches("^[0-9]")
-  )
-  %>%
-  cols_hide("improvement")
+  ) %>% cols_hide("improvement")
 ```
-

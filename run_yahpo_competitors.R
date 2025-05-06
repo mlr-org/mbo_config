@@ -38,9 +38,19 @@ smac4bb_wrapper = function(job, data, instance, ...) {
   result
 }
 
+hebo_wrapper = function(job, data, instance, ...) {
+  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/hebo_venv", required = TRUE)
+  library(reticulate)
+  py_run_file("hebo_wrapper.py")
+  result = py$run_hebo(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed)
+  result = as.data.table(result)
+  result
+}
+
 # add algorithms
 addAlgorithm("smac4hpo", fun = smac4hpo_wrapper)
 addAlgorithm("smac4bb", fun = smac4bb_wrapper)
+addAlgorithm("hebo", fun = hebo_wrapper)
 
 if (YAHPO_BENCHMARK == "pure_numeric") {
   setup = data.table(

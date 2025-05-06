@@ -40,16 +40,27 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
 
   optim_instance = make_optim_instance(instance)
 
+  #log_scale = TRUE
+  #init = "sobol"
+  #init_size_fraction = "0.25"
+  #random_interleave_iter = "0"
+  #rf_type = "standard"
+  #acqf = "EI"
+  #lambda = NA_character_
+  #acqopt = "RS"
+  #epsilon_decay = FALSE
+  #lambda_decay = NA
+
   log_scale = TRUE
   init = "sobol"
-  init_size_fraction = "0.25"
+  init_size_fraction = "0.10"
   random_interleave_iter = "0"
-  rf_type = "standard"
-  acqf = "EI"
-  lambda = NA_character_
-  acqopt = "RS"
-  epsilon_decay = FALSE
-  lambda_decay = NA
+  rf_type = "extratrees"
+  acqf = "CB"
+  lambda = "3"
+  acqopt = "FS"
+  epsilon_decay = NA
+  lambda_decay = TRUE
 
   random_interleave_iter = as.numeric(random_interleave_iter)
   init_size_fraction = as.numeric(init_size_fraction)
@@ -184,7 +195,7 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
 }
 
 # add algorithms
-addAlgorithm("mlr3mbo", fun = mlr3mbo_wrapper)
+addAlgorithm("mlr3mbo_configured", fun = mlr3mbo_wrapper)
 
 if (YAHPO_BENCHMARK == "pure_numeric") {
   setup = data.table(
@@ -235,7 +246,7 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = prob_names
 
 # add jobs for optimizers
-optimizers = data.table(algorithm = c("mlr3mbo"))
+optimizers = data.table(algorithm = c("mlr3mbo_configured"))
 
 for (i in seq_len(nrow(optimizers))) {
   algo_designs = setNames(list(optimizers[i, ]), nm = optimizers[i, ]$algorithm)

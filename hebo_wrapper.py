@@ -2,24 +2,78 @@ import json
 import os
 import random
 import re
-import shutil
 import subprocess
 import tempfile
-from functools import partial
 
 import numpy as np
 import pandas as pd
-from ConfigSpace import ConfigurationSpace
-from smac import BlackBoxFacade, HyperparameterOptimizationFacade, Scenario
-from smac.intensifier import Intensifier
+from ConfigSpace import (
+    CategoricalHyperparameter,
+    ConfigurationSpace,
+    UniformFloatHyperparameter,
+    UniformIntegerHyperparameter,
+)
+from hebo.design_space.design_space import DesignSpace
+from hebo.optimizers.hebo import HEBO
 
-from .config import (
+from config import (
     SCENARIO_META_DATA,
     YAHPO_DATA_PATH,
     YAHPO_SCRIPT_PATH,
     YAHPO_VENV_PATH,
 )
-from .configspace_utils import fix_config, remove_hyperparameters
+from configspace_utils import fix_config, remove_hyperparameters
+
+
+def configspace_to_hebo_designspace(cs):
+    hebo_params = []
+
+    for hp in cs.get_hyperparameters():
+        name = hp.name
+
+        if isinstance(hp, UniformFloatHyperparameter):
+            if hp.log:
+                hebo_params.append(
+                    {
+                        "name": name,
+                        "type": "pow",
+                        "lb": hp.lower,
+                        "ub": hp.upper,
+                        "base": np.exp(1),
+                    }
+                )
+            else:
+                hebo_params.append(
+                    {"name": name, "type": "num", "lb": hp.lower, "ub": hp.upper}
+                )
+        elif isinstance(hp, UniformIntegerHyperparameter):
+            if hp.log:
+                hebo_params.append(
+                    {
+                        "name": name,
+                        "type": "pow_int",
+                        "lb": hp.lower,
+                        "ub": hp.upper,
+                        "base": np.exp(1),
+                    }
+                )
+            else:
+                hebo_params.append(
+                    {"name": name, "type": "int", "lb": hp.lower, "ub": hp.upper}
+                )
+
+        elif isinstance(hp, CategoricalHyperparameter):
+            choices = hp.choices
+            if set(choices) == {True, False} or set(choices) == {False, True}:
+                hebo_params.append({"name": name, "type": "bool"})
+            else:
+                hebo_params.append({"name": name, "type": "cat", "categories": choices})
+        else:
+            raise NotImplementedError(
+                f"Unsupported hyperparameter type: {type(hp)} for {name}"
+            )
+
+    return DesignSpace().parse(hebo_params)
 
 
 def target_function(
@@ -95,7 +149,7 @@ def target_function(
     return factor * output[target_variable]
 
 
-def run_smac(
+def run_hebo(
     benchmark,
     scenario,
     instance,
@@ -103,10 +157,9 @@ def run_smac(
     direction,
     budget,
     seed,
-    facade="hpo",
 ):
     random.seed(seed)
-    np.random.seed(seed)
+    np.random.seed(seed)  # also seeds HEBO's design space
 
     if benchmark == "pure_numeric":
         config_space = ConfigurationSpace().from_json(
@@ -140,72 +193,49 @@ def run_smac(
         )
     # FIXME: mixed
     opt_space.seed(seed)
+    hebo_designspace = configspace_to_hebo_designspace(opt_space)
     fidelity_param_id = SCENARIO_META_DATA[scenario]["fidelity_param_id"]
     on_integer_scale = SCENARIO_META_DATA[scenario]["on_integer_scale"]
     max_fidelity = SCENARIO_META_DATA[scenario]["max_fidelity"]
-    output_directory = (
-        "smac4hpo_tmp_" + str(seed) + "_" + str(random.randrange(49152, 65535 + 1))
-    )
+    hebo = HEBO(hebo_designspace)
 
-    smac_scenario = Scenario(
-        configspace=opt_space,
-        output_directory=output_directory,
-        deterministic=True,
-        n_trials=budget,
-        seed=seed,
-    )
+    configs = []
+    targets = []
+    hebo_fallbacks = []
 
-    # for unclear reasons, SMAC might still try to evaluate a configuration multiple times with different seeds although the scenario was specified to be deterministic
-    # we therefore set max_config_calls explicitly to 1
-    # moreover, to make sure that SMAC always evaluates enough configurations we set retries to budget
-    smac_intensifier = Intensifier(
-        scenario=smac_scenario, max_config_calls=1, retries=budget
-    )
-
-    if facade == "hpo":
-        smac = HyperparameterOptimizationFacade(
-            scenario=smac_scenario,
-            target_function=partial(
-                target_function,
-                benchmark=benchmark,
-                scenario=scenario,
-                instance=instance,
-                target_variable=target_variable,
-                direction=direction,
-                fidelity_param_id=fidelity_param_id,
-                on_integer_scale=on_integer_scale,
-                max_fidelity=max_fidelity,
-            ),
-            intensifier=smac_intensifier,
-            overwrite=True,
+    for i in range(budget):
+        try:
+            config_raw = hebo.suggest(n_suggestions=1)
+            hebo_fallback = False
+        except:
+            config_raw = hebo_designspace.sample(num_samples=1)
+            hebo_fallback = True
+        config = config_raw.to_dict(orient="records")[0]
+        target = target_function(
+            config,
+            seed=seed,
+            benchmark=benchmark,
+            scenario=scenario,
+            instance=instance,
+            target_variable=target_variable,
+            direction=direction,
+            fidelity_param_id=fidelity_param_id,
+            on_integer_scale=on_integer_scale,
+            max_fidelity=max_fidelity,
         )
-    elif facade == "bb":
-        smac = BlackBoxFacade(
-            scenario=smac_scenario,
-            target_function=partial(
-                target_function,
-                benchmark=benchmark,
-                scenario=scenario,
-                instance=instance,
-                target_variable=target_variable,
-                direction=direction,
-                fidelity_param_id=fidelity_param_id,
-                on_integer_scale=on_integer_scale,
-                max_fidelity=max_fidelity,
-            ),
-            intensifier=smac_intensifier,
-            overwrite=True,
-        )
-
-    smac.optimize()
+        hebo.observe(config_raw, y=np.array([[target]]))
+        configs.append(config)
+        targets.append(target)
+        hebo_fallbacks.append(hebo_fallback)
 
     trial_data = []
-    for trial_info, trial_value in smac.runhistory.items():
+    for i in range(budget):
         trial_entry = {
-            "config_id": trial_info.config_id,
-            "cost": trial_value.cost,
+            "config_id": i,
+            "target": targets[i],
+            "hebo_fallback": hebo_fallbacks[i],
         }
-        config = smac.runhistory.get_config(trial_info.config_id)
+        config = configs[i]
         config_entry = fix_config(
             config,
             benchmark=benchmark,
@@ -216,7 +246,6 @@ def run_smac(
         )
         trial_data.append(trial_entry | config_entry)
     data = pd.DataFrame(trial_data)
-    data.rename(columns={"cost": target_variable}, inplace=True)
+    data.rename(columns={"target_variable": target_variable}, inplace=True)
 
-    shutil.rmtree(output_directory)
     return data
