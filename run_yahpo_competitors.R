@@ -47,10 +47,20 @@ hebo_wrapper = function(job, data, instance, ...) {
   result
 }
 
+ax_wrapper = function(job, data, instance, ...) {
+  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/ax_venv", required = TRUE)
+  library(reticulate)
+  py_run_file("ax_wrapper.py")
+  result = py$run_ax(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed)
+  result = as.data.table(result)
+  result
+}
+
 # add algorithms
 addAlgorithm("smac4hpo", fun = smac4hpo_wrapper)
 addAlgorithm("smac4bb", fun = smac4bb_wrapper)
 addAlgorithm("hebo", fun = hebo_wrapper)
+addAlgorithm("ax", fun = ax_wrapper)
 
 if (YAHPO_BENCHMARK == "pure_numeric") {
   setup = data.table(
@@ -101,7 +111,7 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = prob_names
 
 # add jobs for optimizers
-optimizers = data.table(algorithm = c("smac4hpo", "smac4bb", "hebo"))
+optimizers = data.table(algorithm = c("smac4hpo", "smac4bb", "hebo", "ax"))
 
 for (i in seq_len(nrow(optimizers))) {
   algo_designs = setNames(list(optimizers[i, ]), nm = optimizers[i, ]$algorithm)

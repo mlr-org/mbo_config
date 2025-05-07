@@ -135,7 +135,7 @@ def run_ax(
     seed,
 ):
     random.seed(seed)
-    np.random.seed(seed)  # also seeds HEBO"s design space
+    np.random.seed(seed)
 
     if benchmark == "pure_numeric":
         config_space = ConfigurationSpace().from_json(
