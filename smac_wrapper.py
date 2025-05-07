@@ -13,13 +13,13 @@ from ConfigSpace import ConfigurationSpace
 from smac import BlackBoxFacade, HyperparameterOptimizationFacade, Scenario
 from smac.intensifier import Intensifier
 
-from .config import (
+from config import (
     SCENARIO_META_DATA,
     YAHPO_DATA_PATH,
     YAHPO_SCRIPT_PATH,
     YAHPO_VENV_PATH,
 )
-from .configspace_utils import fix_config, remove_hyperparameters
+from configspace_utils import fix_config, remove_hyperparameters
 
 
 def target_function(
