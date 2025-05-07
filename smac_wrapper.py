@@ -144,7 +144,10 @@ def run_smac(
     on_integer_scale = SCENARIO_META_DATA[scenario]["on_integer_scale"]
     max_fidelity = SCENARIO_META_DATA[scenario]["max_fidelity"]
     output_directory = (
-        "smac4hpo_tmp_" + str(seed) + "_" + str(random.randrange(49152, 65535 + 1))
+        f"smac4{facade}_tmp_"
+        + str(seed)
+        + "_"
+        + str(random.randrange(49152, 65535 + 1))
     )
 
     smac_scenario = Scenario(

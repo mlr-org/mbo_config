@@ -7,14 +7,13 @@ import tempfile
 
 import numpy as np
 import pandas as pd
+from ax.service.ax_client import AxClient, ObjectiveProperties
 from ConfigSpace import (
     CategoricalHyperparameter,
     ConfigurationSpace,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
 )
-from hebo.design_space.design_space import DesignSpace
-from hebo.optimizers.hebo import HEBO
 
 from config import (
     SCENARIO_META_DATA,
@@ -25,55 +24,32 @@ from config import (
 from configspace_utils import clip_to_bounds, fix_config, remove_hyperparameters
 
 
-def configspace_to_hebo_designspace(cs):
-    hebo_params = []
-
+def configspace_to_ax_parameters(cs):
+    ax_params = []
     for hp in list(cs.values()):
-        name = hp.name
-
-        if isinstance(hp, UniformFloatHyperparameter):
-            if hp.log:
-                hebo_params.append(
-                    {
-                        "name": name,
-                        "type": "pow",
-                        "lb": hp.lower,
-                        "ub": hp.upper,
-                        "base": np.exp(1),
-                    }
-                )
+        param = {"name": hp.name}
+        if hasattr(hp, "lower") and hasattr(hp, "upper"):
+            param["type"] = "range"
+            param["bounds"] = [hp.lower, hp.upper]
+            if isinstance(hp, (UniformIntegerHyperparameter,)):
+                param["value_type"] = "int"
+            elif isinstance(hp, (UniformFloatHyperparameter,)):
+                param["value_type"] = "float"
             else:
-                hebo_params.append(
-                    {"name": name, "type": "num", "lb": hp.lower, "ub": hp.upper}
-                )
-        elif isinstance(hp, UniformIntegerHyperparameter):
-            if hp.log:
-                hebo_params.append(
-                    {
-                        "name": name,
-                        "type": "pow_int",
-                        "lb": hp.lower,
-                        "ub": hp.upper,
-                        "base": np.exp(1),
-                    }
-                )
-            else:
-                hebo_params.append(
-                    {"name": name, "type": "int", "lb": hp.lower, "ub": hp.upper}
-                )
-
+                raise NotImplementedError(f"Unsupported parameter type: {type(hp)}")
+            if getattr(hp, "log", False):
+                param["log_scale"] = True
         elif isinstance(hp, CategoricalHyperparameter):
-            choices = hp.choices
-            if set(choices) == {True, False} or set(choices) == {False, True}:
-                hebo_params.append({"name": name, "type": "bool"})
+            param["type"] = "choice"
+            param["values"] = hp.choices
+            if set(hp.choices) == {True, False} or set(hp.choices) == {False, True}:
+                param["value_type"] = "bool"
             else:
-                hebo_params.append({"name": name, "type": "cat", "categories": choices})
+                param["value_type"] = "str"
         else:
-            raise NotImplementedError(
-                f"Unsupported hyperparameter type: {type(hp)} for {name}"
-            )
-
-    return DesignSpace().parse(hebo_params)
+            raise NotImplementedError(f"Unsupported parameter type: {type(hp)}")
+        ax_params.append(param)
+    return ax_params
 
 
 def target_function(
@@ -149,7 +125,7 @@ def target_function(
     return factor * output[target_variable]
 
 
-def run_hebo(
+def run_ax(
     benchmark,
     scenario,
     instance,
@@ -159,7 +135,7 @@ def run_hebo(
     seed,
 ):
     random.seed(seed)
-    np.random.seed(seed)  # also seeds HEBO's design space
+    np.random.seed(seed)  # also seeds HEBO"s design space
 
     if benchmark == "pure_numeric":
         config_space = ConfigurationSpace().from_json(
@@ -193,24 +169,28 @@ def run_hebo(
         )
     # FIXME: mixed
     opt_space.seed(seed)
-    hebo_designspace = configspace_to_hebo_designspace(opt_space)
+    ax_parameters = configspace_to_ax_parameters(opt_space)
     fidelity_param_id = SCENARIO_META_DATA[scenario]["fidelity_param_id"]
     on_integer_scale = SCENARIO_META_DATA[scenario]["on_integer_scale"]
     max_fidelity = SCENARIO_META_DATA[scenario]["max_fidelity"]
-    hebo = HEBO(hebo_designspace)
+
+    ax_client = AxClient(
+        enforce_sequential_optimization=True, random_seed=seed
+    )  # will automatically be BO
+    ax_client.create_experiment(
+        name=f"ax_{benchmark}_{scenario}_{instance}_{target_variable}_{seed}",
+        parameters=ax_parameters,
+        objectives={target_variable: ObjectiveProperties(minimize=True)},
+        overwrite_existing_experiment=True,
+    )
+    if ax_client.generation_strategy.name != "Sobol+BoTorch":
+        raise ValueError("AX did not automatically select a BO strategy.")
 
     configs = []
     targets = []
-    hebo_fallbacks = []
 
     for i in range(budget):
-        try:
-            config_raw = hebo.suggest(n_suggestions=1)
-            hebo_fallback = False
-        except:
-            config_raw = hebo_designspace.sample(num_samples=1)
-            hebo_fallback = True
-        config = config_raw.to_dict(orient="records")[0]
+        config, trial_index = ax_client.get_next_trial()
         config = clip_to_bounds(config, config_space=opt_space)
         target = target_function(
             config,
@@ -224,18 +204,13 @@ def run_hebo(
             on_integer_scale=on_integer_scale,
             max_fidelity=max_fidelity,
         )
-        hebo.observe(config_raw, y=np.array([[target]]))
+        ax_client.complete_trial(trial_index=trial_index, raw_data=target)
         configs.append(config)
         targets.append(target)
-        hebo_fallbacks.append(hebo_fallback)
 
     trial_data = []
     for i in range(budget):
-        trial_entry = {
-            "config_id": i,
-            "target": targets[i],
-            "hebo_fallback": hebo_fallbacks[i],
-        }
+        trial_entry = {"config_id": i, "target": targets[i]}
         config = configs[i]
         config_entry = fix_config(
             config,

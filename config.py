@@ -80,4 +80,3 @@ SCENARIO_META_DATA = {
 YAHPO_DATA_PATH = "/glade/derecho/scratch/lschneider/yahpo_data/"
 YAHPO_SCRIPT_PATH = "/glade/u/home/lschneider/mbo_config/subprocess_yahpo.py"
 YAHPO_VENV_PATH = "/glade/u/home/lschneider/mbo_config/yahpo_venv/bin/python"
-

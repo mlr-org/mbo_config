@@ -1,4 +1,4 @@
-from ConfigSpace import ConfigurationSpace
+from ConfigSpace import ConfigurationSpace, UniformFloatHyperparameter
 from ConfigSpace.conditions import (
     AndConjunction,
     EqualsCondition,
@@ -104,3 +104,14 @@ def fix_config(
             )
     # FIXME: mixed
     return X
+
+
+def clip_to_bounds(config, config_space, epsilon=1e-16):
+    clipped_config = {}
+    for hp in list(config_space.values()):
+        name = hp.name
+        val = config[name]
+        if isinstance(hp, (UniformFloatHyperparameter,)):
+            val = min(max(val, hp.lower + epsilon), hp.upper - epsilon)
+        clipped_config[name] = val
+    return clipped_config

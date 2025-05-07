@@ -1,6 +1,7 @@
 yahpo_venv/
 smac_venv/
 hebo_venv/
+ax_venv/
 renv/
 .Rprofile
 *.rds
