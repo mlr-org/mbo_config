@@ -71,12 +71,12 @@ g = ggplot(aes(x = cumbudget_scaled, y = mean, colour = method, fill = method), 
   labs(x = "Fraction of Budget Used", y = "Mean Rank", colour = "Optimizer", fill = "Optimizer") +
   theme_minimal() +
   theme(legend.position = "bottom", legend.title = element_text(size = rel(0.75)), legend.text = element_text(size = rel(0.75)))
-ggsave("/tmp/anytime_average_rank.pdf", plot = g, device = "pdf", width = 6, height = 4)
+ggsave("/tmp/anytime_average_rank.png", plot = g, device = "png", width = 6, height = 4)
 
 best_agg = agg_budget[cumbudget_scaled == 1]
 best_agg[, problem := paste0(scenario, "_", instance, "_", target_variable)]
 tmp = - as.matrix(dcast(best_agg, problem ~ method, value.var = "mean")[, -1L])
 friedmanTest(tmp)
-pdf("/tmp/cd.pdf", width = 6, height = 4, pointsize = 10)
+png("/tmp/cd.png", width = 600, height = 400, pointsize = 10)
 plotCD(tmp, cex = 1)
 dev.off()
