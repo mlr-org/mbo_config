@@ -2,6 +2,7 @@ library(data.table)
 library(ggplot2)
 library(pammtools)
 library(mlr3misc)
+library(scmamp)
 
 dat = rbind(readRDS("yahpo_pure_numeric_competitors_raw.rds"), readRDS("yahpo_pure_numeric_mlr3mbo_raw.rds"), readRDS("yahpo_pure_numeric_rs_simulated.rds"), fill=TRUE)
 dat[, cumbudget := iter, by = .(method, scenario, instance, target_variable, repl)]
@@ -43,4 +44,39 @@ g = ggplot(aes(x = cumbudget_scaled, y = mean, colour = method, fill = method), 
   labs(x = "Fraction of Budget Used", y = "Mean Normalized Regret", colour = "Optimizer", fill = "Optimizer") +
   theme_minimal() +
   theme(legend.position = "bottom", legend.title = element_text(size = rel(0.75)), legend.text = element_text(size = rel(0.75)))
-ggsave("anytime_average.png", plot = g, device = "png", width = 6, height = 4)
+ggsave("/tmp/anytime_average.png", plot = g, device = "png", width = 6, height = 4)
+
+
+methods = unique(agg_budget$method)
+ranks = map_dtr(unique(agg_budget$scenario), function(scenario_) {
+  map_dtr(unique(agg_budget$instance), function(instance_) {
+    map_dtr(unique(agg_budget$target_variable), function(target_variable_) {
+      map_dtr(unique(agg_budget$cumbudget_scaled), function(cumbudget_scaled_) {
+        res = agg_budget[scenario == scenario_ & instance == instance_ & target_variable == target_variable_ & cumbudget_scaled == cumbudget_scaled_]
+        if (nrow(res) == 0L) {
+          return(data.table())
+        }
+        setorderv(res, "mean")
+        data.table(rank = match(methods, res$method), method = methods, scenario = scenario_, instance = instance_, cumbudget_scaled = cumbudget_scaled_)
+      })
+    })
+  })
+})
+
+ranks_overall = ranks[, .(mean = mean(rank), se = sd(rank) / sqrt(.N)), by = .(method, cumbudget_scaled)]
+
+g = ggplot(aes(x = cumbudget_scaled, y = mean, colour = method, fill = method), data = ranks_overall) +
+  geom_line() +
+  geom_ribbon(aes(min = mean - se, max = mean + se), colour = NA, alpha = 0.3) +
+  labs(x = "Fraction of Budget Used", y = "Mean Rank", colour = "Optimizer", fill = "Optimizer") +
+  theme_minimal() +
+  theme(legend.position = "bottom", legend.title = element_text(size = rel(0.75)), legend.text = element_text(size = rel(0.75)))
+ggsave("/tmp/anytime_average_rank.pdf", plot = g, device = "pdf", width = 6, height = 4)
+
+best_agg = agg_budget[cumbudget_scaled == 1]
+best_agg[, problem := paste0(scenario, "_", instance, "_", target_variable)]
+tmp = - as.matrix(dcast(best_agg, problem ~ method, value.var = "mean")[, -1L])
+friedmanTest(tmp)
+pdf("/tmp/cd.pdf", width = 6, height = 4, pointsize = 10)
+plotCD(tmp, cex = 1)
+dev.off()

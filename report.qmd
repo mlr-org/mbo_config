@@ -1,5 +1,5 @@
 ---
-title: "MBO Config"
+title: "mlr3mbo - Configuration"
 format:
   html:
     embed-resources: true
@@ -39,11 +39,11 @@ archive[, improvement := .SD[parameter == "incumbent", mean_meta_score] < mean_m
 
 # Setup
 
-Coordinate descent on configurations of the `mlr3mbo` package (see search space).
-Each mbo configuration runs on the instances from YAHPO Gym SO v1 pure numeric with a budget of `ceiling(40 + 20 * sqrt(d))`.
-When the performance of the mbo run is the same as a random search with this budget, the configuration scores 0.
-When the performance of the mbo run is the same as a random search with 1,000,000 iterations, the score is 1.
-The score is averaged over all instances.
+Coordinate descent on configurations of the `mlr3mbo` package (see `search_space` below).
+Each MBO configuration runs on the instances from YAHPO-SO v1 pure numeric with a budget of `ceiling(40 + 20 * sqrt(d))`.
+When the performance of the MBO run is the same as a random search with this budget, the configuration scores 0.
+When the performance of the MBO run is the same as a random search with 1,000,000 iterations, the score is 1.
+The score is averaged over all `instances` (see below) and before that averaged over potential repeated runs (currently 3).
 
 ```{r}
 #| eval: false
@@ -62,7 +62,24 @@ search_space = ps(
 )
 ```
 
+```{r}
+#| eval: false
 
+instances = data.table(
+    benchmark = "pure_numeric",
+    scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
+    instance = c(
+        "167168", "189873", "189906",
+        "375", "458",
+        "14", "40499",
+        "16", "42",
+        "12", "1501", "16", "40499"
+    ),
+    target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
+    direction = rep("maximize", 13L),
+    budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L))
+  )
+```
 
 ```{r}
 #| echo: false
