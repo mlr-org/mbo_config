@@ -45,6 +45,8 @@ When the performance of the MBO run is the same as a random search with this bud
 When the performance of the MBO run is the same as a random search with 1,000,000 iterations, the score is 1.
 The score is averaged over all `instances` (see below) and before that averaged over potential repeated runs (currently 3).
 
+## mlr3mbo Search Space
+
 ```{r}
 #| eval: false
 
@@ -61,6 +63,10 @@ search_space = ps(
   lambda_decay = p_lgl(depends = acqf == "CB")
 )
 ```
+
+## Instances
+
+For the search space of the 13 pure numeric YAHPO-SO v1 instances, see `helper.R`.
 
 ```{r}
 #| eval: false
@@ -81,20 +87,23 @@ instances = data.table(
   )
 ```
 
+# Results
+
+Each row is the evaluation of a configuration on the instances.
+The green rows are the best performing configuration in each generation.
+The orange rows are the re-evalation of the incumbent configuration.
+The group rank is the rank of the configuration in the generation.
+The min and max score are the minimum and maximum score achieved on the instances.
+The parameter column indicates which parameter was changed.
+The subheadings show the batch number and the parameter that was changed.
+Bold mean scores are better than the incumbent.
+
 ```{r}
 #| echo: false
 #| column: screen
 #| label: tbl-mbo
 #| tbl-cap: |
-#|  Result of coordinate descent.
-#|  Each row is the evaluation of a configuration on the instances.
-#|  The green rows are the best performing configuration in each generation.
-#|  The orange rows are the re-evalation of the incumbent configuration.
-#|  The group rank is the rank of the configuration in the generation.
-#|  The min and max score are the minimum and maximum score archived on the instances.
-#|  The parameter column indicates which parameter was changed.
-#|  The subheadings show the batch number and the parameter that was changed.
-#|  Bold mean scores are better than the incumbent.
+#|  Result of coordinate descent for mlr3mbo configuration on YAHPO-SO v1 pure numeric.
 
 as_tibble(archive) %>%
  group_by(batch_nr, parameter) %>%

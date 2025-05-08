@@ -2622,9 +2622,11 @@ vertical-align: -.125em;
 
 </header>
 
-<section id="setup" class="level1 page-columns page-full">
+<section id="setup" class="level1">
 <h1>Setup</h1>
 <p>Coordinate descent on configurations of the <code>mlr3mbo</code> package (see <code>search_space</code> below). Each MBO configuration runs on the instances from YAHPO-SO v1 pure numeric with a budget of <code>ceiling(40 + 20 * sqrt(d))</code>. When the performance of the MBO run is the same as a random search with this budget, the configuration scores 0. When the performance of the MBO run is the same as a random search with 1,000,000 iterations, the score is 1. The score is averaged over all <code>instances</code> (see below) and before that averaged over potential repeated runs (currently 3).</p>
+<section id="mlr3mbo-search-space" class="level2">
+<h2 class="anchored" data-anchor-id="mlr3mbo-search-space">mlr3mbo Search Space</h2>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>search_space <span class="ot">=</span> <span class="fu">ps</span>(</span>
 <span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">log_scale =</span> <span class="fu">p_lgl</span>(),</span>
@@ -2639,6 +2641,10 @@ vertical-align: -.125em;
 <span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a>  <span class="at">lambda_decay =</span> <span class="fu">p_lgl</span>(<span class="at">depends =</span> acqf <span class="sc">==</span> <span class="st">&quot;CB&quot;</span>)</span>
 <span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
+<section id="instances" class="level2">
+<h2 class="anchored" data-anchor-id="instances">Instances</h2>
+<p>For the search space of the 13 pure numeric YAHPO-SO v1 instances, see <code>helper.R</code>.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>instances <span class="ot">=</span> <span class="fu">data.table</span>(</span>
 <span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>    <span class="at">benchmark =</span> <span class="st">&quot;pure_numeric&quot;</span>,</span>
@@ -2655,24 +2661,29 @@ vertical-align: -.125em;
 <span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">budget =</span> <span class="fu">rep</span>(<span class="fu">c</span>(126L, 77L, 100L, 100L, 147L), <span class="fu">c</span>(3L, 2L, 2L, 2L, 4L))</span>
 <span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>  )</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
+</section>
+</section>
+<section id="results" class="level1 page-columns page-full">
+<h1>Results</h1>
+<p>Each row is the evaluation of a configuration on the instances. The green rows are the best performing configuration in each generation. The orange rows are the re-evalation of the incumbent configuration. The group rank is the rank of the configuration in the generation. The min and max score are the minimum and maximum score achieved on the instances. The parameter column indicates which parameter was changed. The subheadings show the batch number and the parameter that was changed. Bold mean scores are better than the incumbent.</p>
 <div class="cell page-columns page-full">
 <div class="cell-output-display column-screen">
 <div id="tbl-mbo" class="anchored">
 
-<div id="lpyezuwvza" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
-<style>#lpyezuwvza table {
+<div id="bnsgxgxteo" style="padding-left:0px;padding-right:0px;padding-top:10px;padding-bottom:10px;overflow-x:auto;overflow-y:auto;width:auto;height:auto;">
+<style>#bnsgxgxteo table {
 font-family: system-ui, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 -webkit-font-smoothing: antialiased;
 -moz-osx-font-smoothing: grayscale;
 }
-#lpyezuwvza thead, #lpyezuwvza tbody, #lpyezuwvza tfoot, #lpyezuwvza tr, #lpyezuwvza td, #lpyezuwvza th {
+#bnsgxgxteo thead, #bnsgxgxteo tbody, #bnsgxgxteo tfoot, #bnsgxgxteo tr, #bnsgxgxteo td, #bnsgxgxteo th {
 border-style: none;
 }
-#lpyezuwvza p {
+#bnsgxgxteo p {
 margin: 0;
 padding: 0;
 }
-#lpyezuwvza .gt_table {
+#bnsgxgxteo .gt_table {
 display: table;
 border-collapse: collapse;
 line-height: normal;
@@ -2697,11 +2708,11 @@ border-left-style: none;
 border-left-width: 2px;
 border-left-color: #D3D3D3;
 }
-#lpyezuwvza .gt_caption {
+#bnsgxgxteo .gt_caption {
 padding-top: 4px;
 padding-bottom: 4px;
 }
-#lpyezuwvza .gt_title {
+#bnsgxgxteo .gt_title {
 color: #333333;
 font-size: 125%;
 font-weight: initial;
@@ -2712,7 +2723,7 @@ padding-right: 5px;
 border-bottom-color: #FFFFFF;
 border-bottom-width: 0;
 }
-#lpyezuwvza .gt_subtitle {
+#bnsgxgxteo .gt_subtitle {
 color: #333333;
 font-size: 85%;
 font-weight: initial;
@@ -2723,7 +2734,7 @@ padding-right: 5px;
 border-top-color: #FFFFFF;
 border-top-width: 0;
 }
-#lpyezuwvza .gt_heading {
+#bnsgxgxteo .gt_heading {
 background-color: #FFFFFF;
 text-align: center;
 border-bottom-color: #FFFFFF;
@@ -2734,12 +2745,12 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#lpyezuwvza .gt_bottom_border {
+#bnsgxgxteo .gt_bottom_border {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#lpyezuwvza .gt_col_headings {
+#bnsgxgxteo .gt_col_headings {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -2753,7 +2764,7 @@ border-right-style: none;
 border-right-width: 1px;
 border-right-color: #D3D3D3;
 }
-#lpyezuwvza .gt_col_heading {
+#bnsgxgxteo .gt_col_heading {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -2772,7 +2783,7 @@ padding-left: 5px;
 padding-right: 5px;
 overflow-x: hidden;
 }
-#lpyezuwvza .gt_column_spanner_outer {
+#bnsgxgxteo .gt_column_spanner_outer {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -2783,13 +2794,13 @@ padding-bottom: 0;
 padding-left: 4px;
 padding-right: 4px;
 }
-#lpyezuwvza .gt_column_spanner_outer:first-child {
+#bnsgxgxteo .gt_column_spanner_outer:first-child {
 padding-left: 0;
 }
-#lpyezuwvza .gt_column_spanner_outer:last-child {
+#bnsgxgxteo .gt_column_spanner_outer:last-child {
 padding-right: 0;
 }
-#lpyezuwvza .gt_column_spanner {
+#bnsgxgxteo .gt_column_spanner {
 border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
@@ -2800,10 +2811,10 @@ overflow-x: hidden;
 display: inline-block;
 width: 100%;
 }
-#lpyezuwvza .gt_spanner_row {
+#bnsgxgxteo .gt_spanner_row {
 border-bottom-style: hidden;
 }
-#lpyezuwvza .gt_group_heading {
+#bnsgxgxteo .gt_group_heading {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -2828,7 +2839,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 text-align: left;
 }
-#lpyezuwvza .gt_empty_group_heading {
+#bnsgxgxteo .gt_empty_group_heading {
 padding: 0.5px;
 color: #333333;
 background-color: #FFFFFF;
@@ -2842,13 +2853,13 @@ border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 vertical-align: middle;
 }
-#lpyezuwvza .gt_from_md > :first-child {
+#bnsgxgxteo .gt_from_md > :first-child {
 margin-top: 0;
 }
-#lpyezuwvza .gt_from_md > :last-child {
+#bnsgxgxteo .gt_from_md > :last-child {
 margin-bottom: 0;
 }
-#lpyezuwvza .gt_row {
+#bnsgxgxteo .gt_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -2866,7 +2877,7 @@ border-right-color: #D3D3D3;
 vertical-align: middle;
 overflow-x: hidden;
 }
-#lpyezuwvza .gt_stub {
+#bnsgxgxteo .gt_stub {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -2878,7 +2889,7 @@ border-right-color: #D3D3D3;
 padding-left: 5px;
 padding-right: 5px;
 }
-#lpyezuwvza .gt_stub_row_group {
+#bnsgxgxteo .gt_stub_row_group {
 color: #333333;
 background-color: #FFFFFF;
 font-size: 100%;
@@ -2891,13 +2902,13 @@ padding-left: 5px;
 padding-right: 5px;
 vertical-align: top;
 }
-#lpyezuwvza .gt_row_group_first td {
+#bnsgxgxteo .gt_row_group_first td {
 border-top-width: 2px;
 }
-#lpyezuwvza .gt_row_group_first th {
+#bnsgxgxteo .gt_row_group_first th {
 border-top-width: 2px;
 }
-#lpyezuwvza .gt_summary_row {
+#bnsgxgxteo .gt_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -2906,14 +2917,14 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#lpyezuwvza .gt_first_summary_row {
+#bnsgxgxteo .gt_first_summary_row {
 border-top-style: solid;
 border-top-color: #D3D3D3;
 }
-#lpyezuwvza .gt_first_summary_row.thick {
+#bnsgxgxteo .gt_first_summary_row.thick {
 border-top-width: 2px;
 }
-#lpyezuwvza .gt_last_summary_row {
+#bnsgxgxteo .gt_last_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -2922,7 +2933,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#lpyezuwvza .gt_grand_summary_row {
+#bnsgxgxteo .gt_grand_summary_row {
 color: #333333;
 background-color: #FFFFFF;
 text-transform: inherit;
@@ -2931,7 +2942,7 @@ padding-bottom: 8px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#lpyezuwvza .gt_first_grand_summary_row {
+#bnsgxgxteo .gt_first_grand_summary_row {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -2940,7 +2951,7 @@ border-top-style: double;
 border-top-width: 6px;
 border-top-color: #D3D3D3;
 }
-#lpyezuwvza .gt_last_grand_summary_row_top {
+#bnsgxgxteo .gt_last_grand_summary_row_top {
 padding-top: 8px;
 padding-bottom: 8px;
 padding-left: 5px;
@@ -2949,10 +2960,10 @@ border-bottom-style: double;
 border-bottom-width: 6px;
 border-bottom-color: #D3D3D3;
 }
-#lpyezuwvza .gt_striped {
+#bnsgxgxteo .gt_striped {
 background-color: rgba(128, 128, 128, 0.05);
 }
-#lpyezuwvza .gt_table_body {
+#bnsgxgxteo .gt_table_body {
 border-top-style: solid;
 border-top-width: 2px;
 border-top-color: #D3D3D3;
@@ -2960,7 +2971,7 @@ border-bottom-style: solid;
 border-bottom-width: 2px;
 border-bottom-color: #D3D3D3;
 }
-#lpyezuwvza .gt_footnotes {
+#bnsgxgxteo .gt_footnotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -2973,7 +2984,7 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#lpyezuwvza .gt_footnote {
+#bnsgxgxteo .gt_footnote {
 margin: 0px;
 font-size: 90%;
 padding-top: 4px;
@@ -2981,7 +2992,7 @@ padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#lpyezuwvza .gt_sourcenotes {
+#bnsgxgxteo .gt_sourcenotes {
 color: #333333;
 background-color: #FFFFFF;
 border-bottom-style: none;
@@ -2994,68 +3005,68 @@ border-right-style: none;
 border-right-width: 2px;
 border-right-color: #D3D3D3;
 }
-#lpyezuwvza .gt_sourcenote {
+#bnsgxgxteo .gt_sourcenote {
 font-size: 90%;
 padding-top: 4px;
 padding-bottom: 4px;
 padding-left: 5px;
 padding-right: 5px;
 }
-#lpyezuwvza .gt_left {
+#bnsgxgxteo .gt_left {
 text-align: left;
 }
-#lpyezuwvza .gt_center {
+#bnsgxgxteo .gt_center {
 text-align: center;
 }
-#lpyezuwvza .gt_right {
+#bnsgxgxteo .gt_right {
 text-align: right;
 font-variant-numeric: tabular-nums;
 }
-#lpyezuwvza .gt_font_normal {
+#bnsgxgxteo .gt_font_normal {
 font-weight: normal;
 }
-#lpyezuwvza .gt_font_bold {
+#bnsgxgxteo .gt_font_bold {
 font-weight: bold;
 }
-#lpyezuwvza .gt_font_italic {
+#bnsgxgxteo .gt_font_italic {
 font-style: italic;
 }
-#lpyezuwvza .gt_super {
+#bnsgxgxteo .gt_super {
 font-size: 65%;
 }
-#lpyezuwvza .gt_footnote_marks {
+#bnsgxgxteo .gt_footnote_marks {
 font-size: 75%;
 vertical-align: 0.4em;
 position: initial;
 }
-#lpyezuwvza .gt_asterisk {
+#bnsgxgxteo .gt_asterisk {
 font-size: 100%;
 vertical-align: 0;
 }
-#lpyezuwvza .gt_indent_1 {
+#bnsgxgxteo .gt_indent_1 {
 text-indent: 5px;
 }
-#lpyezuwvza .gt_indent_2 {
+#bnsgxgxteo .gt_indent_2 {
 text-indent: 10px;
 }
-#lpyezuwvza .gt_indent_3 {
+#bnsgxgxteo .gt_indent_3 {
 text-indent: 15px;
 }
-#lpyezuwvza .gt_indent_4 {
+#bnsgxgxteo .gt_indent_4 {
 text-indent: 20px;
 }
-#lpyezuwvza .gt_indent_5 {
+#bnsgxgxteo .gt_indent_5 {
 text-indent: 25px;
 }
-#lpyezuwvza .katex-display {
+#bnsgxgxteo .katex-display {
 display: inline-flex !important;
 margin-bottom: 0.75em !important;
 }
-#lpyezuwvza div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
+#bnsgxgxteo div.Reactable > div.rt-table > div.rt-thead > div.rt-tr.rt-tr-group-header > div.rt-th-group:after {
 height: 0px !important;
 }
 </style>
-<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false"><caption>Table 1:  Result of coordinate descent. Each row is the evaluation of a configuration on the instances. The green rows are the best performing configuration in each generation. The orange rows are the re-evalation of the incumbent configuration. The group rank is the rank of the configuration in the generation. The min and max score are the minimum and maximum score archived on the instances. The parameter column indicates which parameter was changed. The subheadings show the batch number and the parameter that was changed. Bold mean scores are better than the incumbent. </caption>
+<table class="gt_table" data-quarto-disable-processing="false" data-quarto-bootstrap="false"><caption>Table 1:  Result of coordinate descent for mlr3mbo configuration on YAHPO-SO v1 pure numeric. </caption>
   <thead>
     <tr class="gt_col_headings">
       <th class="gt_col_heading gt_columns_bottom_border gt_center" rowspan="1" colspan="1" scope="col" id="log_scale">Log Scale</th>
