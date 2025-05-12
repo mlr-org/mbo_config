@@ -4,10 +4,9 @@
 #PBS -A WYOM0202
 #PBS -j oe
 #PBS -k eod
-#PBS -q main
-#PBS -l job_priority=economy
-#PBS -l select=1:ncpus=128
-#PBS -l walltime=12:00:00
+#PBS -q develop
+#PBS -l walltime=00:05:00
+#PBS -l select=1:ncpus=128:mem=235GB
 #PBS -o <%= log.file %>
 
 ### Set temp to scratch
