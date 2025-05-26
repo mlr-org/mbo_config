@@ -11,7 +11,7 @@ library(checkmate)
 
 source("submit_ncar.R")
 
-YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
+YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", "mixed_deps"
 
 reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
 library(reticulate)
@@ -114,11 +114,12 @@ addAlgorithm(
     job,
     data,
     instance,
-    log_scale,
+    input_trafo,
+    output_trafo,
     init,
     init_size_fraction,
     random_interleave_iter,
-    rf_type,
+    surrogate,
     acqf,
     lambda,
     acqopt,
