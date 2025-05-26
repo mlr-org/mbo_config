@@ -201,12 +201,12 @@ addAlgorithm(
     } else if (acqopt == "RS") {
       AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 30000L))
     } else if (acqopt == "FS") {
-      n_repeats = 5L
+      n_repeats = 3L
       maxit = 9L
       batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
     } else if (acqopt == "LS") {
-      acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 10000L), terminator = trm("evals", n_evals = 30000L))
+      acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_point = 100L), terminator = trm("evals", n_evals = 30000L))
       acq_optimizer
     }
     acq_optimizer$param_set$values$catch_errors = FALSE
