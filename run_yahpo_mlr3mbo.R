@@ -9,7 +9,7 @@ library(paradox)
 library(R6)
 library(checkmate)
 
-YAHPO_BENCHMARK = ""  # "pure_numeric", "mixed", ""
+YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
 
 reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
 library(reticulate)
@@ -439,7 +439,8 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = prob_names
 
 # add jobs for optimizers
-optimizers = data.table(algorithm = c("mlr3mbo_configured"))
+#optimizers = data.table(algorithm = c("mlr3mbo_configured"))
+optimizers = data.table(algorithm = c("mlr3mbo_pure_numeric_configured"))
 
 for (i in seq_len(nrow(optimizers))) {
   algo_designs = setNames(list(optimizers[i, ]), nm = optimizers[i, ]$algorithm)

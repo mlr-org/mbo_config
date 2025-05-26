@@ -31,7 +31,7 @@ registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/gla
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
-    conf.file = "batchtools.conf.R",
+    conf.file = "batchtools.conf.main.R",
     packages = packages,
     source = source_files
   )
@@ -39,7 +39,7 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 } else {
   reg = loadRegistry(
     file.dir = registry_name,
-    conf.file = "batchtools.conf.R",
+    conf.file = "batchtools.conf.main.R",
     writeable = TRUE
   )
 }
@@ -371,7 +371,7 @@ objective = ObjectiveRFunDt$new(
     ades = list(mbo = xdt)
     job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
     #ids[, chunk := batchtools::chunk(job.id, chunk.size = 96L, shuffle = FALSE)]
-    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho.tmpl", n_jobs = 128)
+    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L)
     waitForJobs(ids = job_ids, reg = reg)
 
     while(TRUE) {
@@ -379,7 +379,7 @@ objective = ObjectiveRFunDt$new(
         message("Resubmitting expired jobs")
         expired_ids = findExpired()
         #expired_ids[, chunk := batchtools::chunk(job.id, chunk.size = 96L, shuffle = FALSE)]
-        resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho.tmpl", n_jobs = 128)
+        resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L)
         waitForJobs(ids = resubmitted_ids, reg = reg)
       } else {
         break
