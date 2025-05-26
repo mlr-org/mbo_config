@@ -13,7 +13,7 @@ source("submit_ncar.R")
 
 YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
 
-reticulate::use_condaenv("yahpo_gym", required = TRUE)
+reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
 library(reticulate)
 yahpo_gym = import("yahpo_gym")
 
@@ -128,7 +128,7 @@ addAlgorithm(
     config_hash
     ) {
 
-    reticulate::use_condaenv("yahpo_gym", required = TRUE)
+    reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
     library(yahpogym)
     logger = lgr::get_logger("bbotk")
     logger$set_threshold("warn")
