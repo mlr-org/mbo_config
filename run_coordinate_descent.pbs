@@ -2,10 +2,11 @@
 
 #PBS -N coordinate_descent
 #PBS -A WYOM0202
-#PBS -q main
-#PBS -l select=1:ncpus=128:mem=235GB
-#PBS -l walltime=12:00:00
 #PBS -j oe
+#PBS -k eod
+#PBS -q develop
+#PBS -l select=1:ncpus=5:mem=20GB
+#PBS -l walltime=06:00:00
 #PBS -o coordinate_descent.log
 
 ## Setup temporary directory

@@ -1,5 +1,5 @@
 ---
-title: "mlr3mbo - Configuration"
+title: "mlr3mbo - Configuration Pure Numeric"
 format:
   html:
     embed-resources: true
@@ -15,7 +15,7 @@ library(mlr3misc)
 library(dplyr)
 library(gt)
 
-archive = readRDS("pure_numeric_intermediate_instance.rds")
+archive = readRDS("pure_numeric_coordinate_descent.rds")$archive$data
 
 other_stats = rbindlist(map(seq(nrow(archive)), function(i) {
   data.table(

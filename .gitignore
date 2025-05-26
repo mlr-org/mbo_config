@@ -9,3 +9,4 @@ renv/
 .Rhistory
 *.html
 __pycache__/
+log_nodes/

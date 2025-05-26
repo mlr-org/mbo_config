@@ -9,9 +9,11 @@ library(paradox)
 library(R6)
 library(checkmate)
 
-YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
+source("submit_ncar.R")
 
-reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
+YAHPO_BENCHMARK = ""  # "pure_numeric", "mixed", ""
+
+reticulate::use_condaenv("yahpo_gym", required = TRUE)
 library(reticulate)
 yahpo_gym = import("yahpo_gym")
 
@@ -25,11 +27,11 @@ for (source_file in source_files) {
   source(source_file)
 }
 
-registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/lschneider/yahpo_YAHPO_BENCHMARK_coordinate_descent")
+registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/marcbecker/yahpo_YAHPO_BENCHMARK_coordinate_descent")
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
-    conf.file = "batchtools.conf.coordinate_descent.R",
+    conf.file = "batchtools.conf.R",
     packages = packages,
     source = source_files
   )
@@ -37,7 +39,7 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 } else {
   reg = loadRegistry(
     file.dir = registry_name,
-    conf.file = "batchtools.conf.coordinate_descent.R",
+    conf.file = "batchtools.conf.R",
     writeable = TRUE
   )
 }
@@ -124,8 +126,8 @@ addAlgorithm(
     id,
     config_hash
     ) {
-
-    reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
+    
+    reticulate::use_condaenv("yahpo_gym", required = TRUE)
     library(yahpogym)
     logger = lgr::get_logger("bbotk")
     logger$set_threshold("warn")
@@ -304,14 +306,14 @@ objective = ObjectiveRFunDt$new(
     reg,
     rs_reference
     ) {
-    n_repls = 3L
+    n_repls = 15L
     xdt[, id := .I]
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
 
     ades = list(mbo = xdt)
-    ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
+    job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
     #ids[, chunk := batchtools::chunk(job.id, chunk.size = 96L, shuffle = FALSE)]
-    job_ids = submitJobs(ids = ids, reg = reg)$job.id
+    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho.tmpl", n_jobs = 128)
     waitForJobs(ids = job_ids, reg = reg)
 
     while(TRUE) {
@@ -319,7 +321,7 @@ objective = ObjectiveRFunDt$new(
         message("Resubmitting expired jobs")
         expired_ids = findExpired()
         #expired_ids[, chunk := batchtools::chunk(job.id, chunk.size = 96L, shuffle = FALSE)]
-        resubmitted_ids = submitJobs(ids = expired_ids, reg = reg)
+        resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho.tmpl", n_jobs = 128)
         waitForJobs(ids = resubmitted_ids, reg = reg)
       } else {
         break
@@ -386,7 +388,7 @@ callback_backup = callback_batch("bbotk.backup",
   }
 )
 
-state_path = "/glade/derecho/scratch/lschneider/YAHPO_BENCHMARK_intermediate_instance.rds"
+state_path = "/glade/derecho/scratch/marcbecker/YAHPO_BENCHMARK_intermediate_instance.rds"
 callback_backup$state$path = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = state_path)
 
 optim_instance = oi(
@@ -407,5 +409,5 @@ if (file.exists(callback_backup$state$path)) {
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$optimize(optim_instance)
 
-save_path = "/glade/derecho/scratch/lschneider/YAHPO_BENCHMARK_coordinate_descent.rds"
+save_path = "/glade/derecho/scratch/marcbecker/YAHPO_BENCHMARK_coordinate_descent.rds"
 saveRDS(optim_instance, gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = save_path))
