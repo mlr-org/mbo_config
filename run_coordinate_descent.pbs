@@ -4,8 +4,8 @@
 #PBS -A WYOM0202
 #PBS -j oe
 #PBS -k eod
-#PBS -q develop
-#PBS -l select=1:ncpus=5:mem=20GB
+#PBS -q main
+#PBS -l select=1:ncpus=8:mem=32GB
 #PBS -l walltime=12:00:00
 #PBS -o coordinate_descent.log
 

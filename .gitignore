@@ -10,3 +10,4 @@ renv/
 *.html
 __pycache__/
 log_nodes/
+coordinate_descent.log
