@@ -6,7 +6,7 @@
 #PBS -k eod
 #PBS -q develop
 #PBS -l select=1:ncpus=5:mem=20GB
-#PBS -l walltime=06:00:00
+#PBS -l walltime=12:00:00
 #PBS -o coordinate_descent.log
 
 ## Setup temporary directory
@@ -18,4 +18,4 @@ ml conda
 conda activate r-4.3
 
 ## Execute job
-Rscript coordinate_descent.R
+Rscript coordinate_descent_pure_numeric.R
