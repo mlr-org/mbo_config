@@ -9,7 +9,7 @@ library(paradox)
 library(R6)
 library(checkmate)
 
-YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
+YAHPO_BENCHMARK = ""  # "pure_numeric", "mixed", ""
 
 reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
 library(reticulate)
@@ -39,17 +39,6 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
   future::plan("sequential")
 
   optim_instance = make_optim_instance(instance)
-
-  #log_scale = TRUE
-  #init = "sobol"
-  #init_size_fraction = "0.25"
-  #random_interleave_iter = "0"
-  #rf_type = "standard"
-  #acqf = "EI"
-  #lambda = NA_character_
-  #acqopt = "RS"
-  #epsilon_decay = FALSE
-  #lambda_decay = NA
 
   log_scale = TRUE
   init = "sobol"
@@ -125,6 +114,10 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
   )
   surrogate$param_set$values$catch_errors = FALSE
 
+  if (log_scale) {
+    surrogate$output_trafo = OutputTrafoLog$new(invert_posterior = FALSE)
+  }
+
   acq_optimizer = if (acqopt == "RS_1000") {
     AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
   } else if (acqopt == "RS") {
@@ -135,13 +128,12 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
     batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
     AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
   } else if (acqopt == "LS") {
-    acq_optimizer = AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_points = 100L), terminator = trm("evals", n_evals = 30000L))
-    acq_optimizer
+    AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_points = 100L), terminator = trm("evals", n_evals = 30000L))
   }
   acq_optimizer$param_set$values$catch_errors = FALSE
 
   acq_function = if (acqf == "EI" && log_scale) {
-    AcqFunctionLogEI$new()
+    AcqFunctionEILog$new()
   } else if (acqf == "EI" && !log_scale) {
     AcqFunctionEI$new()
   } else if (acqf == "CB") {
@@ -173,29 +165,230 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
     acq_function$callbacks = list(callback_decay_lambda)
   }
 
-  if (!log_scale) {
-    bayesopt_ego(
+  bayesopt_ego(
       optim_instance,
       surrogate = surrogate,
       acq_function = acq_function,
       acq_optimizer = acq_optimizer,
       random_interleave_iter = random_interleave_iter,
       init_design_size = init_design_size)
-  } else {
-    bayesopt_ego_log(
-      optim_instance,
-      surrogate = surrogate,
-      acq_function = acq_function,
-      acq_optimizer = acq_optimizer,
-      random_interleave_iter = random_interleave_iter,
-      init_design_size = init_design_size)
-  }
 
   optim_instance
 }
 
+mlr3mbo_wrapper_pure_numeric = function(job, data, instance, ...) {
+  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
+  library(yahpogym)
+  logger = lgr::get_logger("bbotk")
+  logger$set_threshold("warn")
+  future::plan("sequential")
+
+  optim_instance = make_optim_instance(instance)
+
+  input_trafo = "none"
+  output_trafo = "none"
+  init = "random"
+  init_size_fraction = "0.25"
+  random_interleave_iter = "0"
+  surrogate = "gp_5_2"
+  acqf = "EI"
+  lambda = NA_character_
+  acqopt = "RS_1000"
+  epsilon_decay = FALSE
+  lambda_decay = NA
+
+  random_interleave_iter = as.numeric(random_interleave_iter)
+  init_size_fraction = as.numeric(init_size_fraction)
+  lambda = as.numeric(lambda)
+  init_design_size = ceiling(as.numeric(init_size_fraction) * instance$budget)
+  init_design = if (init == "random") {
+    generate_design_random(optim_instance$search_space, n = init_design_size)$data
+  } else if (init == "lhs") {
+    generate_design_lhs(optim_instance$search_space, n = init_design_size)$data
+  } else if (init == "sobol") {
+    generate_design_sobol(optim_instance$search_space, n = init_design_size)$data
+  }
+
+  optim_instance$eval_batch(init_design)
+
+  learner = LearnerRegrRangerMbo$new()
+  learner$predict_type = "se"
+  learner$param_set$values$keep.inbag = TRUE
+
+  if (surrogate == "rf_standard") {
+    learner = LearnerRegrRangerMbo$new()
+    learner$predict_type = "se"
+    learner$param_set$values$keep.inbag = TRUE
+    learner$param_set$values$se.method = "jack"
+    learner$param_set$values$splitrule = "variance"
+    learner$param_set$values$num.trees = 1000L
+  } else if (surrogate == "rf_extratrees") {
+    learner = LearnerRegrRangerMbo$new()
+    learner$predict_type = "se"
+    learner$param_set$values$keep.inbag = TRUE
+    learner$param_set$values$se.method = "jack"
+    learner$param_set$values$splitrule = "extratrees"
+    learner$param_set$values$num.random.splits = 1L
+    learner$param_set$values$num.trees = 1000L
+  } else if (surrogate == "rf_smaclike_simple") {
+    learner = LearnerRegrRangerMbo$new()
+    learner$predict_type = "se"
+    learner$param_set$values$se.method = "simple"
+    learner$param_set$values$splitrule = "variance"
+    learner$param_set$values$num.trees = 10L
+    learner$param_set$values$replace = TRUE
+    learner$param_set$values$sample.fraction = 1
+    learner$param_set$values$min.node.size = 3
+    learner$param_set$values$min.bucket = 3
+    learner$param_set$values$mtry.ratio = 5/6
+  } else if (surrogate == "rf_smaclike_law_of_total_variance") {
+    learner = LearnerRegrRangerMbo$new()
+    learner$predict_type = "se"
+    learner$param_set$values$se.method = "law_of_total_variance"
+    learner$param_set$values$splitrule = "variance"
+    learner$param_set$values$num.trees = 10L
+    learner$param_set$values$replace = TRUE
+    learner$param_set$values$sample.fraction = 1
+    learner$param_set$values$min.node.size = 3
+    learner$param_set$values$min.bucket = 3
+    learner$param_set$values$mtry.ratio = 5/6
+  } else if (surrogate == "gp_rbf") {
+    learner = LearnerRegrKM$new()
+    learner$predict_type = "se"
+    learner$param_set$values$control = list(trace = FALSE)
+    learner$param_set$values$optim.method = "gen"
+    learner$param_set$values$covtype = "gauss"
+  } else if (surrogate == "gp_3_2") {
+    learner = LearnerRegrKM$new()
+    learner$predict_type = "se"
+    learner$param_set$values$control = list(trace = FALSE)
+    learner$param_set$values$optim.method = "gen"
+    learner$param_set$values$covtype = "matern3_2"
+  } else if (surrogate == "gp_5_2") {
+    learner = LearnerRegrKM$new()
+    learner$predict_type = "se"
+    learner$param_set$values$control = list(trace = FALSE)
+    learner$param_set$values$optim.method = "gen"
+    learner$param_set$values$covtype = "matern5_2"
+  }
+
+  surrogate = SurrogateLearner$new(learner)
+  surrogate$param_set$values$catch_errors = FALSE
+
+  if (input_trafo == "unitcube") {
+    surrogate$input_trafo = InputTrafoUnitcube$new()
+  }
+
+  if (output_trafo == "standardize") {
+    surrogate$output_trafo = OutputTrafoStandardize$new()
+  } else if (output_trafo == "log") {
+    surrogate$output_trafo = OutputTrafoLog$new(invert_posterior = FALSE)
+  }
+
+  acq_optimizer = if (acqopt == "RS_1000") {
+    AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
+  } else if (acqopt == "RS") {
+    AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 30000L))
+  } else if (acqopt == "FS") {
+    n_repeats = 3L
+    maxit = 9L
+    batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
+    AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
+  } else if (acqopt == "LS") {
+    AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_point = 100L), terminator = trm("evals", n_evals = 30000L))
+  } else if (acqopt == "DIRECT") {
+    optimizer = opt("chain",
+      optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("nloptr", algorithm = "NLOPT_GN_DIRECT_L")), times = 10L),
+      terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
+    cb = callback_batch("start_values",
+      on_optimization_begin = function(callback, context) {
+      if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
+        start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
+        context$optimizer$param_set$values$start_values = "custom"
+        context$optimizer$param_set$values$start = start
+      }
+    })
+    acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
+    acq_optimizer
+  } else if (acqopt == "CMAES") {
+    optimizer = opt("chain",
+      optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("cmaes")), times = 10L),
+      terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
+    cb = callback_batch("start_values",
+      on_optimization_begin = function(callback, context) {
+      if (class(context$optimizer)[1L] == "OptimizerBatchCmaes") {
+        start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
+        context$optimizer$param_set$values$start_values = "custom"
+        context$optimizer$param_set$values$start = start
+      }
+    })
+    acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
+    acq_optimizer
+  } else if (acqopt == "LBFGSB") {
+    optimizer = opt("chain",
+      optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("nloptr", algorithm = "NLOPT_LD_LBFGS", approximate_eval_grad_f = TRUE)), times = 10L),
+      terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
+    cb = callback_batch("start_values",
+      on_optimization_begin = function(callback, context) {
+      if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
+        start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
+        context$optimizer$param_set$values$start_values = "custom"
+        context$optimizer$param_set$values$start = start
+      }
+    })
+    acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
+    acq_optimizer
+  }
+  acq_optimizer$param_set$values$catch_errors = FALSE
+
+  acq_function = if (acqf == "EI" && output_trafo == "log") {
+    AcqFunctionEILog$new()
+  } else if (acqf == "EI" && output_trafo != "log") {
+    AcqFunctionEI$new()
+  } else if (acqf == "CB") {
+    AcqFunctionCB$new(lambda = as.numeric(lambda))
+  } else if (acqf == "PI") {
+    AcqFunctionPI$new()
+  } else if (acqf == "Mean") {
+    AcqFunctionMean$new()
+  }
+
+  if (isTRUE(epsilon_decay)) {
+    acq_function$constants$values$epsilon = 0.1
+    callback_decay_epsilon = callback_batch("mlr3mbo.decay_epsilon",
+      on_optimization_end = function(callback, context) {
+        epsilon = context$instance$objective$constants$get_values()[["epsilon"]]
+        context$instance$objective$constants$set_values("epsilon" = epsilon * 0.99)
+      }
+    )
+    acq_function$callbacks = list(callback_decay_epsilon)
+  }
+
+  if (isTRUE(lambda_decay)) {
+    callback_decay_lambda = callback_batch("mlr3mbo.decay_lambda",
+      on_optimization_end = function(callback, context) {
+        lambda = context$instance$objective$constants$get_values()[["lambda"]]
+        context$instance$objective$constants$set_values("lambda" = lambda * 0.99)
+      }
+    )
+    acq_function$callbacks = list(callback_decay_lambda)
+  }
+
+  bayesopt_ego(
+      optim_instance,
+      surrogate = surrogate,
+      acq_function = acq_function,
+      acq_optimizer = acq_optimizer,
+      random_interleave_iter = random_interleave_iter,
+      init_design_size = init_design_size)
+
+  optim_instance
+}
+
+
 # add algorithms
 addAlgorithm("mlr3mbo_configured", fun = mlr3mbo_wrapper)
+addAlgorithm("mlr3mbo_pure_numeric_configured", fun = mlr3mbo_wrapper_pure_numeric)
 
 if (YAHPO_BENCHMARK == "pure_numeric") {
   setup = data.table(

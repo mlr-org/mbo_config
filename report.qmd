@@ -40,7 +40,7 @@ archive[, improvement := .SD[parameter == "incumbent", mean_meta_score] < mean_m
 # Setup
 
 Coordinate descent on configurations of the `mlr3mbo` package (see `search_space` below).
-Each MBO configuration runs on the instances from YAHPO-SO v1 pure numeric with a budget of `ceiling(40 + 20 * sqrt(d))`.
+Each MBO configuration runs on the instances from YAHPO-SO v1 with a budget of `ceiling(40 + 20 * sqrt(d))`.
 When the performance of the MBO run is the same as a random search with this budget, the configuration scores 0.
 When the performance of the MBO run is the same as a random search with 1,000,000 iterations, the score is 1.
 The score is averaged over all `instances` (see below) and before that averaged over potential repeated runs (currently 3).
@@ -66,13 +66,13 @@ search_space = ps(
 
 ## Instances
 
-For the search space of the 13 pure numeric YAHPO-SO v1 instances, see `helper.R`.
+For the search space of the 20 YAHPO-SO v1 instances, see `helper.R`.
 
 ```{r}
 #| eval: false
 
 instances = data.table(
-    benchmark = "mixed_deps",
+    benchmark = "",
     scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
     instance = c(
         "167168", "189873", "189906",
@@ -105,7 +105,7 @@ Bold mean scores are better than the incumbent.
 #| column: screen
 #| label: tbl-mbo
 #| tbl-cap: |
-#|  Result of coordinate descent for mlr3mbo configuration on YAHPO-SO v1 pure numeric.
+#|  Result of coordinate descent for mlr3mbo configuration on YAHPO-SO v1.
 
 as_tibble(archive) %>%
  group_by(batch_nr, parameter) %>%

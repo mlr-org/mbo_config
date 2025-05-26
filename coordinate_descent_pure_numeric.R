@@ -11,7 +11,7 @@ library(checkmate)
 
 source("submit_ncar.R")
 
-YAHPO_BENCHMARK = ""  # "pure_numeric", "mixed", ""
+YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
 
 reticulate::use_condaenv("yahpo_gym", required = TRUE)
 library(reticulate)
@@ -95,14 +95,15 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = prob_names
 
 search_space = ps(
-  log_scale = p_lgl(),
+  input_trafo = p_fct(c("none", "unitcube")),
+  output_trafo = p_fct(c("none", "standardize", "log")),
   init = p_fct(c("random", "lhs", "sobol")),
   init_size_fraction = p_fct(c("0.05", "0.10", "0.25")),
   random_interleave_iter = p_fct(c("0", "2", "5", "10")),
-  rf_type = p_fct(c("standard", "extratrees", "smaclike_simple", "smaclike_law_of_total_variance")),
+  surrogate = p_fct(c("rf_standard", "rf_extratrees", "rf_smaclike_simple", "rf_smaclike_law_of_total_variance", "gp_rbf", "gp_3_2", "gp_5_2")),
   acqf = p_fct(c("EI", "CB", "PI", "Mean")),
   lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
-  acqopt = p_fct(c("RS_1000", "RS", "FS", "LS")),
+  acqopt = p_fct(c("RS_1000", "RS", "FS", "LS", "DIRECT", "CMAES", "LBFGSB")),
   epsilon_decay = p_lgl(depends = acqf == "EI"),
   lambda_decay = p_lgl(depends = acqf == "CB")
 )
@@ -153,16 +154,24 @@ addAlgorithm(
     learner$predict_type = "se"
     learner$param_set$values$keep.inbag = TRUE
 
-    if (rf_type == "standard") {
+    if (surrogate == "rf_standard") {
+      learner = LearnerRegrRangerMbo$new()
+      learner$predict_type = "se"
+      learner$param_set$values$keep.inbag = TRUE
       learner$param_set$values$se.method = "jack"
       learner$param_set$values$splitrule = "variance"
       learner$param_set$values$num.trees = 1000L
-    } else if (rf_type == "extratrees") {
+    } else if (surrogate == "rf_extratrees") {
+      learner = LearnerRegrRangerMbo$new()
+      learner$predict_type = "se"
+      learner$param_set$values$keep.inbag = TRUE
       learner$param_set$values$se.method = "jack"
       learner$param_set$values$splitrule = "extratrees"
       learner$param_set$values$num.random.splits = 1L
       learner$param_set$values$num.trees = 1000L
-    } else if (rf_type == "smaclike_simple") {
+    } else if (surrogate == "rf_smaclike_simple") {
+      learner = LearnerRegrRangerMbo$new()
+      learner$predict_type = "se"
       learner$param_set$values$se.method = "simple"
       learner$param_set$values$splitrule = "variance"
       learner$param_set$values$num.trees = 10L
@@ -171,7 +180,9 @@ addAlgorithm(
       learner$param_set$values$min.node.size = 3
       learner$param_set$values$min.bucket = 3
       learner$param_set$values$mtry.ratio = 5/6
-    } else if (rf_type == "smaclike_law_of_total_variance") {
+    } else if (surrogate == "rf_smaclike_law_of_total_variance") {
+      learner = LearnerRegrRangerMbo$new()
+      learner$predict_type = "se"
       learner$param_set$values$se.method = "law_of_total_variance"
       learner$param_set$values$splitrule = "variance"
       learner$param_set$values$num.trees = 10L
@@ -180,25 +191,36 @@ addAlgorithm(
       learner$param_set$values$min.node.size = 3
       learner$param_set$values$min.bucket = 3
       learner$param_set$values$mtry.ratio = 5/6
+    } else if (surrogate == "gp_rbf") {
+      learner = LearnerRegrKM$new()
+      learner$predict_type = "se"
+      learner$param_set$values$control = list(trace = FALSE)
+      learner$param_set$values$optim.method = "gen"
+      learner$param_set$values$covtype = "gauss"
+    } else if (surrogate == "gp_3_2") {
+      learner = LearnerRegrKM$new()
+      learner$predict_type = "se"
+      learner$param_set$values$control = list(trace = FALSE)
+      learner$param_set$values$optim.method = "gen"
+      learner$param_set$values$covtype = "matern3_2"
+    } else if (surrogate == "gp_5_2") {
+      learner = LearnerRegrKM$new()
+      learner$predict_type = "se"
+      learner$param_set$values$control = list(trace = FALSE)
+      learner$param_set$values$optim.method = "gen"
+      learner$param_set$values$covtype = "matern5_2"
     }
 
-    surrogate = SurrogateLearner$new(
-      #GraphLearner$new(
-      #  po("colapply", applicator = as.factor, affect_columns = selector_type("character")) %>>%
-      #  po("imputesample", affect_columns = selector_type("logical")) %>>%
-      #  po("imputeoor", multiplier = 3, affect_columns = selector_type(c("integer", "numeric", "character", "factor", "ordered"))) %>>%
-      #  po("fixfactors", affect_columns = selector_type(c("character", "factor", "ordered")), droplevels = TRUE) %>>%
-      #  po("imputesample", id = "final_imputesample", affect_columns = selector_type(c("character", "factor", "ordered"))) %>>%
-      #  learner
-      #)
-      GraphLearner$new(
-        ppl("robustify", learner = learner, impute_missings = TRUE, factors_to_numeric = FALSE, ordered_action = "ignore", character_action = "factor", POSIXct_action = "ignore") %>>%
-        learner
-      )
-    )
+    surrogate = SurrogateLearner$new(learner)
     surrogate$param_set$values$catch_errors = FALSE
 
-    if (log_scale) {
+    if (input_trafo == "unitcube") {
+      surrogate$input_trafo = InputTrafoUnitcube$new()
+    }
+
+    if (output_trafo == "standardize") {
+      surrogate$output_trafo = OutputTrafoStandardize$new()
+    } else if (output_trafo == "log") {
       surrogate$output_trafo = OutputTrafoLog$new(invert_posterior = FALSE)
     }
 
@@ -213,12 +235,54 @@ addAlgorithm(
       AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
     } else if (acqopt == "LS") {
       AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_point = 100L), terminator = trm("evals", n_evals = 30000L))
+    } else if (acqopt == "DIRECT") {
+      optimizer = opt("chain",
+        optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("nloptr", algorithm = "NLOPT_GN_DIRECT_L")), times = 10L),
+        terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
+      cb = callback_batch("start_values",
+        on_optimization_begin = function(callback, context) {
+        if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
+          start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
+          context$optimizer$param_set$values$start_values = "custom"
+          context$optimizer$param_set$values$start = start
+        }
+      })
+      acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
+      acq_optimizer
+    } else if (acqopt == "CMAES") {
+      optimizer = opt("chain",
+        optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("cmaes")), times = 10L),
+        terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
+      cb = callback_batch("start_values",
+        on_optimization_begin = function(callback, context) {
+        if (class(context$optimizer)[1L] == "OptimizerBatchCmaes") {
+          start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
+          context$optimizer$param_set$values$start_values = "custom"
+          context$optimizer$param_set$values$start = start
+        }
+      })
+      acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
+      acq_optimizer
+    } else if (acqopt == "LBFGSB") {
+      optimizer = opt("chain",
+        optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("nloptr", algorithm = "NLOPT_LD_LBFGS", approximate_eval_grad_f = TRUE)), times = 10L),
+        terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
+      cb = callback_batch("start_values",
+        on_optimization_begin = function(callback, context) {
+        if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
+          start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
+          context$optimizer$param_set$values$start_values = "custom"
+          context$optimizer$param_set$values$start = start
+        }
+      })
+      acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
+      acq_optimizer
     }
     acq_optimizer$param_set$values$catch_errors = FALSE
 
-    acq_function = if (acqf == "EI" && log_scale) {
+    acq_function = if (acqf == "EI" && output_trafo == "log") {
       AcqFunctionEILog$new()
-    } else if (acqf == "EI" && !log_scale) {
+    } else if (acqf == "EI" && output_trafo != "log") {
       AcqFunctionEI$new()
     } else if (acqf == "CB") {
       AcqFunctionCB$new(lambda = as.numeric(lambda))
@@ -277,11 +341,12 @@ addAlgorithm(
 )
 
 init = data.table(
-  log_scale = FALSE,
+  input_trafo = "none",
+  output_trafo = "none",
   init = "random",
   init_size_fraction = "0.25",
   random_interleave_iter = "0",
-  rf_type = "standard",
+  surrogate = "gp_5_2",
   acqf = "EI",
   lambda = NA_character_,
   acqopt = "RS_1000",
@@ -306,7 +371,7 @@ objective = ObjectiveRFunDt$new(
     ades = list(mbo = xdt)
     job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
     #ids[, chunk := batchtools::chunk(job.id, chunk.size = 96L, shuffle = FALSE)]
-    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho.tmpl", n_jobs = 128L)
+    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho.tmpl", n_jobs = 128)
     waitForJobs(ids = job_ids, reg = reg)
 
     while(TRUE) {
@@ -314,7 +379,7 @@ objective = ObjectiveRFunDt$new(
         message("Resubmitting expired jobs")
         expired_ids = findExpired()
         #expired_ids[, chunk := batchtools::chunk(job.id, chunk.size = 96L, shuffle = FALSE)]
-        resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho.tmpl", n_jobs = 128L)
+        resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho.tmpl", n_jobs = 128)
         waitForJobs(ids = resubmitted_ids, reg = reg)
       } else {
         break
