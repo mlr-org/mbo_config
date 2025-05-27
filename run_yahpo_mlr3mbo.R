@@ -65,72 +65,13 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
 
   optim_instance$eval_batch(init_design)
 
-  learner = LearnerRegrRangerMbo$new()
-  learner$predict_type = "se"
-  learner$param_set$values$keep.inbag = TRUE
-
-  if (rf_type == "standard") {
-    learner$param_set$values$se.method = "jack"
-    learner$param_set$values$splitrule = "variance"
-    learner$param_set$values$num.trees = 1000L
-  } else if (rf_type == "extratrees") {
-    learner$param_set$values$se.method = "jack"
-    learner$param_set$values$splitrule = "extratrees"
-    learner$param_set$values$num.random.splits = 1L
-    learner$param_set$values$num.trees = 1000L
-  } else if (rf_type == "smaclike_simple") {
-    learner$param_set$values$se.method = "simple"
-    learner$param_set$values$splitrule = "variance"
-    learner$param_set$values$num.trees = 10L
-    learner$param_set$values$replace = TRUE
-    learner$param_set$values$sample.fraction = 1
-    learner$param_set$values$min.node.size = 3
-    learner$param_set$values$min.bucket = 3
-    learner$param_set$values$mtry.ratio = 5/6
-  } else if (rf_type == "smaclike_law_of_total_variance") {
-    learner$param_set$values$se.method = "law_of_total_variance"
-    learner$param_set$values$splitrule = "variance"
-    learner$param_set$values$num.trees = 10L
-    learner$param_set$values$replace = TRUE
-    learner$param_set$values$sample.fraction = 1
-    learner$param_set$values$min.node.size = 3
-    learner$param_set$values$min.bucket = 3
-    learner$param_set$values$mtry.ratio = 5/6
-  }
-
-  surrogate = SurrogateLearner$new(
-    #GraphLearner$new(
-    #  po("colapply", applicator = as.factor, affect_columns = selector_type("character")) %>>%
-    #  po("imputesample", affect_columns = selector_type("logical")) %>>%
-    #  po("imputeoor", multiplier = 3, affect_columns = selector_type(c("integer", "numeric", "character", "factor", "ordered"))) %>>%
-    #  po("fixfactors", affect_columns = selector_type(c("character", "factor", "ordered")), droplevels = TRUE) %>>%
-    #  po("imputesample", id = "final_imputesample", affect_columns = selector_type(c("character", "factor", "ordered"))) %>>%
-    #  learner
-    #)
-    GraphLearner$new(
-      ppl("robustify", learner = learner, impute_missings = TRUE, factors_to_numeric = FALSE, ordered_action = "ignore", character_action = "factor", POSIXct_action = "ignore") %>>%
-      learner
-    )
-  )
-  surrogate$param_set$values$catch_errors = FALSE
+  surrogate = get_surrogate_mixed_deps(surrogate)
 
   if (log_scale) {
     surrogate$output_trafo = OutputTrafoLog$new(invert_posterior = FALSE)
   }
 
-  acq_optimizer = if (acqopt == "RS_1000") {
-    AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
-  } else if (acqopt == "RS") {
-    AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 30000L))
-  } else if (acqopt == "FS") {
-    n_repeats = 3L
-    maxit = 9L
-    batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
-    AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
-  } else if (acqopt == "LS") {
-    AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_points = 100L), terminator = trm("evals", n_evals = 30000L))
-  }
-  acq_optimizer$param_set$values$catch_errors = FALSE
+  acq_optimizer = get_acq_optimizer_mixed_deps(acqopt)
 
   acq_function = if (acqf == "EI" && log_scale) {
     AcqFunctionEILog$new()
@@ -211,69 +152,7 @@ mlr3mbo_wrapper_pure_numeric = function(job, data, instance, ...) {
 
   optim_instance$eval_batch(init_design)
 
-  learner = LearnerRegrRangerMbo$new()
-  learner$predict_type = "se"
-  learner$param_set$values$keep.inbag = TRUE
-
-  if (surrogate == "rf_standard") {
-    learner = LearnerRegrRangerMbo$new()
-    learner$predict_type = "se"
-    learner$param_set$values$keep.inbag = TRUE
-    learner$param_set$values$se.method = "jack"
-    learner$param_set$values$splitrule = "variance"
-    learner$param_set$values$num.trees = 1000L
-  } else if (surrogate == "rf_extratrees") {
-    learner = LearnerRegrRangerMbo$new()
-    learner$predict_type = "se"
-    learner$param_set$values$keep.inbag = TRUE
-    learner$param_set$values$se.method = "jack"
-    learner$param_set$values$splitrule = "extratrees"
-    learner$param_set$values$num.random.splits = 1L
-    learner$param_set$values$num.trees = 1000L
-  } else if (surrogate == "rf_smaclike_simple") {
-    learner = LearnerRegrRangerMbo$new()
-    learner$predict_type = "se"
-    learner$param_set$values$se.method = "simple"
-    learner$param_set$values$splitrule = "variance"
-    learner$param_set$values$num.trees = 10L
-    learner$param_set$values$replace = TRUE
-    learner$param_set$values$sample.fraction = 1
-    learner$param_set$values$min.node.size = 3
-    learner$param_set$values$min.bucket = 3
-    learner$param_set$values$mtry.ratio = 5/6
-  } else if (surrogate == "rf_smaclike_law_of_total_variance") {
-    learner = LearnerRegrRangerMbo$new()
-    learner$predict_type = "se"
-    learner$param_set$values$se.method = "law_of_total_variance"
-    learner$param_set$values$splitrule = "variance"
-    learner$param_set$values$num.trees = 10L
-    learner$param_set$values$replace = TRUE
-    learner$param_set$values$sample.fraction = 1
-    learner$param_set$values$min.node.size = 3
-    learner$param_set$values$min.bucket = 3
-    learner$param_set$values$mtry.ratio = 5/6
-  } else if (surrogate == "gp_rbf") {
-    learner = LearnerRegrKM$new()
-    learner$predict_type = "se"
-    learner$param_set$values$control = list(trace = FALSE)
-    learner$param_set$values$optim.method = "gen"
-    learner$param_set$values$covtype = "gauss"
-  } else if (surrogate == "gp_3_2") {
-    learner = LearnerRegrKM$new()
-    learner$predict_type = "se"
-    learner$param_set$values$control = list(trace = FALSE)
-    learner$param_set$values$optim.method = "gen"
-    learner$param_set$values$covtype = "matern3_2"
-  } else if (surrogate == "gp_5_2") {
-    learner = LearnerRegrKM$new()
-    learner$predict_type = "se"
-    learner$param_set$values$control = list(trace = FALSE)
-    learner$param_set$values$optim.method = "gen"
-    learner$param_set$values$covtype = "matern5_2"
-  }
-
-  surrogate = SurrogateLearner$new(learner)
-  surrogate$param_set$values$catch_errors = FALSE
+  surrogate = get_surrogate_pure_numeric(surrogate)
 
   if (input_trafo == "unitcube") {
     surrogate$input_trafo = InputTrafoUnitcube$new()
@@ -285,61 +164,7 @@ mlr3mbo_wrapper_pure_numeric = function(job, data, instance, ...) {
     surrogate$output_trafo = OutputTrafoLog$new(invert_posterior = FALSE)
   }
 
-  acq_optimizer = if (acqopt == "RS_1000") {
-    AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
-  } else if (acqopt == "RS") {
-    AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 30000L))
-  } else if (acqopt == "FS") {
-    n_repeats = 3L
-    maxit = 9L
-    batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
-    AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
-  } else if (acqopt == "LS") {
-    AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_point = 100L), terminator = trm("evals", n_evals = 30000L))
-  } else if (acqopt == "DIRECT") {
-    optimizer = opt("chain",
-      optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("nloptr", algorithm = "NLOPT_GN_DIRECT_L")), times = 10L),
-      terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
-    cb = callback_batch("start_values",
-      on_optimization_begin = function(callback, context) {
-      if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
-        start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
-        context$optimizer$param_set$values$start_values = "custom"
-        context$optimizer$param_set$values$start = start
-      }
-    })
-    acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
-    acq_optimizer
-  } else if (acqopt == "CMAES") {
-    optimizer = opt("chain",
-      optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("cmaes")), times = 10L),
-      terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
-    cb = callback_batch("start_values",
-      on_optimization_begin = function(callback, context) {
-      if (class(context$optimizer)[1L] == "OptimizerBatchCmaes") {
-        start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
-        context$optimizer$param_set$values$start_values = "custom"
-        context$optimizer$param_set$values$start = start
-      }
-    })
-    acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
-    acq_optimizer
-  } else if (acqopt == "LBFGSB") {
-    optimizer = opt("chain",
-      optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("nloptr", algorithm = "NLOPT_LD_LBFGS", approximate_eval_grad_f = TRUE)), times = 10L),
-      terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
-    cb = callback_batch("start_values",
-      on_optimization_begin = function(callback, context) {
-      if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
-        start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
-        context$optimizer$param_set$values$start_values = "custom"
-        context$optimizer$param_set$values$start = start
-      }
-    })
-    acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
-    acq_optimizer
-  }
-  acq_optimizer$param_set$values$catch_errors = FALSE
+  acq_optimizer = get_acq_optimizer_pure_numeric(acqopt)
 
   acq_function = if (acqf == "EI" && output_trafo == "log") {
     AcqFunctionEILog$new()

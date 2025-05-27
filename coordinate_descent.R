@@ -98,7 +98,7 @@ search_space = ps(
   log_scale = p_lgl(),
   init = p_fct(c("random", "lhs", "sobol")),
   init_size_fraction = p_fct(c("0.05", "0.10", "0.25")),
-  random_interleave_iter = p_fct(c("0", "2", "5", "10")),
+  random_interleave_iter = p_fct(c("0", "2", "4")),
   rf_type = p_fct(c("standard", "extratrees", "smaclike_simple", "smaclike_law_of_total_variance")),
   acqf = p_fct(c("EI", "CB", "PI", "Mean")),
   lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
