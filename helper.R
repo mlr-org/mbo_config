@@ -424,7 +424,7 @@ get_acq_optimizer_pure_numeric = function(acqopt) {
   acq_optimizer = if (acqopt == "RS_1000") {
     AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
   } else if (acqopt == "RS") {
-    AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 30000L))
+    AcqOptimizer$new(opt("random_search", batch_size = 10000L), terminator = trm("evals", n_evals = 30000L))
   } else if (acqopt == "FS") {
     n_repeats = 3L
     maxit = 9L
@@ -434,8 +434,8 @@ get_acq_optimizer_pure_numeric = function(acqopt) {
     AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_point = 100L), terminator = trm("evals", n_evals = 30000L))
   } else if (acqopt == "DIRECT") {
     optimizer = opt("chain",
-      optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("nloptr", algorithm = "NLOPT_GN_DIRECT_L")), times = 10L),
-      terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
+      optimizers = rep(list(opt("random_search", batch_size = 5000L), opt("nloptr", algorithm = "NLOPT_GN_DIRECT_L")), times = 5L),
+      terminators = rep(list(trm("evals", n_evals = 5000L), trm("combo", terminators = list(trm("evals", n_evals = 1000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 5L))
     cb = callback_batch("start_values",
       on_optimization_begin = function(callback, context) {
       if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
@@ -448,8 +448,8 @@ get_acq_optimizer_pure_numeric = function(acqopt) {
     acq_optimizer
   } else if (acqopt == "CMAES") {
     optimizer = opt("chain",
-      optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("cmaes")), times = 10L),
-      terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
+      optimizers = rep(list(opt("random_search", batch_size = 5000L), opt("cmaes")), times = 5L),
+      terminators = rep(list(trm("evals", n_evals = 5000L), trm("combo", terminators = list(trm("evals", n_evals = 1000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 5L))
     cb = callback_batch("start_values",
       on_optimization_begin = function(callback, context) {
       if (class(context$optimizer)[1L] == "OptimizerBatchCmaes") {
@@ -462,8 +462,8 @@ get_acq_optimizer_pure_numeric = function(acqopt) {
     acq_optimizer
   } else if (acqopt == "LBFGSB") {
     optimizer = opt("chain",
-      optimizers = rep(list(opt("random_search", batch_size = 1000L), opt("nloptr", algorithm = "NLOPT_LD_LBFGS", approximate_eval_grad_f = TRUE)), times = 10L),
-      terminators = rep(list(trm("evals", n_evals = 1000L), trm("combo", terminators = list(trm("evals", n_evals = 2000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 10L))
+      optimizers = rep(list(opt("random_search", batch_size = 5000L), opt("nloptr", algorithm = "NLOPT_LD_LBFGS", approximate_eval_grad_f = TRUE)), times = 5L),
+      terminators = rep(list(trm("evals", n_evals = 5000L), trm("combo", terminators = list(trm("evals", n_evals = 1000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 5L))
     cb = callback_batch("start_values",
       on_optimization_begin = function(callback, context) {
       if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
