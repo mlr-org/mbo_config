@@ -412,7 +412,7 @@ get_surrogate_pure_numeric = function(surrogate) {
     learner$param_set$values$nugget.stability = 10^-8
   }
   surrogate = SurrogateLearner$new(learner)
-  surrogate$param_set$values$catch_errors = FALSE
+  #surrogate$param_set$values$catch_errors = FALSE
   surrogate
 }
 
@@ -475,7 +475,7 @@ get_acq_optimizer_pure_numeric = function(acqopt) {
     acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
     acq_optimizer
   }
-  acq_optimizer$param_set$values$catch_errors = FALSE
+  #acq_optimizer$param_set$values$catch_errors = FALSE
   acq_optimizer
 }
 

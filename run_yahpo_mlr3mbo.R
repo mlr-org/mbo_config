@@ -34,7 +34,7 @@ saveRegistry(reg)
 mlr3mbo_wrapper = function(job, data, instance, ...) {
   reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
   library(yahpogym)
-  logger = lgr::get_logger("bbotk")
+  logger = lgr::get_logger("mlr3/bbotk")
   logger$set_threshold("warn")
   future::plan("sequential")
 
@@ -120,7 +120,7 @@ mlr3mbo_wrapper = function(job, data, instance, ...) {
 mlr3mbo_wrapper_pure_numeric = function(job, data, instance, ...) {
   reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
   library(yahpogym)
-  logger = lgr::get_logger("bbotk")
+  logger = lgr::get_logger("mlr3/bbotk")
   logger$set_threshold("warn")
   future::plan("sequential")
 
@@ -134,7 +134,7 @@ mlr3mbo_wrapper_pure_numeric = function(job, data, instance, ...) {
   surrogate = "gp_5_2"
   acqf = "EI"
   lambda = NA_character_
-  acqopt = "RS_1000"
+  acqopt = "LBFGSB"
   epsilon_decay = FALSE
   lambda_decay = NA
 

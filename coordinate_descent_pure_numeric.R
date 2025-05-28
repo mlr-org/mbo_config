@@ -136,7 +136,7 @@ addAlgorithm(
 
     reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
     library(yahpogym)
-    logger = lgr::get_logger("bbotk")
+    logger = lgr::get_logger("mlr3/bbotk")
     logger$set_threshold("warn")
     future::plan("sequential")
 
