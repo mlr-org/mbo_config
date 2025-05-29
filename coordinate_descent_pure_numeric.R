@@ -240,7 +240,7 @@ init = data.table(
   acqf = "Mean",
   lambda = NA_character_,
   acqopt = "RS_1000",
-  epsilon_decay = FALSE,
+  epsilon_decay = NA,
   lambda_decay = NA)
 
 constants = ps(
