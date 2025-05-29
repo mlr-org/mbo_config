@@ -95,11 +95,17 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = prob_names
 
 search_space = ps(
-  log_scale = p_lgl(),
+  input_trafo = p_fct(c("none", "unitcube")),
+  output_trafo = p_fct(c("none", "standardize", "log")),
   init = p_fct(c("random", "lhs", "sobol")),
   init_size_fraction = p_fct(c("0.05", "0.10", "0.25")),
   random_interleave_iter = p_fct(c("0", "2", "4")),
-  rf_type = p_fct(c("standard", "extratrees", "smaclike_simple", "smaclike_law_of_total_variance")),
+  surrogate = p_fct(
+    c("rf_var_jk_10", "rf_var_s_10", "rf_var_ltv_10",
+      "rf_et_jk_10", "rf_et_s_10", "rf_et_ltv_10",
+      "rf_var_jk_500", "rf_var_s_500", "rf_var_ltv_500",
+      "rf_et_jk_500", "rf_et_s_500", "rf_et_ltv_500",
+      "gp_rbf", "gp_3_2", "gp_5_2")),
   acqf = p_fct(c("EI", "CB", "PI", "Mean")),
   lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
   acqopt = p_fct(c("RS_1000", "RS", "FS", "LS")),
@@ -113,11 +119,12 @@ addAlgorithm(
     job,
     data,
     instance,
-    log_scale,
+    input_trafo,
+    output_trafo,
     init,
     init_size_fraction,
     random_interleave_iter,
-    rf_type,
+    surrogate,
     acqf,
     lambda,
     acqopt,
@@ -277,12 +284,13 @@ addAlgorithm(
 )
 
 init = data.table(
-  log_scale = FALSE,
+  input_trafo = "none",
+  output_trafo = "none",
   init = "random",
   init_size_fraction = "0.25",
   random_interleave_iter = "0",
-  rf_type = "standard",
-  acqf = "EI",
+  rf_type = "rf_var_s_10",
+  acqf = "Mean",
   lambda = NA_character_,
   acqopt = "RS_1000",
   epsilon_decay = FALSE,
