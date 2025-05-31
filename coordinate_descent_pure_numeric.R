@@ -9,9 +9,9 @@ library(paradox)
 library(R6)
 library(checkmate)
 
-source("submit_ncar.R")
+data.table::setDTthreads(1L)
 
-YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", "mixed_deps"
+source("submit_ncar.R")
 
 reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
 library(reticulate)
@@ -27,7 +27,7 @@ for (source_file in source_files) {
   source(source_file)
 }
 
-registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/lschneider/yahpo_YAHPO_BENCHMARK_coordinate_descent")
+registry_name = "/glade/derecho/scratch/lschneider/yahpo_pure_numeric_coordinate_descent"
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
@@ -46,41 +46,20 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 
 source("OptimizerCoordinateDescent.R")
 
-if (YAHPO_BENCHMARK == "pure_numeric") {
-  setup = data.table(
-    benchmark = YAHPO_BENCHMARK,
-    scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
-    instance = c(
-        "167168", "189873", "189906",
-        "375", "458",
-        "14", "40499",
-        "16", "42",
-        "12", "1501", "16", "40499"
-    ),
-    target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
-    direction = rep("maximize", 13L),
-    budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L))
-  )
-} else if (YAHPO_BENCHMARK == "mixed") {
-    stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
-    setup = data.table(
-    benchmark = YAHPO_BENCHMARK,
-    scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
-    instance = c(
-        "167168", "189873", "189906",
-        "CIFAR10",
-        "375", "458",
-        "14", "40499",
-        "16", "42",
-        "12", "1501", "16", "40499",
-        "1053", "1457", "1063", "1479", "15", "1468"
-    ),
-    target_variable = rep(c("val_accuracy", "acc"), c(4L, 16L)),
-    direction = rep("maximize", 20L),
-    budget = rep(c(126L, 254L, 90L, 110L, 134L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L))
-  )
-}
+setup = data.table(
+  benchmark = "pure_numeric",
+  scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
+  instance = c(
+      "167168", "189873", "189906",
+      "375", "458",
+      "14", "40499",
+      "16", "42",
+      "12", "1501", "16", "40499"
+  ),
+  target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
+  direction = rep("maximize", 13L),
+  budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L))
+)
 
 setup[, id := seq_len(.N)]
 
@@ -254,6 +233,9 @@ objective = ObjectiveRFunDt$new(
     reg,
     rs_reference
     ) {
+    xdt_path = "/glade/derecho/scratch/lschneider/pure_numeric_intermediate_xdt.rds"
+    job_ids_path = "/glade/derecho/scratch/lschneider/pure_numeric_intermediate_job_ids.rds"
+
     n_repls = 15L
     xdt[, id := .I]
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
@@ -261,6 +243,17 @@ objective = ObjectiveRFunDt$new(
     ades = list(mbo = xdt)
     job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
     job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L)
+
+    tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
+    saveRDS(xdt, tmp_file)
+    unlink(xdt_path)
+    file.rename(tmp_file, xdt_path)
+
+    tmp_file = tempfile(tmpdir = dirname(job_ids_path), fileext = ".rds")
+    saveRDS(job_ids, tmp_file)
+    unlink(job_ids_path)
+    file.rename(tmp_file, job_ids_path)
+
     waitForJobs(ids = job_ids, reg = reg)
 
     while(TRUE) {
@@ -306,19 +299,10 @@ objective = ObjectiveRFunDt$new(
   check_values = FALSE
 )
 
-if (YAHPO_BENCHMARK == "pure_numeric") {
-  objective$constants$set_values(
-    reg = reg,
-    rs_reference = readRDS("yahpo_pure_numeric_rs_reference.rds")
-  )
-} else if (YAHPO_BENCHMARK == "mixed") {
-  stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
-  objective$constants$set_values(
-    reg = reg,
-    rs_reference = readRDS("yahpo_rs_reference.rds")
-  )
-}
+objective$constants$set_values(
+  reg = reg,
+  rs_reference = readRDS("yahpo_pure_numeric_rs_reference.rds")
+)
 
 callback_backup = callback_batch("bbotk.backup",
   label = "Backup Archive Callback",
@@ -334,8 +318,8 @@ callback_backup = callback_batch("bbotk.backup",
   }
 )
 
-state_path = "/glade/derecho/scratch/lschneider/YAHPO_BENCHMARK_intermediate_instance.rds"
-callback_backup$state$path = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = state_path)
+state_path = "/glade/derecho/scratch/lschneider/pure_numeric_intermediate_instance.rds"
+callback_backup$state$path = state_path
 
 optim_instance = oi(
   objective = objective,
@@ -355,5 +339,5 @@ if (file.exists(callback_backup$state$path)) {
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$optimize(optim_instance)
 
-save_path = "/glade/derecho/scratch/lschneider/YAHPO_BENCHMARK_coordinate_descent.rds"
-saveRDS(optim_instance, gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = save_path))
+save_path = "/glade/derecho/scratch/lschneider/pure_numeric_coordinate_descent.rds"
+saveRDS(optim_instance, save_path)
