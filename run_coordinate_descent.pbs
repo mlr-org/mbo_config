@@ -7,6 +7,7 @@
 #PBS -q main
 #PBS -l select=1:ncpus=8:mem=32GB
 #PBS -l walltime=12:00:00
+#PBS -l job_priority=regular
 #PBS -o coordinate_descent.log
 
 ## Setup temporary directory
