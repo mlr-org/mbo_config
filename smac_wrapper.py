@@ -114,7 +114,7 @@ def run_smac(
         )
     elif benchmark == "mixed":
         raise ValueError("TBD")
-    elif benchmark == "":
+    elif benchmark == "mixed_deps":
         config_space = ConfigurationSpace().from_json(
             os.path.join(YAHPO_DATA_PATH, scenario, "config_space.json")
         )

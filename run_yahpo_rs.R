@@ -7,7 +7,7 @@ library(paradox)
 library(R6)
 library(checkmate)
 
-YAHPO_BENCHMARK = ""  # "pure_numeric", "mixed", ""
+YAHPO_BENCHMARK = "mixed_deps"  # "pure_numeric", "mixed", "mixed_deps"
 
 reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
 library(reticulate)
@@ -62,7 +62,7 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
   )
 } else if (YAHPO_BENCHMARK == "mixed") {
     stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
+} else if (YAHPO_BENCHMARK == "mixed_deps") {
     setup = data.table(
     benchmark = YAHPO_BENCHMARK,
     scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
@@ -138,8 +138,8 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
   saveRDS(results, "yahpo_pure_numeric_rs_raw.rds")
 } else if (YAHPO_BENCHMARK == "mixed") {
   stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
-  saveRDS(results, "yahpo_rs_raw.rds")
+} else if (YAHPO_BENCHMARK == "mixed_deps") {
+  saveRDS(results, "yahpo_mixed_deps_rs_raw.rds")
 }
 
 results_simulated = reduceResultsList(done, function(result, job) {
@@ -173,8 +173,8 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
   saveRDS(results_simulated, "yahpo_pure_numeric_rs_simulated.rds")
 } else if (YAHPO_BENCHMARK == "mixed") {
   stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
-  saveRDS(results_simulated, "yahpo_rs_simulated.rds")
+} else if (YAHPO_BENCHMARK == "mixed_deps") {
+  saveRDS(results_simulated, "yahpo_mixed_deps_rs_simulated.rds")
 }
 
 results_reference = results_simulated[iter == budget, .(mean_best = mean(best), se_best = sd(best) / sqrt(.N)), by = .(scenario, instance, target_variable, orig_direction, problem)]
@@ -183,7 +183,7 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
   saveRDS(results_reference, "yahpo_pure_numeric_rs_reference.rds")
 } else if (YAHPO_BENCHMARK == "mixed") {
   stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
-  saveRDS(results_reference, "yahpo_rs_reference.rds")
+} else if (YAHPO_BENCHMARK == "mixed_deps") {
+  saveRDS(results_reference, "yahpo_mixed_deps_rs_reference.rds")
 }
 

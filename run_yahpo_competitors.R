@@ -3,7 +3,7 @@ library(paradox)
 library(mlr3misc)
 library(data.table)
 
-YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", ""
+YAHPO_BENCHMARK = "mixed_deps"  # "pure_numeric", "mixed", "mixed_deps"
 
 packages = c("data.table", "paradox")
 
@@ -79,7 +79,7 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
   )
 } else if (YAHPO_BENCHMARK == "mixed") {
     stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
+} else if (YAHPO_BENCHMARK == "mixed_deps") {
     setup = data.table(
     benchmark = YAHPO_BENCHMARK,
     scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
@@ -154,7 +154,7 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
   saveRDS(results, "yahpo_pure_numeric_competitors_raw.rds")
 } else if (YAHPO_BENCHMARK == "mixed") {
   stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
-  saveRDS(results, "yahpo_competitors_raw.rds")
+} else if (YAHPO_BENCHMARK == "mixed_deps") {
+  saveRDS(results, "yahpo_mixed_deps_competitors_raw.rds")
 }
 

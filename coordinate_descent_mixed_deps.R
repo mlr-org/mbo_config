@@ -9,9 +9,9 @@ library(paradox)
 library(R6)
 library(checkmate)
 
-source("submit_ncar.R")
+data.table::setDTthreads(1L)
 
-YAHPO_BENCHMARK = ""  # "pure_numeric", "mixed", ""
+source("submit_ncar.R")
 
 reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
 library(reticulate)
@@ -27,7 +27,7 @@ for (source_file in source_files) {
   source(source_file)
 }
 
-registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/lschneider/yahpo_YAHPO_BENCHMARK_coordinate_descent")
+registry_name = "/glade/derecho/scratch/lschneider/yahpo_mixed_deps_coordinate_descent")
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
@@ -46,41 +46,22 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 
 source("OptimizerCoordinateDescent.R")
 
-if (YAHPO_BENCHMARK == "pure_numeric") {
-  setup = data.table(
-    benchmark = YAHPO_BENCHMARK,
-    scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
-    instance = c(
-        "167168", "189873", "189906",
-        "375", "458",
-        "14", "40499",
-        "16", "42",
-        "12", "1501", "16", "40499"
-    ),
-    target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
-    direction = rep("maximize", 13L),
-    budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L))
-  )
-} else if (YAHPO_BENCHMARK == "mixed") {
-    stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
-    setup = data.table(
-    benchmark = YAHPO_BENCHMARK,
-    scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
-    instance = c(
-        "167168", "189873", "189906",
-        "CIFAR10",
-        "375", "458",
-        "14", "40499",
-        "16", "42",
-        "12", "1501", "16", "40499",
-        "1053", "1457", "1063", "1479", "15", "1468"
-    ),
-    target_variable = rep(c("val_accuracy", "acc"), c(4L, 16L)),
-    direction = rep("maximize", 20L),
-    budget = rep(c(126L, 254L, 90L, 110L, 134L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L))
-  )
-}
+setup = data.table(
+  benchmark = "mixed_deps",
+  scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
+  instance = c(
+      "167168", "189873", "189906",
+      "CIFAR10",
+      "375", "458",
+      "14", "40499",
+      "16", "42",
+      "12", "1501", "16", "40499",
+      "1053", "1457", "1063", "1479", "15", "1468"
+  ),
+  target_variable = rep(c("val_accuracy", "acc"), c(4L, 16L)),
+  direction = rep("maximize", 20L),
+  budget = rep(c(126L, 254L, 90L, 110L, 134L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L))
+)
 
 setup[, id := seq_len(.N)]
 
@@ -136,7 +117,7 @@ addAlgorithm(
 
     reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
     library(yahpogym)
-    logger = lgr::get_logger("bbotk")
+    logger = lgr::get_logger("mlr3/bbotk")
     logger$set_threshold("warn")
     future::plan("sequential")
 
@@ -156,76 +137,23 @@ addAlgorithm(
 
     optim_instance$eval_batch(init_design)
 
-    learner = LearnerRegrRangerMbo$new()
-    learner$predict_type = "se"
-    learner$param_set$values$keep.inbag = TRUE
+    surrogate = get_surrogate_mixed_deps(surrogate)
 
-    if (rf_type == "standard") {
-      learner$param_set$values$se.method = "jack"
-      learner$param_set$values$splitrule = "variance"
-      learner$param_set$values$num.trees = 1000L
-    } else if (rf_type == "extratrees") {
-      learner$param_set$values$se.method = "jack"
-      learner$param_set$values$splitrule = "extratrees"
-      learner$param_set$values$num.random.splits = 1L
-      learner$param_set$values$num.trees = 1000L
-    } else if (rf_type == "smaclike_simple") {
-      learner$param_set$values$se.method = "simple"
-      learner$param_set$values$splitrule = "variance"
-      learner$param_set$values$num.trees = 10L
-      learner$param_set$values$replace = TRUE
-      learner$param_set$values$sample.fraction = 1
-      learner$param_set$values$min.node.size = 3
-      learner$param_set$values$min.bucket = 3
-      learner$param_set$values$mtry.ratio = 5/6
-    } else if (rf_type == "smaclike_law_of_total_variance") {
-      learner$param_set$values$se.method = "law_of_total_variance"
-      learner$param_set$values$splitrule = "variance"
-      learner$param_set$values$num.trees = 10L
-      learner$param_set$values$replace = TRUE
-      learner$param_set$values$sample.fraction = 1
-      learner$param_set$values$min.node.size = 3
-      learner$param_set$values$min.bucket = 3
-      learner$param_set$values$mtry.ratio = 5/6
+    if (input_trafo == "unitcube") {
+      surrogate$input_trafo = InputTrafoUnitcube$new()
     }
 
-    surrogate = SurrogateLearner$new(
-      #GraphLearner$new(
-      #  po("colapply", applicator = as.factor, affect_columns = selector_type("character")) %>>%
-      #  po("imputesample", affect_columns = selector_type("logical")) %>>%
-      #  po("imputeoor", multiplier = 3, affect_columns = selector_type(c("integer", "numeric", "character", "factor", "ordered"))) %>>%
-      #  po("fixfactors", affect_columns = selector_type(c("character", "factor", "ordered")), droplevels = TRUE) %>>%
-      #  po("imputesample", id = "final_imputesample", affect_columns = selector_type(c("character", "factor", "ordered"))) %>>%
-      #  learner
-      #)
-      GraphLearner$new(
-        ppl("robustify", learner = learner, impute_missings = TRUE, factors_to_numeric = FALSE, ordered_action = "ignore", character_action = "factor", POSIXct_action = "ignore") %>>%
-        learner
-      )
-    )
-    surrogate$param_set$values$catch_errors = FALSE
-
-    if (log_scale) {
+    if (output_trafo == "standardize") {
+      surrogate$output_trafo = OutputTrafoStandardize$new()
+    } else if (output_trafo == "log") {
       surrogate$output_trafo = OutputTrafoLog$new(invert_posterior = FALSE)
     }
 
-    acq_optimizer = if (acqopt == "RS_1000") {
-      AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
-    } else if (acqopt == "RS") {
-      AcqOptimizer$new(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 30000L))
-    } else if (acqopt == "FS") {
-      n_repeats = 3L
-      maxit = 9L
-      batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
-      AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
-    } else if (acqopt == "LS") {
-      AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_point = 100L), terminator = trm("evals", n_evals = 30000L))
-    }
-    acq_optimizer$param_set$values$catch_errors = FALSE
+    acq_optimizer = get_acq_optimizer_mixed_deps(acqopt)
 
-    acq_function = if (acqf == "EI" && log_scale) {
+    acq_function = if (acqf == "EI" && output_trafo == "log") {
       AcqFunctionEILog$new()
-    } else if (acqf == "EI" && !log_scale) {
+    } else if (acqf == "EI" && output_trafo != "log") {
       AcqFunctionEI$new()
     } else if (acqf == "CB") {
       AcqFunctionCB$new(lambda = as.numeric(lambda))
@@ -307,21 +235,33 @@ objective = ObjectiveRFunDt$new(
     reg,
     rs_reference
     ) {
+    xdt_path = "/glade/derecho/scratch/lschneider/mixed_deps_intermediate_xdt.rds"
+    job_ids_path = "/glade/derecho/scratch/lschneider/mixed_deps_intermediate_job_ids.rds"
+
     n_repls = 15L
     xdt[, id := .I]
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
 
     ades = list(mbo = xdt)
     job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
-    #ids[, chunk := batchtools::chunk(job.id, chunk.size = 96L, shuffle = FALSE)]
     job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L)
+
+    tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
+    saveRDS(xdt, tmp_file)
+    unlink(xdt_path)
+    file.rename(tmp_file, xdt_path)
+
+    tmp_file = tempfile(tmpdir = dirname(job_ids_path), fileext = ".rds")
+    saveRDS(job_ids, tmp_file)
+    unlink(job_ids_path)
+    file.rename(tmp_file, job_ids_path)
+
     waitForJobs(ids = job_ids, reg = reg)
 
     while(TRUE) {
       if (length(findExpired()$job.id)) {
         message("Resubmitting expired jobs")
         expired_ids = findExpired()
-        #expired_ids[, chunk := batchtools::chunk(job.id, chunk.size = 96L, shuffle = FALSE)]
         resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L)
         waitForJobs(ids = resubmitted_ids, reg = reg)
       } else {
@@ -361,19 +301,10 @@ objective = ObjectiveRFunDt$new(
   check_values = FALSE
 )
 
-if (YAHPO_BENCHMARK == "pure_numeric") {
-  objective$constants$set_values(
-    reg = reg,
-    rs_reference = readRDS("yahpo_pure_numeric_rs_reference.rds")
-  )
-} else if (YAHPO_BENCHMARK == "mixed") {
-  stop("TBD")
-} else if (YAHPO_BENCHMARK == "") {
-  objective$constants$set_values(
-    reg = reg,
-    rs_reference = readRDS("yahpo_rs_reference.rds")
-  )
-}
+objective$constants$set_values(
+  reg = reg,
+  rs_reference = readRDS("yahpo_mixed_deps_rs_reference.rds")
+)
 
 callback_backup = callback_batch("bbotk.backup",
   label = "Backup Archive Callback",
@@ -389,8 +320,8 @@ callback_backup = callback_batch("bbotk.backup",
   }
 )
 
-state_path = "/glade/derecho/scratch/lschneider/YAHPO_BENCHMARK_intermediate_instance.rds"
-callback_backup$state$path = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = state_path)
+state_path = "/glade/derecho/scratch/lschneider/mixed_deps_intermediate_instance.rds"
+callback_backup$state$path = state_path
 
 optim_instance = oi(
   objective = objective,
@@ -410,5 +341,5 @@ if (file.exists(callback_backup$state$path)) {
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$optimize(optim_instance)
 
-save_path = "/glade/derecho/scratch/lschneider/YAHPO_BENCHMARK_coordinate_descent.rds"
-saveRDS(optim_instance, gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = save_path))
+save_path = "/glade/derecho/scratch/lschneider/mixed_deps_coordinate_descent.rds"
+saveRDS(optim_instance, save_path)
