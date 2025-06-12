@@ -41,10 +41,10 @@ mlr3mbo_wrapper_pure_numeric = function(job, data, instance, ...) {
   # configured
   #input_trafo = "none"
   #output_trafo = "log"
-  #init = "random"
+  #init = "lhs"
   #init_size_fraction = "0.25"
   #random_interleave_iter = "0"
-  #surrogate = "gp_rbf"
+  #surrogate = "gp_5_2"
   #acqf = "Mean"
   #lambda = NA_character_
   #acqopt = "CMAES"
