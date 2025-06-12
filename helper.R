@@ -374,7 +374,7 @@ get_surrogate_mixed_deps = function(surrogate) {
       )
     )
   }
-  surrogate$param_set$values$catch_errors = FALSE
+  #surrogate$param_set$values$catch_errors = FALSE
   surrogate
 }
 
@@ -551,7 +551,7 @@ get_acq_optimizer_mixed_deps = function(acqopt) {
   } else if (acqopt == "LS") {
     AcqOptimizer$new(opt("local_search", n_initial_points = 10L, initial_random_sample_size = 1000L, neighbors_per_point = 100L), terminator = trm("evals", n_evals = 30000L))
   }
-  acq_optimizer$param_set$values$catch_errors = FALSE
+  #acq_optimizer$param_set$values$catch_errors = FALSE
   acq_optimizer
 }
 
