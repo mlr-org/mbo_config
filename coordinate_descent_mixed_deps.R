@@ -27,7 +27,7 @@ for (source_file in source_files) {
   source(source_file)
 }
 
-registry_name = "/glade/derecho/scratch/lschneider/yahpo_mixed_deps_coordinate_descent")
+registry_name = "/glade/derecho/scratch/lschneider/yahpo_mixed_deps_coordinate_descent"
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
