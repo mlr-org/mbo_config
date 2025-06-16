@@ -39,15 +39,15 @@ mlr3mbo_wrapper_mixed_deps = function(job, data, instance, ...) {
   optim_instance = make_optim_instance(instance)
 
   input_trafo = "none"
-  output_trafo = "none"
-  init = "random"
+  output_trafo = "log"
+  init = "sobol"
   init_size_fraction = "0.25"
-  random_interleave_iter = "0"
+  random_interleave_iter = "2"
   surrogate = "rf_var_s_10"
-  acqf = "EI"
+  acqf = "Mean"
   lambda = NA_character_
-  acqopt = "RS"
-  epsilon_decay = FALSE
+  acqopt = "LS"
+  epsilon_decay = NA 
   lambda_decay = NA
 
   random_interleave_iter = as.numeric(random_interleave_iter)
