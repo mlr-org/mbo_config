@@ -4,7 +4,7 @@ library(mlr3misc)
 library(data.table)
 
 # n_jobs is the number of jobs per node
-submit_ncar = function(job_ids, reg, template, n_jobs = 128L) {
+submit_ncar = function(job_ids, reg, template, n_jobs = 128L, log_dir = ".") {
   chunks = split(job_ids, ceiling(seq_along(job_ids) / n_jobs))
 
   time = format(Sys.time(), "%Y-%m-%d_%H-%M-%S")
@@ -18,7 +18,7 @@ submit_ncar = function(job_ids, reg, template, n_jobs = 128L) {
     hash = sprintf("%s_%s_%s", time, chunk[1L], chunk[length(chunk)])
 
     assign("job.name", sprintf("job_%s", hash), env = env)
-    assign("log.file", sprintf("/glade/derecho/scratch/lschneider/log_nodes/job_%s.log", hash), env = env)
+    assign("log.file", sprintf("%s/job_%s.log", log_dir, hash), env = env)
 
     iwalk(chunk, function(id, i) {
         jc = makeJobCollection(id)

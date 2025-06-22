@@ -8,13 +8,13 @@ library(bbotk)
 library(paradox)
 library(R6)
 library(checkmate)
+library(reticulate)
 
 data.table::setDTthreads(1L)
 
 source("submit_ncar.R")
 
-reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
-library(reticulate)
+use_condaenv("yahpo_gym", required = TRUE)
 yahpo_gym = import("yahpo_gym")
 
 packages = c("data.table", "mlr3", "mlr3learners", "mlr3misc", "mlr3mbo", "mlr3pipelines", "bbotk", "paradox", "ranger", "R6", "checkmate")
@@ -27,7 +27,7 @@ for (source_file in source_files) {
   source(source_file)
 }
 
-registry_name = "/glade/derecho/scratch/lschneider/yahpo_mixed_deps_coordinate_descent"
+registry_name = "/glade/derecho/scratch/marcbecker/yahpo_mixed_deps_coordinate_descent"
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
@@ -46,23 +46,22 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 
 source("OptimizerCoordinateDescent.R")
 
-setup = data.table(
-  benchmark = "mixed_deps",
-  scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
-  instance = c(
-      "167168", "189873", "189906",
-      "CIFAR10",
-      "375", "458",
-      "14", "40499",
-      "16", "42",
-      "12", "1501", "16", "40499",
-      "1053", "1457", "1063", "1479", "15", "1468"
-  ),
-  target_variable = rep(c("val_accuracy", "acc"), c(4L, 16L)),
-  direction = rep("maximize", 20L),
-  budget = rep(c(126L, 254L, 90L, 110L, 134L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L))
-)
-
+setup = mlr3misc::rowwise_table(
+     ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
+     "mixed_deps", "lcbench", "167168", "val_accuracy", "maximize", 126,
+     "mixed_deps", "lcbench", "189873", "val_accuracy", "maximize", 126,
+     "mixed_deps", "lcbench", "189906", "val_accuracy", "maximize", 126,
+     "mixed_deps", "nb301", "CIFAR10", "val_accuracy", "maximize", 254,
+     "mixed_deps", "rbv2_rpart", "14", "acc", "maximize", 110,
+     "mixed_deps", "rbv2_rpart", "40499", "acc", "maximize", 110,
+     "mixed_deps", "rbv2_ranger", "16", "acc", "maximize", 134,
+     "mixed_deps", "rbv2_ranger", "42", "acc", "maximize", 134,
+     "mixed_deps", "rbv2_xgboost", "12", "acc", "maximize", 170,
+     "mixed_deps", "rbv2_xgboost", "1501", "acc", "maximize", 170,
+     "mixed_deps", "rbv2_xgboost", "16", "acc", "maximize", 170,
+     "mixed_deps", "rbv2_super", "1457", "acc", "maximize", 267,
+     "mixed_deps", "rbv2_super", "1063", "acc", "maximize", 267,
+     "mixed_deps", "rbv2_super", "15", "acc", "maximize", 267)
 setup[, id := seq_len(.N)]
 
 # add problems
@@ -115,7 +114,8 @@ addAlgorithm(
     config_hash
     ) {
 
-    reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/yahpo_venv", required = TRUE)
+
+    reticulate::use_condaenv("yahpo_gym", required = TRUE)
     library(yahpogym)
     logger = lgr::get_logger("mlr3/bbotk")
     logger$set_threshold("warn")
@@ -235,39 +235,42 @@ objective = ObjectiveRFunDt$new(
     reg,
     rs_reference
     ) {
-    xdt_path = "/glade/derecho/scratch/lschneider/mixed_deps_intermediate_xdt.rds"
-    job_ids_path = "/glade/derecho/scratch/lschneider/mixed_deps_intermediate_job_ids.rds"
+    xdt_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_xdt.rds"
+    job_ids_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_job_ids.rds"
 
-    n_repls = 15L
-    xdt[, id := .I]
-    set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
+    # n_repls = 15L
+    # xdt[, id := .I]
+    # set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
 
-    ades = list(mbo = xdt)
-    job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
-    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L)
+    # ades = list(mbo = xdt)
+    # job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
+    # job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps")
 
-    tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
-    saveRDS(xdt, tmp_file)
-    unlink(xdt_path)
-    file.rename(tmp_file, xdt_path)
+    # tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
+    # saveRDS(xdt, tmp_file)
+    # unlink(xdt_path)
+    # file.rename(tmp_file, xdt_path)
 
-    tmp_file = tempfile(tmpdir = dirname(job_ids_path), fileext = ".rds")
-    saveRDS(job_ids, tmp_file)
-    unlink(job_ids_path)
-    file.rename(tmp_file, job_ids_path)
+    # tmp_file = tempfile(tmpdir = dirname(job_ids_path), fileext = ".rds")
+    # saveRDS(job_ids, tmp_file)
+    # unlink(job_ids_path)
+    # file.rename(tmp_file, job_ids_path)
 
-    waitForJobs(ids = job_ids, reg = reg)
+    job_ids = readRDS(job_ids_path)
+    xdt = readRDS(xdt_path)
 
-    while(TRUE) {
-      if (length(findExpired()$job.id)) {
-        message("Resubmitting expired jobs")
-        expired_ids = findExpired()
-        resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L)
-        waitForJobs(ids = resubmitted_ids, reg = reg)
-      } else {
-        break
-      }
-    }
+    #waitForJobs(ids = job_ids, reg = reg)
+
+    # while(TRUE) {
+    #   if (length(findExpired()$job.id)) {
+    #     message("Resubmitting expired jobs")
+    #     expired_ids = findExpired()
+    #     resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps")
+    #     waitForJobs(ids = resubmitted_ids, reg = reg)
+    #   } else {
+    #     break
+    #   }
+    # }
 
     res = rbindlist(reduceResultsList(ids = intersect(job_ids, findDone()$job.id), reg = reg))
 
@@ -293,6 +296,10 @@ objective = ObjectiveRFunDt$new(
       raw_mean_score = list(set_names(mean_score, problem)),
       missing_instances = list(setdiff(reg$problems, problem))),
       by = .(id)]
+browser()
+    # if no meta score on all instances, set to -Inf
+    agg_meta_score[n < 14, mean_meta_score := -Inf]
+
     agg_meta_score
   },
   domain = search_space,
@@ -320,7 +327,7 @@ callback_backup = callback_batch("bbotk.backup",
   }
 )
 
-state_path = "/glade/derecho/scratch/lschneider/mixed_deps_intermediate_instance.rds"
+state_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_instance.rds"
 callback_backup$state$path = state_path
 
 optim_instance = oi(
@@ -341,5 +348,5 @@ if (file.exists(callback_backup$state$path)) {
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$optimize(optim_instance)
 
-save_path = "/glade/derecho/scratch/lschneider/mixed_deps_coordinate_descent.rds"
+save_path = "/glade/derecho/scratch/marcbecker/mixed_deps_coordinate_descent.rds"
 saveRDS(optim_instance, save_path)

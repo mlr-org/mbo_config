@@ -1,4 +1,4 @@
-ml conda
+ml conda cmake
 conda activate r-4.3
 
 # ----------------------

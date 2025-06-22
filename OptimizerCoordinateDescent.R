@@ -57,7 +57,7 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
       }
 
       # iterate over all parameters
-      for (i in seq(inst$archive$n_batch + 1, iterations + 1)) {
+      for (i in (inst$archive$n_batch + 1)) { # i in seq(inst$archive$n_batch + 1, iterations + 1) 
 
         xdt = map_dtr(inst$search_space$subspaces(ids = parameters), function(subset) {
           param_id = subset$ids()

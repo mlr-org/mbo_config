@@ -1,17 +1,17 @@
 #!/bin/bash
 
-#PBS -N coordinate_descent
+#PBS -N coordinate_descent_pure_numeric
 #PBS -A WYOM0202
 #PBS -j oe
 #PBS -k eod
 #PBS -q main
-#PBS -l select=1:ncpus=8:mem=32GB
+#PBS -l select=1:ncpus=128
 #PBS -l walltime=12:00:00
 #PBS -l job_priority=regular
-#PBS -o coordinate_descent.log
+#PBS -o coordinate_descent_pure_numeric.log
 
 ## Setup temporary directory
-export TMPDIR=/glade/derecho/scratch/lschneider/tmp
+export TMPDIR=/glade/derecho/scratch/marcbecker/tmp
 mkdir -p "$TMPDIR"
 
 ## Load required environment modules
