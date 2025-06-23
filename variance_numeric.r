@@ -3,14 +3,14 @@ library(data.table)
 library(mlr3misc)
 
 reg = loadRegistry(
-  file.dir = "/glade/derecho/scratch/marcbecker/old_yahpo_pure_numeric_coordinate_descent/",
+  file.dir = "/glade/derecho/scratch/marcbecker/yahpo_pure_numeric_coordinate_descent/",
   conf.file = "batchtools.conf.main.R",
   writeable = FALSE
 )
 
 rs_reference = readRDS("yahpo_pure_numeric_rs_reference.rds")
 
-archive = rbindlist(reduceResultsList(ids = seq(20000), fun = function(res, job) {
+archive = rbindlist(reduceResultsList(fun = function(res, job) {
   res[, config_hash := job$algo.pars$config_hash]
   res
 }, missing.val = NULL))
