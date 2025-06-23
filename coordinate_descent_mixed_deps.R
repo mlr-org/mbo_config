@@ -238,28 +238,28 @@ objective = ObjectiveRFunDt$new(
     xdt_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_xdt.rds"
     job_ids_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_job_ids.rds"
 
-    # n_repls = 15L
-    # xdt[, id := .I]
-    # set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
+    n_repls = 15L
+    xdt[, id := .I]
+    set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
 
-    # ades = list(mbo = xdt)
-    # job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
-    # job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps")
+    ades = list(mbo = xdt)
+    job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
+    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps")
 
-    # tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
-    # saveRDS(xdt, tmp_file)
-    # unlink(xdt_path)
-    # file.rename(tmp_file, xdt_path)
+    tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
+    saveRDS(xdt, tmp_file)
+    unlink(xdt_path)
+    file.rename(tmp_file, xdt_path)
 
-    # tmp_file = tempfile(tmpdir = dirname(job_ids_path), fileext = ".rds")
-    # saveRDS(job_ids, tmp_file)
-    # unlink(job_ids_path)
-    # file.rename(tmp_file, job_ids_path)
+    tmp_file = tempfile(tmpdir = dirname(job_ids_path), fileext = ".rds")
+    saveRDS(job_ids, tmp_file)
+    unlink(job_ids_path)
+    file.rename(tmp_file, job_ids_path)
 
-    job_ids = readRDS(job_ids_path)
-    xdt = readRDS(xdt_path)
+    # job_ids = readRDS(job_ids_path)
+    # xdt = readRDS(xdt_path)
 
-    #waitForJobs(ids = job_ids, reg = reg)
+    waitForJobs(ids = job_ids, reg = reg)
 
     # while(TRUE) {
     #   if (length(findExpired()$job.id)) {
@@ -296,7 +296,7 @@ objective = ObjectiveRFunDt$new(
       raw_mean_score = list(set_names(mean_score, problem)),
       missing_instances = list(setdiff(reg$problems, problem))),
       by = .(id)]
-browser()
+
     # if no meta score on all instances, set to -Inf
     agg_meta_score[n < 14, mean_meta_score := -Inf]
 
