@@ -76,20 +76,16 @@ For the search space of the 13 pure numeric YAHPO-SO v1 instances, see `helper.R
 ```{r}
 #| eval: false
 
-instances = data.table(
-    benchmark = "pure_numeric",
-    scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
-    instance = c(
-        "167168", "189873", "189906",
-        "375", "458",
-        "14", "40499",
-        "16", "42",
-        "12", "1501", "16", "40499"
-    ),
-    target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
-    direction = rep("maximize", 13L),
-    budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L))
-  )
+mlr3misc::rowwise_table(
+  ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
+  "pure_numeric", "lcbench", "167168", "val_accuracy", "maximize", 126,
+  "pure_numeric", "lcbench", "189873", "val_accuracy", "maximize", 126,
+  "pure_numeric", "lcbench", "189906", "val_accuracy", "maximize", 126,
+  "pure_numeric", "rbv2_rpart", "14", "acc", "maximize", 100,
+  "pure_numeric", "rbv2_rpart", "40499", "acc", "maximize", 100,
+  "pure_numeric", "rbv2_xgboost", "12", "acc", "maximize", 147,
+  "pure_numeric", "rbv2_xgboost", "1501", "acc", "maximize", 147,
+  "pure_numeric", "rbv2_xgboost", "40499", "acc", "maximize", 147)
 ```
 
 # Results
