@@ -5,7 +5,7 @@ library(mlr3misc)
 library(scmamp)
 
 dat = rbind(readRDS("yahpo_mixed_deps_competitors_raw.rds"), readRDS("yahpo_mixed_deps_mlr3mbo_raw.rds"), readRDS("yahpo_mixed_deps_rs_simulated.rds"), fill=TRUE)
-#dat = rbind(readRDS("yahpo_pure_numeric_competitors_raw.rds"), readRDS("yahpo_pure_numeric_mlr3mbo_raw.rds"), readRDS("yahpo_pure_numeric_rs_simulated.rds"), fill=TRUE)
+dat = rbind(readRDS("yahpo_pure_numeric_competitors_raw.rds"), readRDS("yahpo_pure_numeric_mlr3mbo_raw.rds"), readRDS("yahpo_pure_numeric_rs_simulated.rds"), fill=TRUE)
 dat[, cumbudget := iter, by = .(method, scenario, instance, target_variable, repl)]
 dat[, cumbudget_scaled := cumbudget / max(cumbudget), by = .(method, scenario, instance, target_variable, repl)]
 dat[, normalized_regret := (target - min(target)) / (max(target) - min(target)), by = .(scenario, instance, target_variable)]
@@ -25,6 +25,14 @@ get_best_normalized_cumbudget = function(best_normalized, cumbudget_scaled) {
 
 dat_budget = dat[, .(best_normalized_budget = get_best_normalized_cumbudget(best_normalized, cumbudget_scaled), cumbudget_scaled = seq(0, 1, length.out = 101L)), by = .(method, scenario, instance, target_variable, repl)]
 agg_budget = dat_budget[, .(mean = mean(best_normalized_budget), se = sd(best_normalized_budget) / sqrt(.N)), by = .(cumbudget_scaled, method, scenario, instance, target_variable)]
+
+#agg_budget[, problem := paste0(scenario, instance)]
+#problem_subset = c(
+#  paste0("lcbench", c("167168", "189873", "189906")),
+#  paste0("rbv2_rpart", c("14", "40499")),
+#  paste0("rbv2_xgboost", c("12", "1501", "40499"))
+#)
+#agg_budget = agg_budget[problem %in% problem_subset]
 
 g = ggplot(aes(x = cumbudget_scaled, y = mean, colour = method, fill = method), data = agg_budget) +
   scale_y_log10() +
