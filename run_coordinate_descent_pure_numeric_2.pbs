@@ -1,0 +1,22 @@
+#!/bin/bash
+
+#PBS -N coordinate_descent_pure_numeric_2
+#PBS -A WYOM0202
+#PBS -j oe
+#PBS -k eod
+#PBS -q main
+#PBS -l select=1:ncpus=128
+#PBS -l walltime=12:00:00
+#PBS -l job_priority=regular
+#PBS -o coordinate_descent_pure_numeric_2.log
+
+## Setup temporary directory
+export TMPDIR=/glade/derecho/scratch/marcbecker/tmp
+mkdir -p "$TMPDIR"
+
+## Load required environment modules
+ml conda
+conda activate r-4.3
+
+## Execute job
+Rscript coordinate_descent_pure_numeric_2.R
