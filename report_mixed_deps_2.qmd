@@ -1,5 +1,5 @@
 ---
-title: "mlr3mbo - Configuration Mixed Dependencies"
+title: "mlr3mbo - Configuration Mixed Dependencies 2"
 format:
   html:
     embed-resources: true
@@ -71,7 +71,7 @@ search_space = ps(
 
 ## Instances
 
-For the search space of the 20 YAHPO-SO v1 instances, see `helper.R`.
+For the search space of the 14 YAHPO-SO v1 instances, see `helper.R`.
 
 ```{r}
 #| eval: false
