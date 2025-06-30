@@ -3,14 +3,14 @@ library(data.table)
 library(mlr3misc)
 
 reg = loadRegistry(
-  file.dir = "/glade/derecho/scratch/marcbecker/yahpo__coordinate_descent/",
+  file.dir = "/glade/derecho/scratch/marcbecker/yahpo_mixed_deps_coordinate_descent_2",
   conf.file = "batchtools.conf.main.R",
   writeable = FALSE
 )
 
 rs_reference = readRDS("yahpo_mixed_deps_rs_reference.rds")
 
-archive = rbindlist(reduceResultsList(ids = seq(10000), fun = function(res, job) {
+archive = rbindlist(reduceResultsList(fun = function(res, job) {
   res[, config_hash := job$algo.pars$config_hash]
   res
 }, missing.val = NULL))
@@ -22,19 +22,26 @@ archive[, meta_score := pmap_dbl(list(score, problem), function(x, problem) {
   (score_rs_small - x) / (score_rs_small - score_rs_large)
 })]
 
-aggr = archive[, list(var_meta_score = var(meta_score)), by = c("id", "problem", "config_hash")]
 
-aggr = aggr[, list(
-  n = .N,
-  min_var_meta_score = min(var_meta_score),
-  max_var_meta_score = max(var_meta_score),
-  mean_var_meta_score = mean(var_meta_score)
-), by = c("problem")][order(mean_var_meta_score, decreasing = TRUE)]
+tab = archive[, list(sd = sd(meta_score)), by = c("problem", "config_hash")]
+tab = tab[, n := (2 * sd / 0.001)^2]
+tab[]
 
 
-ref = rs_reference[, list(rs_small = mean_best, rs_large = best), by = "problem"]
 
-aggr[ref, on = "problem"][order(mean_var_meta_score, decreasing = TRUE)]
+# aggr = archive[, list(var_meta_score = var(meta_score)), by = c("id", "problem", "config_hash")]
+
+# aggr = aggr[, list(
+#   n = .N,
+#   min_var_meta_score = min(var_meta_score),
+#   max_var_meta_score = max(var_meta_score),
+#   mean_var_meta_score = mean(var_meta_score)
+# ), by = c("problem")][order(mean_var_meta_score, decreasing = TRUE)]
 
 
-tab = getJobTable()
+# ref = rs_reference[, list(rs_small = mean_best, rs_large = best), by = "problem"]
+
+# aggr[ref, on = "problem"][order(mean_var_meta_score, decreasing = TRUE)]
+
+
+# tab = getJobTable()
