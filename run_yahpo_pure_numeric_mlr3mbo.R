@@ -39,30 +39,31 @@ mlr3mbo_wrapper_pure_numeric = function(job, data, instance, ...) {
   optim_instance = make_optim_instance(instance)
 
   # configured
+  #input_trafo = "none"
+  #output_trafo = "log"
+  #init = "random"
+  #init_size_fraction = "0.10"
+  #random_interleave_iter = "0"
+  #surrogate = "gp_rbf"
+  #acqf = "CB"
+  #lambda = "1"
+  #acqopt = "CMAES"
+  #epsilon_decay = NA 
+  #lambda_decay = NA
+
+  
+  # configured 2
   input_trafo = "none"
   output_trafo = "log"
   init = "random"
-  init_size_fraction = "0.10"
+  init_size_fraction = "0.25"
   random_interleave_iter = "0"
-  surrogate = "gp_rbf"
+  surrogate = "gp_3_2"
   acqf = "CB"
   lambda = "1"
   acqopt = "CMAES"
   epsilon_decay = NA 
-  lambda_decay = NA
-
-  # alternative
-  #input_trafo = "none"
-  #output_trafo = "none"
-  #init = "random"
-  #init_size_fraction = "0.05"
-  #random_interleave_iter = "0"
-  #surrogate = "gp_5_2"
-  #acqf = "EI"
-  #lambda = NA_character_
-  #acqopt = "CMAES"
-  #epsilon_decay = NA 
-  #lambda_decay = NA
+  lambda_decay = TRUE 
 
   random_interleave_iter = as.numeric(random_interleave_iter)
   init_size_fraction = as.numeric(init_size_fraction)
@@ -138,7 +139,7 @@ mlr3mbo_wrapper_pure_numeric = function(job, data, instance, ...) {
 
 
 # add algorithms
-addAlgorithm("mlr3mbo_pure_numeric_configured", fun = mlr3mbo_wrapper_pure_numeric)
+addAlgorithm("mlr3mbo_pure_numeric_configured_2", fun = mlr3mbo_wrapper_pure_numeric)
 
 setup = data.table(
   benchmark = "pure_numeric",
@@ -168,7 +169,7 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = prob_names
 
 # add jobs for optimizers
-optimizers = data.table(algorithm = c("mlr3mbo_pure_numeric_alternative"))
+optimizers = data.table(algorithm = c("mlr3mbo_pure_numeric_configured_2"))
 
 for (i in seq_len(nrow(optimizers))) {
   algo_designs = setNames(list(optimizers[i, ]), nm = optimizers[i, ]$algorithm)

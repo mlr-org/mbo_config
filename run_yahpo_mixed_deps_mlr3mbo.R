@@ -38,17 +38,31 @@ mlr3mbo_wrapper_mixed_deps = function(job, data, instance, ...) {
 
   optim_instance = make_optim_instance(instance)
 
+  # configured
+  #input_trafo = "none"
+  #output_trafo = "log"
+  #init = "sobol"
+  #init_size_fraction = "0.25"
+  #random_interleave_iter = "2"
+  #surrogate = "rf_var_s_10"
+  #acqf = "Mean"
+  #lambda = NA_character_
+  #acqopt = "LS"
+  #epsilon_decay = NA 
+  #lambda_decay = NA
+
+  # configured 2
   input_trafo = "none"
   output_trafo = "log"
-  init = "sobol"
-  init_size_fraction = "0.25"
-  random_interleave_iter = "2"
-  surrogate = "rf_var_s_10"
-  acqf = "Mean"
-  lambda = NA_character_
+  init = "random"
+  init_size_fraction = "0.10"
+  random_interleave_iter = "0"
+  surrogate = "rf_var_jk_500"
+  acqf = "CB"
+  lambda = "1" 
   acqopt = "LS"
   epsilon_decay = NA 
-  lambda_decay = NA
+  lambda_decay = TRUE 
 
   random_interleave_iter = as.numeric(random_interleave_iter)
   init_size_fraction = as.numeric(init_size_fraction)
@@ -124,7 +138,7 @@ mlr3mbo_wrapper_mixed_deps = function(job, data, instance, ...) {
 
 
 # add algorithms
-addAlgorithm("mlr3mbo_mixed_deps_configured", fun = mlr3mbo_wrapper_mixed_deps)
+addAlgorithm("mlr3mbo_mixed_deps_configured_2", fun = mlr3mbo_wrapper_mixed_deps)
 
 setup = data.table(
   benchmark = "mixed_deps",
@@ -156,7 +170,7 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = prob_names
 
 # add jobs for optimizers
-optimizers = data.table(algorithm = c("mlr3mbo_mixed_deps_configured"))
+optimizers = data.table(algorithm = c("mlr3mbo_mixed_deps_configured_2"))
 
 for (i in seq_len(nrow(optimizers))) {
   algo_designs = setNames(list(optimizers[i, ]), nm = optimizers[i, ]$algorithm)
