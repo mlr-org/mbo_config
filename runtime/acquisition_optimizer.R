@@ -1,5 +1,4 @@
 # Script to measure the runtime of the acquisition optimizer
-# The
 
 library(bbotk)
 library(mlr3mbo)
