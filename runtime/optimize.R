@@ -106,3 +106,15 @@ list(
   surrogate_train = surrogate_train_runtime,
   acq_optimizer = acq_optimizer_runtime,
   surrogate_predict = surrogate_predict_runtime)
+
+# seconds!
+#    acquisition_optimizer     surrogate acq_function                                  renv_project mean_runtime mean_runtime_surrogate_train mean_runtime_acq_optimizer mean_runtime_surrogate_predict
+#                   <char>        <char>       <char>                                        <char>        <num>                        <num>                      <num>                          <num>
+# 1:          local_search rf_var_jk_500           cb mlr3mbo/default/snapshots/snapshot_2025_07_04      121.482                        0.114                  120.25638                          5.364
+# 2:          local_search rf_var_jk_500           ei mlr3mbo/default/snapshots/snapshot_2025_07_04      126.563                        0.119                  125.22277                          5.351
+# 3:          local_search  rf_var_s_500           cb mlr3mbo/default/snapshots/snapshot_2025_07_04      659.764                        0.496                  658.24868                        557.975
+# 4:          local_search  rf_var_s_500           ei mlr3mbo/default/snapshots/snapshot_2025_07_04      693.176                        0.584                  691.45090                        585.514
+# 5:         random_search rf_var_jk_500           cb mlr3mbo/default/snapshots/snapshot_2025_07_04       13.773                        0.314                   12.17773                          6.056
+# 6:         random_search rf_var_jk_500           ei mlr3mbo/default/snapshots/snapshot_2025_07_04       14.264                        0.117                   12.60780                          6.095
+# 7:         random_search  rf_var_s_500           cb mlr3mbo/default/snapshots/snapshot_2025_07_04      596.709                        0.583                  595.11774                        589.042
+# 8:         random_search  rf_var_s_500           ei mlr3mbo/default/snapshots/snapshot_2025_07_04      572.475                        0.549                  570.87915                        565.123

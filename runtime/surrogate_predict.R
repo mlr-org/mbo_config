@@ -86,7 +86,7 @@ newdata = generate_design_random(instance$search_space, n = size)$data
 
 system.time(surrogate$predict(newdata))
 
-
+# milliseconds
 #         surrogate  size                                  renv_project median_runtime mad_runtime mean_runtime  sd_runtime  timestamp
 #            <char> <num>                                        <char>          <num>       <num>        <num>       <num>      <num>
 #  1:  rf_var_jk_10     1 mlr3mbo/default/snapshots/snapshot_2025_07_04           10.0      1.4826         10.8    2.658320 1751654446
