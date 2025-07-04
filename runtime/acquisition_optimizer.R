@@ -57,3 +57,16 @@ list(
   elapsed = runtime["elapsed"],
   surrogate_predict = surrogate_predict
 )
+
+#     acquisition_optimizer                                  renv_project mean_runtime  sd_runtime median_runtime mad_runtime mean_runtime_surrogate_predict sd_runtime_surrogate_predict median_runtime_surrogate_predict mad_runtime_surrogate_predict
+#                    <char>                                        <char>        <num>       <num>          <num>       <num>                          <num>                        <num>                            <num>                         <num>
+#  1:                 cmaes mlr3mbo/default/snapshots/snapshot_2025_06_03     194192.7 17118.39281       189235.5   9572.4069                        12384.6                  962.3539658                          12052.0                      527.0643
+#  2:                 cmaes mlr3mbo/default/snapshots/snapshot_2025_07_04     259131.3 23522.83913       247133.0   7851.8496                        12849.2                 1059.8019521                          12418.0                      638.2593
+#  3:                direct mlr3mbo/default/snapshots/snapshot_2025_06_03     200308.9 23456.43051       188433.5   3647.9373                        12821.2                 1490.3714526                          12048.5                      204.5988
+#  4:                direct mlr3mbo/default/snapshots/snapshot_2025_07_04     262511.3 11567.71635       266929.0   7168.3710                        13032.5                  600.9953318                          13287.0                      377.3217
+#  5:          focus_search mlr3mbo/default/snapshots/snapshot_2025_06_03        980.2   100.51291          928.5     54.1149                           12.1                    1.1972190                             12.0                        1.4826
+#  6:          focus_search mlr3mbo/default/snapshots/snapshot_2025_07_04       1510.8   214.42834         1557.0    258.7137                           14.5                    1.7159384                             15.0                        1.4826
+#  7:          local_search mlr3mbo/default/snapshots/snapshot_2025_06_03      10718.1   478.98630        10632.5    580.4379                           14.0                    0.9428090                             14.0                        0.7413
+#  8:          local_search mlr3mbo/default/snapshots/snapshot_2025_07_04      11205.1   692.19497        11152.5    392.8890                           14.9                    1.9692074                             15.0                        0.7413
+#  9:         random_search mlr3mbo/default/snapshots/snapshot_2025_06_03        599.9    99.15134          582.5    119.3493                            1.9                    0.3162278                              2.0                        0.0000
+# 10:         random_search mlr3mbo/default/snapshots/snapshot_2025_07_04        631.7   140.60745          604.5    156.4143                            2.4                    0.6992059                              2.0                        0.0000
