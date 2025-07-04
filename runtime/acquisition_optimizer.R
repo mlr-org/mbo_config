@@ -1,4 +1,4 @@
-# Script to measure the runtime of the acquisition optimizer
+set.seed(7832)
 
 library(bbotk)
 library(mlr3mbo)
