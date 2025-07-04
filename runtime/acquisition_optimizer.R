@@ -6,7 +6,7 @@ library(mlr3misc)
 
 #lgr::get_logger("mlr3/bbotk")$set_threshold("warn")
 
-acquisition_optimizer = "local_search"
+acquisition_optimizer = "local_search" # "random_search", "local_search", "focus_search", "direct", "cmaes"
 
 search_space = ps(
   x_1 = p_dbl(lower = -1, upper = 1),

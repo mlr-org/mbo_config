@@ -6,9 +6,9 @@ library(mlr3misc)
 
 # lgr::get_logger("bbotk")$set_threshold("warn")
 
-acquisition_optimizer = "random_search"
-surrogate = "rf_var_jk_500"
-acq_function = "ei"
+acquisition_optimizer = "random_search" # "random_search", "local_search", "direct"
+surrogate = "rf_var_jk_500" # "rf_var_jk_500", "rf_var_s_500"
+acq_function = "ei" # "ei", "cb"
 
 search_space = ps(
   x_1 = p_dbl(lower = -1, upper = 1),
