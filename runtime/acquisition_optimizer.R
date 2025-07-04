@@ -4,7 +4,9 @@ library(bbotk)
 library(mlr3mbo)
 library(mlr3misc)
 
-lgr::get_logger("mlr3/bbotk")$set_threshold("warn")
+#lgr::get_logger("mlr3/bbotk")$set_threshold("warn")
+
+acquisition_optimizer = "local_search"
 
 search_space = ps(
   x_1 = p_dbl(lower = -1, upper = 1),
@@ -35,14 +37,23 @@ callback_acq_optimizer_surrogate = callback_batch("mlr3mbo.acq_optimizer_surroga
   }
 )
 
-local_search = opt("local_search", n_initial_points = 10L, initial_random_sample_size = 100L, neighbors_per_point = 90L)
-acq_optimizer = acqo(local_search, terminator = trm("evals", n_evals = 10000L), acq_function = acq_function, callbacks = callback_acq_optimizer_surrogate)
+optimizer = switch(acquisition_optimizer,
+  random_search = opt("random_search", batch_size = 10000L),
+  local_search = opt("local_search", n_initial_points = 10L, initial_random_sample_size = 100L, neighbors_per_point = 100L),
+  focus_search = opt("focus_search", maxit = 9, n_points = 1000L),
+  direct = opt("nloptr", algorithm = "NLOPT_GN_DIRECT_L", xtol_rel = -1, xtol_abs = -1, ftol_rel = -1, ftol_abs = -1),
+  cmaes = opt("cmaes")
+)
 
-random_search = opt("random_search", batch_size = 10000L)
-acq_optimizer = acqo(random_search, terminator = trm("evals", n_evals = 10000L), acq_function = acq_function, callbacks = callback_acq_optimizer_surrogate)
+acq_optimizer = acqo(optimizer, terminator = trm("evals", n_evals = 10000L), acq_function = acq_function, callbacks = callback_acq_optimizer_surrogate)
 
 # runtime of the acquisition optimizer
-system.time(acq_optimizer$optimize())
+runtime = system.time(acq_optimizer$optimize())
 
 # runtime of the surrogate predict
-sum(acq_optimizer$callbacks$mlr3mbo.acq_optimizer_surrogate_time$state$time)
+surrogate_predict = sum(acq_optimizer$callbacks$mlr3mbo.acq_optimizer_surrogate_time$state$time)
+
+list(
+  elapsed = runtime["elapsed"],
+  surrogate_predict = surrogate_predict
+)
