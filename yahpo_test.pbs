@@ -1,0 +1,12 @@
+#PBS -N yahpo_test
+#PBS -A WYOM0202
+#PBS -q develop
+#PBS -l select=1:ncpus=1:mem=1GB
+#PBS -l walltime=00:10:00
+#PBS -j oe
+#PBS -o yahpo_test.log
+
+ml conda
+conda activate r-4.3
+
+Rscript yahpo_test.R

@@ -1,5 +1,5 @@
 ---
-title: "mlr3mbo - Configuration Mixed Dependencies"
+title: "mlr3mbo - Configuration Mixed Dependencies 2"
 format:
   html:
     embed-resources: true
@@ -15,7 +15,7 @@ library(mlr3misc)
 library(dplyr)
 library(gt)
 
-archive = readRDS("mixed_deps_coordinate_descent.rds")$archive$data
+archive = readRDS("mixed_deps_coordinate_descent_2.rds")$archive$data
 
 other_stats = rbindlist(map(seq(nrow(archive)), function(i) {
   data.table(
@@ -173,4 +173,17 @@ as_tibble(archive) %>%
     label = "numbered",
     rows = matches("^[0-9]")
   ) %>% cols_hide("improvement")
+```
+
+## Variance
+
+```{r}
+#| echo: false
+archive[, config_hash := pmap_chr(list(input_trafo, output_trafo, init, init_size_fraction, random_interleave_iter, surrogate, acqf, lambda, acqopt, epsilon_decay, lambda_decay), mlr3misc::calculate_hash)]
+archive[, sd_meta_score := sd(mean_meta_score), by = config_hash]
+archive[, n := .N, by = config_hash]
+
+x = archive[order(batch_nr, mean_meta_score, decreasing = TRUE)][, head(.SD, 1), by = batch_nr][order(batch_nr)][, .(parameter, mean_meta_score, sd_meta_score)]
+setcolorder(x, c("parameter"))
+x[1:5]
 ```

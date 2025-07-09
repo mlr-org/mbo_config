@@ -1,3 +1,5 @@
+sink(file = "coordinate_descent_pure_numeric.log")
+
 library(batchtools)
 library(data.table)
 library(mlr3)
@@ -211,10 +213,10 @@ init = data.table(
   init_size_fraction = "0.25",
   random_interleave_iter = "0",
   surrogate = "gp_rbf",
-  acqf = "Mean",
+  acqf = "EI",
   lambda = NA_character_,
   acqopt = "RS_1000",
-  epsilon_decay = NA,
+  epsilon_decay = FALSE,
   lambda_decay = NA)
 
 constants = ps(
