@@ -48,20 +48,20 @@ source("OptimizerCoordinateDescent.R")
 
 setup = mlr3misc::rowwise_table(
      ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
-     "mixed_deps", "lcbench", "167168", "val_accuracy", "maximize", 126,
-     "mixed_deps", "lcbench", "189873", "val_accuracy", "maximize", 126,
-     "mixed_deps", "lcbench", "189906", "val_accuracy", "maximize", 126,
-     "mixed_deps", "nb301", "CIFAR10", "val_accuracy", "maximize", 254,
-     "mixed_deps", "rbv2_rpart", "14", "acc", "maximize", 110,
-     "mixed_deps", "rbv2_rpart", "40499", "acc", "maximize", 110,
-     "mixed_deps", "rbv2_ranger", "16", "acc", "maximize", 134,
-     "mixed_deps", "rbv2_ranger", "42", "acc", "maximize", 134,
-     "mixed_deps", "rbv2_xgboost", "12", "acc", "maximize", 170,
-     "mixed_deps", "rbv2_xgboost", "1501", "acc", "maximize", 170,
-     "mixed_deps", "rbv2_xgboost", "16", "acc", "maximize", 170,
-     "mixed_deps", "rbv2_super", "1457", "acc", "maximize", 267,
-     "mixed_deps", "rbv2_super", "1063", "acc", "maximize", 267,
-     "mixed_deps", "rbv2_super", "15", "acc", "maximize", 267)
+     "mixed_deps", "lcbench", "167168", "val_accuracy", "maximize", 126L,
+     "mixed_deps", "lcbench", "189873", "val_accuracy", "maximize", 126L,
+     "mixed_deps", "lcbench", "189906", "val_accuracy", "maximize", 126L,
+     "mixed_deps", "nb301", "CIFAR10", "val_accuracy", "maximize", 254L,
+     "mixed_deps", "rbv2_rpart", "14", "acc", "maximize", 110L,
+     "mixed_deps", "rbv2_rpart", "40499", "acc", "maximize", 110L,
+     "mixed_deps", "rbv2_ranger", "16", "acc", "maximize", 134L,
+     "mixed_deps", "rbv2_ranger", "42", "acc", "maximize", 134L,
+     "mixed_deps", "rbv2_xgboost", "12", "acc", "maximize", 170L,
+     "mixed_deps", "rbv2_xgboost", "1501", "acc", "maximize", 170L,
+     "mixed_deps", "rbv2_xgboost", "16", "acc", "maximize", 170L,
+     "mixed_deps", "rbv2_super", "1457", "acc", "maximize", 267L,
+     "mixed_deps", "rbv2_super", "1063", "acc", "maximize", 267L,
+     "mixed_deps", "rbv2_super", "15", "acc", "maximize", 267L)
 setup[, id := seq_len(.N)]
 
 # add problems
@@ -75,22 +75,26 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = prob_names
 
 search_space = ps(
-  input_trafo = p_fct(c("none", "unitcube")),
-  output_trafo = p_fct(c("none", "standardize", "log")),
-  init = p_fct(c("random", "lhs", "sobol")),
-  init_size_fraction = p_fct(c("0.05", "0.10", "0.25")),
+  input_trafo            = p_fct(c("none", "unitcube")),
+  output_trafo           = p_fct(c("none", "standardize", "log")),
+  init                   = p_fct(c("random", "lhs", "sobol")),
+  init_size_fraction     = p_fct(c("0.05", "0.10", "0.25")),
   random_interleave_iter = p_fct(c("0", "2", "4")),
-  surrogate = p_fct(
-    c("rf_var_jk_10", "rf_var_s_10", "rf_var_ltv_10",
-      "rf_et_jk_10", "rf_et_s_10", "rf_et_ltv_10",
-      "rf_var_jk_500", "rf_var_s_500", "rf_var_ltv_500",
-      "rf_et_jk_500", "rf_et_s_500", "rf_et_ltv_500",
-      "gp_rbf", "gp_3_2", "gp_5_2")),
-  acqf = p_fct(c("EI", "CB", "PI", "Mean")),
-  lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
-  acqopt = p_fct(c("RS_1000", "RS", "FS", "LS")),
-  epsilon_decay = p_lgl(depends = acqf == "EI"),
-  lambda_decay = p_lgl(depends = acqf == "CB")
+  # surrogate
+  surrogate              = p_fct(c("rf", "gp")),
+  extratrees             = p_lgl(depends = surrogate == "rf"),
+  trees                  = p_fct(c("10", "500"), depends = surrogate == "rf"),
+  variance_estimator     = p_fct(c("jackknife", "simple", "law_of_total_variance"), depends = surrogate == "rf"),
+  kernel                 = p_fct(c("rbf", "matern3_2", "matern5_2", "exp", "powexp"), depends = surrogate == "gp"),
+  nugget                 = p_fct(c("0", "1e-3", "1e-8"), depends = surrogate == "gp"),
+  scaling                = p_lgl(depends = surrogate == "gp"),
+  # acqf
+  acqf                   = p_fct(c("EI", "CB", "PI", "Mean")),
+  lambda                 = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
+  epsilon_decay          = p_lgl(depends = acqf == "EI"),
+  lambda_decay           = p_lgl(depends = acqf == "CB"),
+  # acqopt
+  acqopt                 = p_fct(c("RS_1000", "RS", "LS")) # "FS"
 )
 
 addAlgorithm(
