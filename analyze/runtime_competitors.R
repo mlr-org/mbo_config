@@ -7,12 +7,12 @@ options(width = 200)
 
 reg = loadRegistry(
   file.dir = "/glade/derecho/scratch/lschneider/yahpo_mixed_deps_competitors",
-  conf.file = "batchtools.conf.main.R",^
+  conf.file = "batchtools.conf.main.R",
   writeable = FALSE
 )
 
 
-summary_instances = fread("/glade/u/home/marcbecker/mbo_config/yapho_instances_mixed_deps.csv")
+summary_instances = fread("/glade/u/home/marcbecker/mbo_config/analyze/yapho_instances_mixed_deps.csv")
 summary_instances[, problem := paste0(scenario, "_", instance, "_", target_variable)]
 
 job_table = getJobTable()
@@ -30,7 +30,7 @@ reg = loadRegistry(
   writeable = FALSE
 )
 
-summary_instances = fread("/glade/u/home/marcbecker/mbo_config/yapho_instances_pure_numeric.csv")
+summary_instances = fread("/glade/u/home/marcbecker/mbo_config/analyze/yapho_instances_pure_numeric.csv")
 summary_instances[, problem := paste0(scenario, "_", instance, "_", target_variable)]
 
 job_table = getJobTable()

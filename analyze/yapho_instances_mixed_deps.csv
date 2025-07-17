@@ -1,0 +1,15 @@
+scenario,instance,name,target_variable,budget,dimension
+lcbench,189873,dionis,val_accuracy,126,7
+lcbench,189906,segment,val_accuracy,126,7
+lcbench,167168,vehicle,val_accuracy,126,7
+nb301,CIFAR10,CIFAR10,val_accuracy,254,34
+rbv2_ranger,16,mfeat-karhunen,acc,134,8
+rbv2_ranger,42,soybean,acc,134,8
+rbv2_rpart,14,mfeat-fourier,acc,110,5
+rbv2_rpart,40499,texture,acc,110,5
+rbv2_super,1457,amazon-commerce-reviews,acc,267,38
+rbv2_super,15,breast-w,acc,267,38
+rbv2_super,1063,kc2,acc,267,38
+rbv2_xgboost,12,mfeat-factors,acc,170,14
+rbv2_xgboost,16,mfeat-karhunen,acc,170,14
+rbv2_xgboost,1501,semeion,acc,170,14

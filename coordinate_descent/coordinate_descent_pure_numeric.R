@@ -1,5 +1,3 @@
-sink(file = "coordinate_descent_pure_numeric.log")
-
 library(batchtools)
 library(data.table)
 library(mlr3)
@@ -24,11 +22,12 @@ packages = c("data.table", "mlr3", "mlr3learners", "mlr3misc", "mlr3mbo", "mlr3p
 root = here::here()
 experiments_dir = file.path(root)
 
-source_files = map_chr(c("helper.R"), function(x) file.path(experiments_dir, x))
+source_files = map_chr(c("coordinate_descent/helper.R"), function(x) file.path(experiments_dir, x))
 for (source_file in source_files) {
   source(source_file)
 }
 
+unlink("/glade/derecho/scratch/marcbecker/yahpo_pure_numeric_coordinate_descent", recursive = TRUE)
 registry_name = "/glade/derecho/scratch/marcbecker/yahpo_pure_numeric_coordinate_descent"
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
@@ -46,18 +45,19 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
   )
 }
 
-source("OptimizerCoordinateDescent.R")
+source("coordinate_descent/OptimizerCoordinateDescent.R")
 
 setup = mlr3misc::rowwise_table(
      ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
-     "pure_numeric", "lcbench", "167168", "val_accuracy", "maximize", 126,
-     "pure_numeric", "lcbench", "189873", "val_accuracy", "maximize", 126,
-     "pure_numeric", "lcbench", "189906", "val_accuracy", "maximize", 126,
-     "pure_numeric", "rbv2_rpart", "14", "acc", "maximize", 100,
-     "pure_numeric", "rbv2_rpart", "40499", "acc", "maximize", 100,
-     "pure_numeric", "rbv2_xgboost", "12", "acc", "maximize", 147,
-     "pure_numeric", "rbv2_xgboost", "1501", "acc", "maximize", 147,
-     "pure_numeric", "rbv2_xgboost", "40499", "acc", "maximize", 147)
+     "pure_numeric", "lcbench", "167168", "val_accuracy", "maximize", 126     #126
+    #  "pure_numeric", "lcbench", "189873", "val_accuracy", "maximize", 126,
+    #  "pure_numeric", "lcbench", "189906", "val_accuracy", "maximize", 126,
+    #  "pure_numeric", "rbv2_rpart", "14", "acc", "maximize", 100,
+    #  "pure_numeric", "rbv2_rpart", "40499", "acc", "maximize", 100,
+    #  "pure_numeric", "rbv2_xgboost", "12", "acc", "maximize", 147,
+    #  "pure_numeric", "rbv2_xgboost", "1501", "acc", "maximize", 147,
+    #  "pure_numeric", "rbv2_xgboost", "40499", "acc", "maximize", 147
+  )
 setup[, id := seq_len(.N)]
 
 # add problems
@@ -80,8 +80,8 @@ search_space = ps(
   surrogate              = p_fct(c("rf", "gp")),
   extratrees             = p_lgl(depends = surrogate == "rf"),
   trees                  = p_fct(c("10", "500"), depends = surrogate == "rf"),
-  variance_estimator     = p_fct(c("jackknife", "simple", "law_of_total_variance"), depends = surrogate == "rf"),
-  kernel                 = p_fct(c("rbf", "matern3_2", "matern5_2", "exp", "powexp"), depends = surrogate == "gp"),
+  variance_estimator     = p_fct(c("jack", "simple", "law_of_total_variance"), depends = surrogate == "rf"),
+  kernel                 = p_fct(c("gauss", "matern3_2", "matern5_2", "exp", "powexp"), depends = surrogate == "gp"),
   nugget                 = p_fct(c("0", "1e-3", "1e-8"), depends = surrogate == "gp"),
   scaling                = p_lgl(depends = surrogate == "gp"),
   # acqf
@@ -90,7 +90,7 @@ search_space = ps(
   epsilon_decay          = p_lgl(depends = acqf == "EI"),
   lambda_decay           = p_lgl(depends = acqf == "CB"),
   # acqopt
-  acqopt                 = p_fct(c("RS_1000", "RS", "FS", "LS", "DIRECT", "CMAES", "LBFGSB"))
+  acqopt                 = p_fct(c("RS_1000", "RS", "LS", "DIRECT", "CMAES", "LBFGSB")) # "FS",
 )
 
 addAlgorithm(
@@ -222,12 +222,19 @@ init = data.table(
   init = "random",
   init_size_fraction = "0.25",
   random_interleave_iter = "0",
-  surrogate = "gp_rbf",
+  surrogate = "gp",
+  extratrees = NA,
+  trees = NA_character_,
+  variance_estimator = NA_character_,
+  kernel = "gauss",
+  nugget = "0",
+  scaling = FALSE,
   acqf = "EI",
   lambda = NA_character_,
-  acqopt = "RS_1000",
   epsilon_decay = FALSE,
-  lambda_decay = NA)
+  lambda_decay = NA,
+  acqopt = "RS_1000"
+)
 
 constants = ps(
   reg = p_uty(),
@@ -243,7 +250,7 @@ objective = ObjectiveRFunDt$new(
     xdt_path = "/glade/derecho/scratch/marcbecker/pure_numeric_intermediate_xdt.rds"
     job_ids_path = "/glade/derecho/scratch/marcbecker/pure_numeric_intermediate_job_ids.rds"
 
-    n_repls = 15L
+    n_repls = 1L #!!
     xdt[, id := .I]
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
 
@@ -303,7 +310,7 @@ objective = ObjectiveRFunDt$new(
       by = .(id)]
 
     # if no meta score on all instances, set to -Inf
-    agg_meta_score[n < 8, mean_meta_score := -Inf]
+    # agg_meta_score[n < 8, mean_meta_score := -Inf]
 
     agg_meta_score
   },
@@ -315,7 +322,7 @@ objective = ObjectiveRFunDt$new(
 
 objective$constants$set_values(
   reg = reg,
-  rs_reference = readRDS("yahpo_pure_numeric_rs_reference.rds")
+  rs_reference = readRDS("random_search/yahpo_pure_numeric_rs_reference.rds")
 )
 
 callback_backup = callback_batch("bbotk.backup",
@@ -343,14 +350,18 @@ optim_instance = oi(
   callbacks = list(callback_backup)
 )
 
-if (file.exists(callback_backup$state$path)) {
-  data = readRDS(callback_backup$state$path)
-  optim_instance$archive$data = data
-} else {
-  optim_instance$eval_batch(init)
-}
+# if (file.exists(callback_backup$state$path)) {
+#   data = readRDS(callback_backup$state$path)
+#   optim_instance$archive$data = data
+# } else {
+#   optim_instance$eval_batch(init)
+# }
 
 optimizer = OptimizerBatchCoordinateDescent$new()
+optimizer$param_set$set_values(
+  n_generations = 1L,
+  start = init
+)
 optimizer$optimize(optim_instance)
 
 save_path = "/glade/derecho/scratch/marcbecker/pure_numeric_coordinate_descent.rds"

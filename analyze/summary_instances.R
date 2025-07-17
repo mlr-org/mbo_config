@@ -11,7 +11,6 @@ library(checkmate)
 library(reticulate)
 library(yahpogym)
 library(mlr3oml)
-library(mlr3oml)
 
 options(width = 250)
 

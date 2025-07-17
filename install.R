@@ -29,8 +29,6 @@ library("yahpogym")
 system("git clone https://github.com/slds-lmu/yahpo_data ~/yahpo_data")
 system("git -C ~/yahpo_data checkout pure_numeric")
 
-init_local_config(data_path = "~/yahpo_data")
-
 # check yahpo_gym
 init_local_config(data_path = "~/yahpo_data")
 b = BenchmarkSet$new("iaml_glmnet")
@@ -67,8 +65,10 @@ conda_install(envname = "hebo", pip = TRUE, packages = c("HEBO", "ConfigSpace"))
 # AX
 conda_create("ax", python = "3.8", packages = c(
   "ax-platform",
-  "mkl",
-  "mkl-service",
-  "intel-openmp",
   "ConfigSpace"
 ), channel = "conda-forge")
+
+
+  # "mkl",
+  # "mkl-service",
+  # "intel-openmp",
