@@ -49,12 +49,13 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
 
         xdt = get_generation(inst, incumbent)
 
-        # revaluate incumbent
-        set(incumbent, j = "parameter", value = "incumbent")
-        xdt = rbindlist(list(incumbent, xdt))
-
         # remove duplicates
         xdt = unique(xdt, by = inst$search_space$ids())
+
+        # remove incumbent but keep start configuration in first generation
+        if (i > 1) {
+          xdt = xdt[!incumbent, on = inst$search_space$ids()]
+        }
 
         set(xdt, j = "iteration", value = i)
         inst$eval_batch(xdt)
@@ -126,6 +127,9 @@ get_generation = function(inst, incumbent) {
 }
 
 if (FALSE) {
+
+  library(bbotk)
+  library(paradox)
   inst = list(search_space = ps(
     surrogate = p_fct(c("rf", "gp")),
     trees = p_fct(c("10", "500"), depends = surrogate == "rf"),
@@ -136,12 +140,15 @@ if (FALSE) {
   incumbent = data.table(
     surrogate = "rf",
     trees = "10",
-    kernel = "rbf",
-    nugget = "0"
+    kernel = NA_character_,
+    nugget = NA_character_
   )
 
   xdt = get_generation(inst, incumbent)
   assert_data_table(xdt, nrows = 12)
+
+  # incumbent
+  assert_data_table(xdt[!incumbent, on = inst$search_space$ids()], nrows = 11)
 
   ##
   inst = list(search_space = ps(
@@ -256,6 +263,11 @@ if (FALSE) {
   xdt = get_generation(inst, incumbent)
   assert_data_table(xdt, nrows = 73)
 
+  # remove dubplicated and incumbent
+  xdt = unique(xdt, by = inst$search_space$ids())
+  assert_data_table(xdt, nrows = 66)
+  assert_data_table(xdt[!incumbent, on = inst$search_space$ids()], nrows = 65)
+
   ##
   search_space = ps(
     input_trafo            = p_fct(c("none", "unitcube")),
@@ -321,14 +333,15 @@ if (FALSE) {
   optimizer$optimize(instance)
 
   instance$archive$data[batch_nr == 1]
+  instance$archive$data[batch_nr == 2]
 
-  best_1 = instance$archive$best(batch = 1)
-  incumbent_2 = instance$archive$data[batch_nr == 2 & parameter == "incumbent"]
+  # best_1 = instance$archive$best(batch = 1)
+  # #incumbent_2 = instance$archive$data[batch_nr == 2 & parameter == "incumbent"]
 
-  all.equal(best_1[, inst$search_space$ids(), with = FALSE], incumbent_2[, inst$search_space$ids(), with = FALSE])
+  # #all.equal(best_1[, inst$search_space$ids(), with = FALSE], incumbent_2[, inst$search_space$ids(), with = FALSE])
 
-  best_2 = instance$archive$best(batch = 2)
-  incumbent_3 = instance$archive$data[batch_nr == 3 & parameter == "incumbent"]
+  # best_2 = instance$archive$best(batch = 2)
+  # #incumbent_3 = instance$archive$data[batch_nr == 3 & parameter == "incumbent"]
 
-  all.equal(best_2[, inst$search_space$ids(), with = FALSE], incumbent_3[, inst$search_space$ids(), with = FALSE])
+  # all.equal(best_2[, inst$search_space$ids(), with = FALSE], incumbent_3[, inst$search_space$ids(), with = FALSE])
 }
