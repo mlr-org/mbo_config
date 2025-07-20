@@ -5,7 +5,8 @@ library(mlr3misc)
 library(scmamp)
 
 dat = rbind(readRDS("yahpo_mixed_deps_competitors_raw.rds"), readRDS("yahpo_mixed_deps_mlr3mbo_raw.rds"), readRDS("yahpo_mixed_deps_rs_simulated.rds"), fill=TRUE)
-dat = rbind(readRDS("yahpo_pure_numeric_competitors_raw.rds"), readRDS("yahpo_pure_numeric_mlr3mbo_raw.rds"), readRDS("yahpo_pure_numeric_rs_simulated.rds"), fill=TRUE)
+#dat = rbind(readRDS("yahpo_pure_numeric_competitors_raw.rds"), readRDS("yahpo_pure_numeric_mlr3mbo_raw.rds"), readRDS("yahpo_pure_numeric_rs_simulated.rds"), fill=TRUE)
+#dat = dat[method != "mlr3mbo_pure_numeric_alternative"]
 dat[, cumbudget := iter, by = .(method, scenario, instance, target_variable, repl)]
 dat[, cumbudget_scaled := cumbudget / max(cumbudget), by = .(method, scenario, instance, target_variable, repl)]
 dat[, normalized_regret := (target - min(target)) / (max(target) - min(target)), by = .(scenario, instance, target_variable)]

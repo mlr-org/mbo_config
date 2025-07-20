@@ -12,6 +12,7 @@ import pandas as pd
 from ConfigSpace import ConfigurationSpace
 from smac import BlackBoxFacade, HyperparameterOptimizationFacade, Scenario
 from smac.intensifier import Intensifier
+from smac.runhistory.dataclasses import TrialValue
 
 from config import (
     SCENARIO_META_DATA,
@@ -166,7 +167,7 @@ def run_smac(
     )
 
     if facade == "hpo":
-        smac = HyperparameterOptimizationFacade(
+        smac_optimizer = HyperparameterOptimizationFacade(
             scenario=smac_scenario,
             target_function=partial(
                 target_function,
@@ -183,7 +184,7 @@ def run_smac(
             overwrite=True,
         )
     elif facade == "bb":
-        smac = BlackBoxFacade(
+        smac_optimizer = BlackBoxFacade(
             scenario=smac_scenario,
             target_function=partial(
                 target_function,
@@ -200,17 +201,155 @@ def run_smac(
             overwrite=True,
         )
 
-    smac.optimize()
+    smac_optimizer.optimize()
 
     trial_data = []
-    for trial_info, trial_value in smac.runhistory.items():
+    for trial_info, trial_value in smac_optimizer.runhistory.items():
         trial_entry = {
             "config_id": trial_info.config_id,
             "cost": trial_value.cost,
         }
-        config = smac.runhistory.get_config(trial_info.config_id)
+        config = smac_optimizer.runhistory.get_config(trial_info.config_id)
         config_entry = fix_config(
             config,
+            benchmark=benchmark,
+            scenario=scenario,
+            fidelity_param_id=fidelity_param_id,
+            on_integer_scale=on_integer_scale,
+            max_fidelity=max_fidelity,
+        )
+        trial_data.append(trial_entry | config_entry)
+    data = pd.DataFrame(trial_data)
+    data.rename(columns={"cost": target_variable}, inplace=True)
+
+    shutil.rmtree(output_directory)
+    return data
+
+
+def run_smac_ask_tell(
+    benchmark,
+    scenario,
+    instance,
+    target_variable,
+    direction,
+    budget,
+    seed,
+    facade="hpo",
+):
+    random.seed(seed)
+    np.random.seed(seed)
+
+    if benchmark == "pure_numeric":
+        config_space = ConfigurationSpace().from_json(
+            os.path.join(YAHPO_DATA_PATH, scenario, "config_space_pure_numeric.json")
+        )
+    elif benchmark == "mixed":
+        raise ValueError("TBD")
+    elif benchmark == "mixed_deps":
+        config_space = ConfigurationSpace().from_json(
+            os.path.join(YAHPO_DATA_PATH, scenario, "config_space.json")
+        )
+    opt_space = remove_hyperparameters(
+        config_space,
+        params_to_remove=SCENARIO_META_DATA[scenario]["params_to_remove"],
+        seed=seed,
+    )
+    if benchmark == "pure_numeric":
+        opt_space = remove_hyperparameters(
+            opt_space,
+            params_to_remove=SCENARIO_META_DATA[scenario]["pure_numeric"][
+                "params_to_remove"
+            ],
+            seed=seed,
+        )
+        opt_space = remove_hyperparameters(
+            opt_space,
+            params_to_remove=SCENARIO_META_DATA[scenario]["pure_numeric"][
+                "params_to_constant"
+            ].keys(),
+            seed=seed,
+        )
+    # FIXME: mixed
+    opt_space.seed(seed)
+    fidelity_param_id = SCENARIO_META_DATA[scenario]["fidelity_param_id"]
+    on_integer_scale = SCENARIO_META_DATA[scenario]["on_integer_scale"]
+    max_fidelity = SCENARIO_META_DATA[scenario]["max_fidelity"]
+    output_directory = (
+        f"smac4{facade}_tmp_"
+        + str(seed)
+        + "_"
+        + str(random.randrange(49152, 65535 + 1))
+    )
+
+    smac_scenario = Scenario(
+        configspace=opt_space,
+        output_directory=output_directory,
+        deterministic=True,
+        n_trials=budget,
+        seed=seed,
+    )
+
+    smac_intensifier = Intensifier(scenario=smac_scenario, max_config_calls=1)
+
+    if facade == "hpo":
+        smac_optimizer = HyperparameterOptimizationFacade(
+            scenario=smac_scenario,
+            target_function=partial(
+                target_function,
+                benchmark=benchmark,
+                scenario=scenario,
+                instance=instance,
+                target_variable=target_variable,
+                direction=direction,
+                fidelity_param_id=fidelity_param_id,
+                on_integer_scale=on_integer_scale,
+                max_fidelity=max_fidelity,
+            ),
+            intensifier=smac_intensifier,
+            overwrite=True,
+        )
+    elif facade == "bb":
+        smac_optimizer = BlackBoxFacade(
+            scenario=smac_scenario,
+            target_function=partial(
+                target_function,
+                benchmark=benchmark,
+                scenario=scenario,
+                instance=instance,
+                target_variable=target_variable,
+                direction=direction,
+                fidelity_param_id=fidelity_param_id,
+                on_integer_scale=on_integer_scale,
+                max_fidelity=max_fidelity,
+            ),
+            intensifier=smac_intensifier,
+            overwrite=True,
+        )
+
+    trial_data = []
+    for config_id in range(budget):
+        info = smac_optimizer.ask()
+        assert info.seed is not None
+        cost = target_function(
+            benchmark=benchmark,
+            scenario=scenario,
+            instance=instance,
+            target_variable=target_variable,
+            direction=direction,
+            fidelity_param_id=fidelity_param_id,
+            on_integer_scale=on_integer_scale,
+            max_fidelity=max_fidelity,
+            config=info.config,
+            seed=info.seed,
+        )
+        value = TrialValue(cost=cost)
+        smac_optimizer.tell(info, value)
+        trial_entry = {
+            "config_id": config_id,
+            "cost": cost,
+        }
+        config_entry = fix_config(
+            info.config,
             benchmark=benchmark,
             scenario=scenario,
             fidelity_param_id=fidelity_param_id,

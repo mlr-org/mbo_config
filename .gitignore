@@ -2,6 +2,7 @@ yahpo_venv/
 smac_venv/
 hebo_venv/
 ax_venv/
+optuna_venv/
 renv/
 .Rprofile
 *.rds
@@ -11,3 +12,4 @@ renv/
 __pycache__/
 log_nodes/
 coordinate_descent.log
+.python-version

@@ -6,15 +6,18 @@ import subprocess
 import tempfile
 
 import numpy as np
+import optuna
 import pandas as pd
 from ConfigSpace import (
     CategoricalHyperparameter,
     ConfigurationSpace,
+    OrdinalHyperparameter,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,
 )
-from hebo.design_space.design_space import DesignSpace
-from hebo.optimizers.hebo import HEBO
+from ConfigSpace.conditions import AndConjunction, OrConjunction
+from optuna.samplers import TPESampler
+from optuna.trial import Trial
 
 from config import (
     SCENARIO_META_DATA,
@@ -25,55 +28,99 @@ from config import (
 from configspace_utils import clip_to_bounds, fix_config, remove_hyperparameters
 
 
-def configspace_to_hebo_designspace(cs):
-    hebo_params = []
+def get_value(hp_name, config_space, trial):
+    hp = config_space.get_hyperparameter(hp_name)
 
-    for hp in list(cs.values()):
-        name = hp.name
+    if isinstance(hp, UniformFloatHyperparameter):
+        value = float(
+            trial.suggest_float(name=hp_name, low=hp.lower, high=hp.upper, log=hp.log)
+        )
 
-        if isinstance(hp, UniformFloatHyperparameter):
-            if hp.log:
-                hebo_params.append(
-                    {
-                        "name": name,
-                        "type": "pow",
-                        "lb": hp.lower,
-                        "ub": hp.upper,
-                        "base": np.exp(1),
-                    }
-                )
-            else:
-                hebo_params.append(
-                    {"name": name, "type": "num", "lb": hp.lower, "ub": hp.upper}
-                )
-        elif isinstance(hp, UniformIntegerHyperparameter):
-            if hp.log:
-                hebo_params.append(
-                    {
-                        "name": name,
-                        "type": "pow_int",
-                        "lb": hp.lower,
-                        "ub": hp.upper,
-                        "base": np.exp(1),
-                    }
-                )
-            else:
-                hebo_params.append(
-                    {"name": name, "type": "int", "lb": hp.lower, "ub": hp.upper}
-                )
+    elif isinstance(hp, UniformIntegerHyperparameter):
+        value = int(
+            trial.suggest_int(name=hp_name, low=hp.lower, high=hp.upper, log=hp.log)
+        )
 
-        elif isinstance(hp, CategoricalHyperparameter):
-            choices = hp.choices
-            if set(choices) == {True, False} or set(choices) == {False, True}:
-                hebo_params.append({"name": name, "type": "bool"})
-            else:
-                hebo_params.append({"name": name, "type": "cat", "categories": choices})
-        else:
-            raise NotImplementedError(
-                f"Unsupported hyperparameter type: {type(hp)} for {name}"
+    elif isinstance(hp, CategoricalHyperparameter):
+        hp_type = type(hp.default_value)
+        value = hp_type(trial.suggest_categorical(name=hp_name, choices=hp.choices))
+
+    elif isinstance(hp, OrdinalHyperparameter):
+        num_vars = len(hp.sequence)
+        index = trial.suggest_int(hp_name, low=0, high=num_vars - 1, log=False)
+        hp_type = type(hp.default_value)
+        value = hp.sequence[index]
+        value = hp_type(value)
+
+    elif isinstance(hp, Constant):
+        value = hp.value
+
+    else:
+        raise ValueError(f"Please implement the support for hps of type {type(hp)}")
+
+    return value
+
+
+def sample_config_from_optuna(trial, config_space):
+    config = {}
+    for hp_name in config_space.get_all_unconditional_hyperparameters():
+        value = get_value(hp_name, config_space, trial)
+        config.update({hp_name: value})
+
+    conditions = config_space.get_conditions()
+    conditional_hps = list(config_space.get_all_conditional_hyperparameters())
+    n_conditions = dict(
+        zip(
+            conditional_hps,
+            [len(config_space.get_parent_conditions_of(hp)) for hp in conditional_hps],
+        )
+    )
+    conditional_hps_sorted = sorted(n_conditions, key=n_conditions.get)
+    for hp_name in conditional_hps_sorted:
+        conditions_to_check = np.where(
+            [
+                (
+                    hp_name in [child.name for child in condition.get_children()]
+                    if (
+                        isinstance(condition, AndConjunction)
+                        | isinstance(condition, OrConjunction)
+                    )
+                    else hp_name == condition.child.name
+                )
+                for condition in conditions
+            ]
+        )[0]
+        checks = [
+            conditions[to_check].satisfied_by_value(
+                dict(
+                    zip(
+                        [parent.name for parent in conditions[to_check].get_parents()],
+                        [
+                            config.get(parent.name)
+                            for parent in conditions[to_check].get_parents()
+                        ],
+                    )
+                )
+                if (
+                    isinstance(conditions[to_check], AndConjunction)
+                    | isinstance(conditions[to_check], OrConjunction)
+                )
+                else {
+                    conditions[to_check].parent.name: config.get(
+                        conditions[to_check].parent.name
+                    )
+                }
             )
+            for to_check in conditions_to_check
+        ]
 
-    return DesignSpace().parse(hebo_params)
+        if sum(checks) == len(checks):
+            value = get_value(hp_name, config_space, trial)
+            config.update({hp_name: value})
+
+    Configuration(config_space, config).check_valid_configuration()
+
+    return config
 
 
 def target_function(
@@ -149,7 +196,7 @@ def target_function(
     return factor * output[target_variable]
 
 
-def run_hebo(
+def run_optuna(
     benchmark,
     scenario,
     instance,
@@ -159,7 +206,7 @@ def run_hebo(
     seed,
 ):
     random.seed(seed)
-    np.random.seed(seed)  # also seeds HEBO's design space
+    np.random.seed(seed)
 
     if benchmark == "pure_numeric":
         config_space = ConfigurationSpace().from_json(
@@ -193,24 +240,20 @@ def run_hebo(
         )
     # FIXME: mixed
     opt_space.seed(seed)
-    hebo_designspace = configspace_to_hebo_designspace(opt_space)
     fidelity_param_id = SCENARIO_META_DATA[scenario]["fidelity_param_id"]
     on_integer_scale = SCENARIO_META_DATA[scenario]["on_integer_scale"]
     max_fidelity = SCENARIO_META_DATA[scenario]["max_fidelity"]
-    hebo = HEBO(hebo_designspace)
+
+    study = optuna.create_study(
+        direction="minimize", sampler=TPESampler(seed=seed)
+    )  # target_function corrects sign
 
     configs = []
     targets = []
-    hebo_fallbacks = []
 
     for i in range(budget):
-        try:
-            config_raw = hebo.suggest(n_suggestions=1)
-            hebo_fallback = False
-        except:
-            config_raw = hebo_designspace.sample(num_samples=1)
-            hebo_fallback = True
-        config = config_raw.to_dict(orient="records")[0]
+        trial = study.ask()
+        config = sample_config_from_optuna(trial, config_space=opt_space)
         config = clip_to_bounds(config, config_space=opt_space)
         target = target_function(
             config,
@@ -224,17 +267,15 @@ def run_hebo(
             on_integer_scale=on_integer_scale,
             max_fidelity=max_fidelity,
         )
-        hebo.observe(config_raw, y=np.array([[target]]))
+        study.tell(trial, values=target)
         configs.append(config)
         targets.append(target)
-        hebo_fallbacks.append(hebo_fallback)
 
     trial_data = []
     for i in range(budget):
         trial_entry = {
             "config_id": i,
             "target": targets[i],
-            "hebo_fallback": hebo_fallbacks[i],
         }
         config = configs[i]
         config_entry = fix_config(

@@ -184,7 +184,7 @@ for (i in seq_len(nrow(optimizers))) {
 }
 
 jobs = findJobs()
-resources.default = list(walltime = 3600L * 3L, memory = 4000L, ntasks = 1L, ncpus = 1L, nodes = 1L)
+resources.default = list(walltime = 3600L * 6L, memory = 4000L, ntasks = 1L, ncpus = 1L, nodes = 1L)
 submitJobs(jobs, resources = resources.default)
 
 done = findDone()

@@ -29,11 +29,30 @@ smac4hpo_wrapper = function(job, data, instance, ...) {
   result
 }
 
+smac4hpo_ask_tell_wrapper = function(job, data, instance, ...) {
+  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/smac_venv", required = TRUE)
+  library(reticulate)
+  py_run_file("smac_wrapper.py")
+  result = py$run_smac_ask_tell(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed, facade = "hpo")
+  result = as.data.table(result)
+  result
+}
+
+
 smac4bb_wrapper = function(job, data, instance, ...) {
   reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/smac_venv", required = TRUE)
   library(reticulate)
   py_run_file("smac_wrapper.py")
   result = py$run_smac(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed, facade = "bb")
+  result = as.data.table(result)
+  result
+}
+
+smac4bb_ask_tell_wrapper = function(job, data, instance, ...) {
+  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/smac_venv", required = TRUE)
+  library(reticulate)
+  py_run_file("smac_wrapper.py")
+  result = py$run_smac_ask_tell(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed, facade = "bb")
   result = as.data.table(result)
   result
 }
@@ -58,7 +77,9 @@ ax_wrapper = function(job, data, instance, ...) {
 
 # add algorithms
 addAlgorithm("smac4hpo", fun = smac4hpo_wrapper)
+addAlgorithm("smac4hpo_ask_tell", fun = smac4hpo_ask_tell_wrapper)
 addAlgorithm("smac4bb", fun = smac4bb_wrapper)
+addAlgorithm("smac4bb_ask_tell", fun = smac4bb_ask_tell_wrapper)
 addAlgorithm("hebo", fun = hebo_wrapper)
 addAlgorithm("ax", fun = ax_wrapper)
 

@@ -110,6 +110,8 @@ def clip_to_bounds(config, config_space, epsilon=1e-12):
     clipped_config = {}
     for hp in list(config_space.values()):
         name = hp.name
+        if name not in config:
+            continue
         val = config[name]
         if isinstance(hp, (UniformFloatHyperparameter,)):
             val = min(max(val, hp.lower + epsilon), hp.upper - epsilon)
