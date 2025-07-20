@@ -11,6 +11,7 @@ import pandas as pd
 from ConfigSpace import (
     CategoricalHyperparameter,
     ConfigurationSpace,
+    Configuration,
     OrdinalHyperparameter,
     UniformFloatHyperparameter,
     UniformIntegerHyperparameter,

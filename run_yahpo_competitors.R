@@ -75,6 +75,15 @@ ax_wrapper = function(job, data, instance, ...) {
   result
 }
 
+optuna_wrapper = function(job, data, instance, ...) {
+  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/optuna_venv", required = TRUE)
+  library(reticulate)
+  py_run_file("optuna_wrapper.py")
+  result = py$run_optuna(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed)
+  result = as.data.table(result)
+  result
+}
+
 # add algorithms
 addAlgorithm("smac4hpo", fun = smac4hpo_wrapper)
 addAlgorithm("smac4hpo_ask_tell", fun = smac4hpo_ask_tell_wrapper)
@@ -82,6 +91,7 @@ addAlgorithm("smac4bb", fun = smac4bb_wrapper)
 addAlgorithm("smac4bb_ask_tell", fun = smac4bb_ask_tell_wrapper)
 addAlgorithm("hebo", fun = hebo_wrapper)
 addAlgorithm("ax", fun = ax_wrapper)
+addAlgorithm("optuna", fun = optuna_wrapper)
 
 if (YAHPO_BENCHMARK == "pure_numeric") {
   setup = data.table(
@@ -132,7 +142,7 @@ prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
 names(prob_designs) = prob_names
 
 # add jobs for optimizers
-optimizers = data.table(algorithm = c("smac4hpo", "smac4bb", "hebo", "ax"))
+optimizers = data.table(algorithm = c("smac4hpo", "smac4hpo_ask_tell", "optuna"))
 
 for (i in seq_len(nrow(optimizers))) {
   algo_designs = setNames(list(optimizers[i, ]), nm = optimizers[i, ]$algorithm)
