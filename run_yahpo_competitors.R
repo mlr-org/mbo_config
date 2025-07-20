@@ -38,7 +38,6 @@ smac4hpo_ask_tell_wrapper = function(job, data, instance, ...) {
   result
 }
 
-
 smac4bb_wrapper = function(job, data, instance, ...) {
   reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/smac_venv", required = TRUE)
   library(reticulate)
