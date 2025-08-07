@@ -43,6 +43,7 @@ renv::install(c(
   "mlr-org/mlr3mbo@so_config_5",
   "mlr3pipelines",
   "mlr-org/bbotk@so_config",
+  "be-marc/cmaes",
   "ranger",
   "DiceKriging",
   "rgenoud",
