@@ -16,7 +16,7 @@ mkdir -p "$TMPDIR"
 
 ## Load required environment modules
 ml conda
-conda activate r-4.3
+conda activate mbo_config
 
 ## Execute job
-Rscript coordinate_descent_mixed_deps.R
+Rscript coordinate_descent/coordinate_descent_mixed_deps.R

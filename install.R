@@ -1,5 +1,7 @@
 options("install.opts" = "--without-keep.source")
 options("renv.config.pak.enabled" = TRUE)
+options(repos=c(CRAN="https://cran.r-project.org"))
+install.packages("renv")
 
 renv::init(".", bare = TRUE)
 renv::load(".")
@@ -38,12 +40,11 @@ obj = b$get_objective("40981", multifidelity = FALSE)
 renv::install(c(
   "batchtools",
   "here",
-  "mlr-org/mlr3@predict_newdata_fast",
-  "mlr-org/mlr3learners@ranger_se",
-  "mlr-org/mlr3mbo@so_config_5",
+  "mlr3",
+  "mlr-org/mlr3learners",
+  "mlr-org/mlr3mbo@so_config_6",
   "mlr3pipelines",
-  "mlr-org/bbotk@so_config",
-  "be-marc/cmaes",
+  "mlr-org/bbotk@benchmark",
   "ranger",
   "DiceKriging",
   "rgenoud",
@@ -53,6 +54,11 @@ renv::install(c(
   "fastGHQuad",
   "lhs"
 ))
+
+system("git clone --recursive https://github.com/mlr-org/libcmaesr.git /tmp/libcmaesr")
+renv::load(".")
+renv::install("languageserver") # Why?
+renv::install("/tmp/libcmaesr")
 
 # SMAC
 conda_create("smac", python = "3.8", packages = c(

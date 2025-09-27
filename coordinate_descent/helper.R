@@ -11,9 +11,9 @@ make_optim_instance = function(instance) {
     objective = fix_objective_domain_constants_pure_numeric(instance$scenario, objective=objective)
     search_space = get_search_space_pure_numeric(instance$scenario)
   }
-  if (instance$budget != determine_budget(search_space$length)) {
-    stop("Incorrect budget.")
-  }
+  # if (instance$budget != determine_budget(search_space$length)) {
+  #   stop("Incorrect budget.")
+  # }
   optim_instance = OptimInstanceBatchSingleCrit$new(objective, search_space = search_space, terminator = trm("evals", n_evals = instance$budget))
   optim_instance
 }
@@ -227,8 +227,8 @@ get_surrogate_mixed_deps = function(surrogate, extratrees, trees, variance_estim
       nugget.stability = as.numeric(nugget),
       scaling = scaling
     )
-     ppl("robustify", learner = learner, impute_missings = TRUE, factors_to_numeric = TRUE, ordered_action = "factor", character_action = "factor", POSIXct_action = "ignore") %>>%
-     learner
+    as_learner(ppl("robustify", learner = learner, impute_missings = TRUE, factors_to_numeric = TRUE, ordered_action = "factor", character_action = "factor", POSIXct_action = "ignore") %>>%
+       learner)
   }
   srlrn(learner)
   #surrogate$param_set$values$catch_errors = FALSE
@@ -273,7 +273,9 @@ get_acq_optimizer_mixed_deps = function(acqopt) {
   #   batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
   #   AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
   } else if (acqopt == "LS") {
-    acqo(opt("local_search", n_searches = 10L, n_steps = 30L, n_neighbors = 100L), terminator = trm("evals", n_evals = 30000L))
+    optimizer = AcqOptimizerLocalSearch$new()
+    optimizer$param_set$set_values(n_searches = 30L, n_steps = 10L, n_neighs = 100L)
+    optimizer
   }
   #acq_optimizer$param_set$values$catch_errors = FALSE
   acq_optimizer

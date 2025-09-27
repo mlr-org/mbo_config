@@ -1,5 +1,5 @@
 ml conda cmake
-conda activate r-4.3
+conda activate mbo_config
 
 # ----------------------
 # Git Aliases
