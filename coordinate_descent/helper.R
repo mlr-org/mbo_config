@@ -204,12 +204,11 @@ rbv2_xgboost_search_space_pure_numeric = ps(
   # task_id
 )
 
-get_surrogate_mixed_deps = function(surrogate, extratrees, trees, variance_estimator, kernel, nugget, scaling) {
-  learner = if (surrogate == "rf") {
-    lrn("regr.ranger",
+get_surrogate_mixed_deps = function(trees, variance_estimator) {
+  learner = lrn("regr.ranger",
       num.trees = as.integer(trees),
       se.method = variance_estimator,
-      splitrule = if (extratrees) "extratrees" else "variance",
+      splitrule = "variance",
       predict_type = "se",
       keep.inbag = TRUE,
       sample.fraction = 1,
@@ -217,19 +216,6 @@ get_surrogate_mixed_deps = function(surrogate, extratrees, trees, variance_estim
       min.bucket = 3,
       mtry.ratio = 5/6
     )
-    # impute missings? Ranger can handle missing values now
-  } else if (surrogate == "gp") {
-    learner = lrn("regr.km",
-      predict_type = "se",
-      control = list(trace = FALSE),
-      optim.method = "gen",
-      covtype = kernel,
-      nugget.stability = as.numeric(nugget),
-      scaling = scaling
-    )
-    as_learner(ppl("robustify", learner = learner, impute_missings = TRUE, factors_to_numeric = TRUE, ordered_action = "factor", character_action = "factor", POSIXct_action = "ignore") %>>%
-       learner)
-  }
   srlrn(learner)
   #surrogate$param_set$values$catch_errors = FALSE
 }
@@ -262,11 +248,13 @@ get_surrogate_pure_numeric = function(surrogate, extratrees, trees, variance_est
   #surrogate$param_set$values$catch_errors = FALSE
 }
 
-get_acq_optimizer_mixed_deps = function(acqopt) {
+get_acq_optimizer_mixed_deps = function(acqopt, dim) {
+  budget = 100L * dim^2
+
   acq_optimizer = if (acqopt == "RS_1000") {
     acqo(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
   } else if (acqopt == "RS") {
-    acqo(opt("random_search", batch_size = 30000L), terminator = trm("evals", n_evals = 30000L))
+    acqo(opt("random_search", batch_size = budget), terminator = trm("evals", n_evals = budget))
   # } else if (acqopt == "FS") {
   #   n_repeats = 3L
   #   maxit = 9L
@@ -274,7 +262,7 @@ get_acq_optimizer_mixed_deps = function(acqopt) {
   #   AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
   } else if (acqopt == "LS") {
     optimizer = AcqOptimizerLocalSearch$new()
-    optimizer$param_set$set_values(n_searches = 30L, n_steps = 10L, n_neighs = 100L)
+    optimizer$param_set$set_values(n_searches = 10L, n_steps = ceiling(budget / 300L), n_neighs = 30L)
     optimizer
   }
   #acq_optimizer$param_set$values$catch_errors = FALSE

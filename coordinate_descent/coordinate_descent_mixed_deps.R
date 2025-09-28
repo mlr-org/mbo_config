@@ -49,20 +49,20 @@ source("coordinate_descent/OptimizerCoordinateDescent.R")
 
 setup = mlr3misc::rowwise_table(
      ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
-     "mixed_deps", "lcbench", "167168", "val_accuracy", "maximize", 200L,
-     "mixed_deps", "lcbench", "189873", "val_accuracy", "maximize", 200L,
-     "mixed_deps", "lcbench", "189906", "val_accuracy", "maximize", 200L,
-     "mixed_deps", "nb301", "CIFAR10", "val_accuracy", "maximize", 200L,
-     "mixed_deps", "rbv2_rpart", "14", "acc", "maximize", 200L,
-     "mixed_deps", "rbv2_rpart", "40499", "acc", "maximize", 200L,
-     "mixed_deps", "rbv2_ranger", "16", "acc", "maximize", 200L,
-     "mixed_deps", "rbv2_ranger", "42", "acc", "maximize", 200L,
-     "mixed_deps", "rbv2_xgboost", "12", "acc", "maximize", 200L,
-     "mixed_deps", "rbv2_xgboost", "1501", "acc", "maximize", 200L,
-     "mixed_deps", "rbv2_xgboost", "16", "acc", "maximize", 200L,
-     "mixed_deps", "rbv2_super", "1457", "acc", "maximize", 200L,
-     "mixed_deps", "rbv2_super", "1063", "acc", "maximize", 200L,
-     "mixed_deps", "rbv2_super", "15", "acc", "maximize", 200L)
+     "mixed_deps", "lcbench", "167168", "val_accuracy", "maximize", 400L,
+     "mixed_deps", "lcbench", "189873", "val_accuracy", "maximize", 400L,
+     "mixed_deps", "lcbench", "189906", "val_accuracy", "maximize", 400L,
+     "mixed_deps", "nb301", "CIFAR10", "val_accuracy", "maximize", 400L,
+     "mixed_deps", "rbv2_rpart", "14", "acc", "maximize", 400L,
+     "mixed_deps", "rbv2_rpart", "40499", "acc", "maximize", 400L,
+     "mixed_deps", "rbv2_ranger", "16", "acc", "maximize", 400L,
+     "mixed_deps", "rbv2_ranger", "42", "acc", "maximize", 400L,
+     "mixed_deps", "rbv2_xgboost", "12", "acc", "maximize", 400L,
+     "mixed_deps", "rbv2_xgboost", "1501", "acc", "maximize", 400L,
+     "mixed_deps", "rbv2_xgboost", "16", "acc", "maximize", 400L,
+     "mixed_deps", "rbv2_super", "1457", "acc", "maximize", 400L,
+     "mixed_deps", "rbv2_super", "1063", "acc", "maximize", 400L,
+     "mixed_deps", "rbv2_super", "15", "acc", "maximize", 400L)
 setup[, id := seq_len(.N)]
 
 # setup = mlr3misc::rowwise_table(
@@ -100,20 +100,15 @@ search_space = ps(
   init_size_fraction     = p_fct(c("0.05", "0.10", "0.25")),
   random_interleave_iter = p_fct(c("0", "2", "4")),
   # surrogate
-  surrogate              = p_fct(c("rf", "gp")),
-  extratrees             = p_lgl(depends = surrogate == "rf"),
-  trees                  = p_fct(c("10", "500"), depends = surrogate == "rf"),
-  variance_estimator     = p_fct(c("jack", "ensemble_standard_deviation", "law_of_total_variance"), depends = surrogate == "rf"),
-  kernel                 = p_fct(c("gauss", "matern5_2", "matern3_2", "exp"), depends = surrogate == "gp"),
-  nugget                 = p_fct(c("0", "1e-3", "1e-8"), depends = surrogate == "gp"),
-  scaling                = p_lgl(depends = surrogate == "gp"),
+  trees                  = p_fct(c("10", "500")),
+  variance_estimator     = p_fct(c("jack", "ensemble_standard_deviation", "law_of_total_variance")),
   # acqf
   acqf                   = p_fct(c("EI", "CB", "PI", "Mean")),
   lambda                 = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
   epsilon_decay          = p_lgl(depends = acqf == "EI"),
   lambda_decay           = p_lgl(depends = acqf == "CB"),
   # acqopt
-  acqopt                 = p_fct(c("RS_1000", "RS", "LS")) # "FS"
+  acqopt                 = p_fct(c("RS_1000", "RS", "LS"))
 )
 
 addAlgorithm(
@@ -127,13 +122,8 @@ addAlgorithm(
     init,
     init_size_fraction,
     random_interleave_iter,
-    surrogate,
-    extratrees,
     trees,
     variance_estimator,
-    kernel,
-    nugget,
-    scaling,
     acqf,
     lambda,
     epsilon_decay,
@@ -142,11 +132,15 @@ addAlgorithm(
     id,
     config_hash
     ) {
+    file = file(sprintf("coordinate_descent/logs/mixed_deps/%i.log", id), open = "wt")
+    sink(file)
+    sink(file, type = "message")
 
     reticulate::use_condaenv("yahpo_gym", required = TRUE)
     library(yahpogym)
-    logger = lgr::get_logger("mlr3/bbotk")
-    logger$set_threshold("warn")
+    # logger = lgr::get_logger("mlr3/bbotk")
+    # logger$set_threshold("warn")
+    data.table::setDTthreads(1L)
     future::plan("sequential")
 
     optim_instance = make_optim_instance(instance)
@@ -165,7 +159,7 @@ addAlgorithm(
 
     optim_instance$eval_batch(init_design)
 
-    surrogate = get_surrogate_mixed_deps(surrogate, extratrees, trees, variance_estimator, kernel, nugget, scaling)
+    surrogate = get_surrogate_mixed_deps(trees, variance_estimator)
 
     if (input_trafo == "unitcube") {
       surrogate$input_trafo = InputTrafoUnitcube$new()
@@ -177,7 +171,7 @@ addAlgorithm(
       surrogate$output_trafo = OutputTrafoLog$new(invert_posterior = FALSE)
     }
 
-    acq_optimizer = get_acq_optimizer_mixed_deps(acqopt)
+    acq_optimizer = get_acq_optimizer_mixed_deps(acqopt, dim = optim_instance$search_space$length)
 
     acq_function = if (acqf == "EI" && output_trafo == "log") {
       AcqFunctionEILog$new()
@@ -245,13 +239,8 @@ init = data.table(
   init = "random",
   init_size_fraction = "0.25",
   random_interleave_iter = "0",
-  surrogate = "rf",
-  extratrees = FALSE,
   trees = "500",
   variance_estimator = "ensemble_standard_deviation",
-  kernel = NA_character_,
-  nugget = NA_character_,
-  scaling = NA,
   acqf = "EI",
   lambda = NA_character_,
   epsilon_decay = FALSE,
@@ -379,7 +368,7 @@ if (file.exists(callback_backup$state$path)) {
 
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$param_set$set_values(
-  n_generations = 10L,
+  n_generations = 5L,
   start = init
 )
 

@@ -81,7 +81,7 @@ search_space = ps(
   extratrees             = p_lgl(depends = surrogate == "rf"),
   trees                  = p_fct(c("10", "500"), depends = surrogate == "rf"),
   variance_estimator     = p_fct(c("jack", "simple", "law_of_total_variance"), depends = surrogate == "rf"),
-  kernel                 = p_fct(c("gauss", "matern3_2", "matern5_2", "exp", "powexp"), depends = surrogate == "gp"),
+  kernel                 = p_fct(c("gauss", "matern3_2", "matern5_2", "exp"), depends = surrogate == "gp"),
   nugget                 = p_fct(c("0", "1e-3", "1e-8"), depends = surrogate == "gp"),
   scaling                = p_lgl(depends = surrogate == "gp"),
   # acqf
@@ -90,7 +90,7 @@ search_space = ps(
   epsilon_decay          = p_lgl(depends = acqf == "EI"),
   lambda_decay           = p_lgl(depends = acqf == "CB"),
   # acqopt
-  acqopt                 = p_fct(c("RS_1000", "RS", "LS", "DIRECT", "CMAES", "LBFGSB")) # "FS",
+  acqopt                 = p_fct(c("RS_1000", "RS", "LS", "DIRECT", "CMAES", "LBFGSB"))
 )
 
 addAlgorithm(
