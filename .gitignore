@@ -15,3 +15,4 @@ log_nodes_pure_numeric/
 log_nodes_mixed_deps/
 log_nodes_pure_numeric
 log_nodes_mixed_deps
+coordinate_descent/logs/

@@ -140,7 +140,6 @@ addAlgorithm(
     id,
     config_hash
     ) {
-
     file = file(sprintf("coordinate_descent/logs/mixed_deps/%i.log", id), open = "wt")
     sink(file)
     sink(file, type = "message")
@@ -266,13 +265,16 @@ addExperiments(
   reg = reg
 )
 
-testJob(1)
+testJob(14)
 
 
 # constants = ps(
 #   reg = p_uty(),
 #   rs_reference = p_uty()
 # )
+
+
+
 
 # objective = ObjectiveRFunDt$new(
 #   fun = function(

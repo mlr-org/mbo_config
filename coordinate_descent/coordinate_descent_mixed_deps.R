@@ -65,24 +65,6 @@ setup = mlr3misc::rowwise_table(
      "mixed_deps", "rbv2_super", "15", "acc", "maximize", 400L)
 setup[, id := seq_len(.N)]
 
-# setup = mlr3misc::rowwise_table(
-#      ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
-#      "mixed_deps", "lcbench", "167168", "val_accuracy", "maximize", 126L,
-#      "mixed_deps", "lcbench", "189873", "val_accuracy", "maximize", 126L,
-#      "mixed_deps", "lcbench", "189906", "val_accuracy", "maximize", 126L,
-#      "mixed_deps", "nb301", "CIFAR10", "val_accuracy", "maximize", 254L,
-#      "mixed_deps", "rbv2_rpart", "14", "acc", "maximize", 110L,
-#      "mixed_deps", "rbv2_rpart", "40499", "acc", "maximize", 110L,
-#      "mixed_deps", "rbv2_ranger", "16", "acc", "maximize", 134L,
-#      "mixed_deps", "rbv2_ranger", "42", "acc", "maximize", 134L,
-#      "mixed_deps", "rbv2_xgboost", "12", "acc", "maximize", 170L,
-#      "mixed_deps", "rbv2_xgboost", "1501", "acc", "maximize", 170L,
-#      "mixed_deps", "rbv2_xgboost", "16", "acc", "maximize", 170L,
-#      "mixed_deps", "rbv2_super", "1457", "acc", "maximize", 267L,
-#      "mixed_deps", "rbv2_super", "1063", "acc", "maximize", 267L,
-#      "mixed_deps", "rbv2_super", "15", "acc", "maximize", 267L)
-# setup[, id := seq_len(.N)]
-
 # add problems
 prob_designs = map(seq_len(nrow(setup)), function(i) {
   prob_id = paste0(setup[i, ]$scenario, "_", setup[i, ]$instance, "_", setup[i, ]$target_variable)

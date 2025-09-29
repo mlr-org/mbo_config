@@ -252,14 +252,13 @@ get_acq_optimizer_mixed_deps = function(acqopt, dim) {
   budget = 100L * dim^2
 
   acq_optimizer = if (acqopt == "RS_1000") {
-    acqo(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
+    optimizer = AcqOptimizerRandomSearch$new()
+    optimizer$param_set$set_values(max_fevals = 1000L)
+    optimizer
   } else if (acqopt == "RS") {
-    acqo(opt("random_search", batch_size = budget), terminator = trm("evals", n_evals = budget))
-  # } else if (acqopt == "FS") {
-  #   n_repeats = 3L
-  #   maxit = 9L
-  #   batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
-  #   AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
+    optimizer = AcqOptimizerRandomSearch$new()
+    optimizer$param_set$set_values(max_fevals = budget)
+    optimizer
   } else if (acqopt == "LS") {
     optimizer = AcqOptimizerLocalSearch$new()
     optimizer$param_set$set_values(n_searches = 10L, n_steps = ceiling(budget / 300L), n_neighs = 30L)
@@ -269,69 +268,43 @@ get_acq_optimizer_mixed_deps = function(acqopt, dim) {
   acq_optimizer
 }
 
-get_acq_optimizer_pure_numeric = function(acqopt) {
- acq_optimizer = if (acqopt == "RS_1000") {
-    acqo(opt("random_search", batch_size = 1000L), terminator = trm("evals", n_evals = 1000L))
+get_acq_optimizer_pure_numeric = function(acqopt, dim) {
+  budget = 100L * dim^2
+
+  acq_optimizer = if (acqopt == "RS_1000") {
+    optimizer = AcqOptimizerRandomSearch$new()
+    optimizer$param_set$set_values(max_fevals = 1000L)
+    optimizer
   } else if (acqopt == "RS") {
-    acqo(opt("random_search", batch_size = 30000L), terminator = trm("evals", n_evals = 30000L))
-  # } else if (acqopt == "FS") {
-  #   n_repeats = 3L
-  #   maxit = 9L
-  #   batch_size = ceiling((30000L / n_repeats) / (1 + maxit)) # 1000L
-  #   AcqOptimizer$new(opt("focus_search", n_points = batch_size, maxit = maxit), terminator = trm("evals", n_evals = 30000L))
+    optimizer = AcqOptimizerRandomSearch$new()
+    optimizer$param_set$set_values(max_fevals = budget)
+    optimizer
   } else if (acqopt == "LS") {
-    acqo(opt("local_search", n_searches = 10L, n_steps = 30L, n_neighbors = 100L), terminator = trm("evals", n_evals = 30000L))
+    optimizer = AcqOptimizerLocalSearch$new()
+    optimizer$param_set$set_values(n_searches = 10L, n_steps = ceiling(budget / 300L), n_neighs = 30L)
+    optimizer
   } else if (acqopt == "DIRECT") {
-    # optimizer = opt("chain",
-    #   optimizers = rep(list(opt("random_search", batch_size = 5000L), opt("nloptr", algorithm = "NLOPT_GN_DIRECT_L")), times = 5L),
-    #   terminators = rep(list(trm("evals", n_evals = 5000L), trm("combo", terminators = list(trm("evals", n_evals = 1000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 5L))
-    # cb = callback_batch("start_values",
-    #   on_optimization_begin = function(callback, context) {
-    #   if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
-    #     start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
-    #     context$optimizer$param_set$values$start_values = "custom"
-    #     context$optimizer$param_set$values$start = start
-    #   }
-    # })
-    acq_optimizer = AcqOptimizerDirect$new()
-    acq_optimizer$param_set$set_values(
-       random_restart_size = 5000L,
-       n_random_restarts = 5L,
-       maxeval = 1000,
+    optimizer = AcqOptimizerDirect$new()
+    optimizer$param_set$set_values(
+       maxeval = budget,
+       max_restarts = dim * 3L,
        ftol_rel = 1e-4 # delta_f / f < 1e-4
     )
-    acq_optimizer
+    optimizer
   } else if (acqopt == "CMAES") {
-    acq_optimizer = AcqOptimizerCmaes$new()
-    acq_optimizer$param_set$set_values(
-      maxit = 6000L,
-      restart_strategy = "ipop",
-      n_restarts = 5L,
-      population_multiplier = 2L
+    optimizer = AcqOptimizerCmaes$new()
+    optimizer$param_set$set_values(
+      max_fevals = budget
     )
-    acq_optimizer
+    optimizer
   } else if (acqopt == "LBFGSB") {
-    # optimizer = opt("chain",
-    #   optimizers = rep(list(opt("random_search", batch_size = 5000L), opt("nloptr", algorithm = "NLOPT_LD_LBFGS", approximate_eval_grad_f = TRUE)), times = 5L),
-    #   terminators = rep(list(trm("evals", n_evals = 5000L), trm("combo", terminators = list(trm("evals", n_evals = 1000L), trm("stagnation", iters = 100L, threshold = 1e-12)))), times = 5L))
-    # cb = callback_batch("start_values",
-    #   on_optimization_begin = function(callback, context) {
-    #   if (class(context$optimizer)[1L] == "OptimizerBatchNLoptr") {
-    #     start = unlist(context$result[, context$instance$archive$cols_x, with = FALSE])  # previous random search
-    #     context$optimizer$param_set$values$start_values = "custom"
-    #     context$optimizer$param_set$values$start = start
-    #   }
-    # })
-    # acq_optimizer = AcqOptimizer$new(optimizer, terminator = trm("evals", n_evals = 30000L), callbacks = list(cb))
-    # acq_optimizer
-    acq_optimizer = AcqOptimizerLbfgsb$new()
-    acq_optimizer$param_set$set_values(
-       random_restart_size = 5000L,
-       n_random_restarts = 5L,
-       maxeval = 1000,
+    optimizer = AcqOptimizerLbfgsb$new()
+    optimizer$param_set$set_values(
+       maxeval = budget,
+       max_restarts = dim * 5L,
        ftol_rel = 1e-4 # delta_f / f < 1e-4
     )
-    acq_optimizer
+    optimizer
   }
   #acq_optimizer$param_set$values$catch_errors = FALSE
   acq_optimizer
