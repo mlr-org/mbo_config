@@ -27,12 +27,12 @@ for (source_file in source_files) {
   source(source_file)
 }
 
-registry_name = "/glade/derecho/scratch/marcbecker/yahpo_pure_numeric_coordinate_descent"
+registry_name = "/glade/derecho/scratch/marcbecker/yahpo_pure_numeric_coordinate_descent_runtime_ncar"
 unlink(registry_name, recursive = TRUE)
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
-    conf.file = "batchtools.conf.main.R",
+    conf.file = NA,
     packages = packages,
     source = source_files
   )
@@ -49,13 +49,13 @@ source("coordinate_descent/OptimizerCoordinateDescent.R")
 
 setup = mlr3misc::rowwise_table(
     ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
-    "pure_numeric", "lcbench", "167168", "val_accuracy", "maximize", 400L,
-    "pure_numeric", "lcbench", "189873", "val_accuracy", "maximize", 400L,
-    "pure_numeric", "lcbench", "189906", "val_accuracy", "maximize", 400L,
-    "pure_numeric", "rbv2_rpart", "14", "acc", "maximize", 400L,
-    "pure_numeric", "rbv2_rpart", "40499", "acc", "maximize", 400L,
-    "pure_numeric", "rbv2_xgboost", "12", "acc", "maximize", 400L,
-    "pure_numeric", "rbv2_xgboost", "1501", "acc", "maximize", 400L,
+    # "pure_numeric", "lcbench", "167168", "val_accuracy", "maximize", 400L,
+    # "pure_numeric", "lcbench", "189873", "val_accuracy", "maximize", 400L,
+    # "pure_numeric", "lcbench", "189906", "val_accuracy", "maximize", 400L,
+    # "pure_numeric", "rbv2_rpart", "14", "acc", "maximize", 400L,
+    # "pure_numeric", "rbv2_rpart", "40499", "acc", "maximize", 400L,
+    # "pure_numeric", "rbv2_xgboost", "12", "acc", "maximize", 400L,
+    # "pure_numeric", "rbv2_xgboost", "1501", "acc", "maximize", 400L,
     "pure_numeric", "rbv2_xgboost", "40499", "acc", "maximize", 400L
 )
 setup[, id := seq_len(.N)]
@@ -119,14 +119,14 @@ addAlgorithm(
     id,
     config_hash
     ) {
-    # file = file(sprintf("coordinate_descent/logs/pure_numeric/%i.log", id), open = "wt")
-    # sink(file)
-    # sink(file, type = "message")
+    file = file(sprintf("coordinate_descent/logs/pure_numeric/%i_%s.log", id, job$prob.name), open = "wt")
+    sink(file)
+    sink(file, type = "message")
 
     reticulate::use_condaenv("yahpo_gym", required = TRUE)
     library(yahpogym)
-    logger = lgr::get_logger("mlr3/bbotk")
-    logger$set_threshold("warn")
+    # logger = lgr::get_logger("mlr3/bbotk")
+    # logger$set_threshold("warn")
     data.table::setDTthreads(1L)
     future::plan("sequential")
 
@@ -240,129 +240,148 @@ init = data.table(
   acqopt = "RS_1000"
 )
 
-constants = ps(
-  reg = p_uty(),
-  rs_reference = p_uty()
+xdt = get_generation(list(search_space = search_space), init)
+
+set(xdt, j = "id", value = seq_len(nrow(xdt)))
+set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))
+xdt$parameter = NULL
+
+addExperiments(
+  algo.designs = list(mbo = xdt),
+  repls = 1L,
+  reg = reg
 )
 
-objective = ObjectiveRFunDt$new(
-  fun = function(
-    xdt,
-    reg,
-    rs_reference
-    ) {
-    xdt_path = "/glade/derecho/scratch/marcbecker/pure_numeric_intermediate_xdt.rds"
-    job_ids_path = "/glade/derecho/scratch/marcbecker/pure_numeric_intermediate_job_ids.rds"
+job_ids = getJobTable()$job.id
+submit_ncar(job_ids, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = ".")
 
-    n_repls = 30L
-    xdt[, id := .I]
-    set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
+# unnest(getJobTable(), c("algo.pars", "prob.pars"))
 
-    ades = list(mbo = xdt)
-    job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
-    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_pure_numeric")
+# constants = ps(
+#   reg = p_uty(),
+#   rs_reference = p_uty()
+# )
 
-    tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
-    saveRDS(xdt, tmp_file)
-    unlink(xdt_path)
-    file.rename(tmp_file, xdt_path)
+# objective = ObjectiveRFunDt$new(
+#   fun = function(
+#     xdt,
+#     reg,
+#     rs_reference
+#     ) {
+#     xdt_path = "/glade/derecho/scratch/marcbecker/pure_numeric_intermediate_xdt.rds"
+#     job_ids_path = "/glade/derecho/scratch/marcbecker/pure_numeric_intermediate_job_ids.rds"
 
-    tmp_file = tempfile(tmpdir = dirname(job_ids_path), fileext = ".rds")
-    saveRDS(job_ids, tmp_file)
-    unlink(job_ids_path)
-    file.rename(tmp_file, job_ids_path)
+#     n_repls = 15L
+#     xdt[, id := .I]
+#     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
 
-    # job_ids = readRDS(job_ids_path)
-    # xdt = readRDS(xdt_path)
+#     ades = list(mbo = xdt)
+#     job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
+#     job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_pure_numeric")
 
-    waitForJobs(ids = job_ids, reg = reg)
+#     tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
+#     saveRDS(xdt, tmp_file)
+#     unlink(xdt_path)
+#     file.rename(tmp_file, xdt_path)
 
-    # while(TRUE) {
-    #   if (length(findExpired()$job.id)) {
-    #     message("Resubmitting expired jobs")
-    #     expired_ids = findExpired()
-    #     resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_pure_numeric")
-    #     waitForJobs(ids = resubmitted_ids, reg = reg)
-    #   } else {
-    #     break
-    #   }
-    # }
+#     tmp_file = tempfile(tmpdir = dirname(job_ids_path), fileext = ".rds")
+#     saveRDS(job_ids, tmp_file)
+#     unlink(job_ids_path)
+#     file.rename(tmp_file, job_ids_path)
 
-    res = rbindlist(reduceResultsList(ids = intersect(job_ids, findDone()$job.id), reg = reg))
+#     # job_ids = readRDS(job_ids_path)
+#     # xdt = readRDS(xdt_path)
 
-    # average score over replications
-    agg = res[, list(mean_score = mean(score), raw_score = list(score), n_na = sum(is.na(score)), n = .N), by = list(id, problem)]
+#     waitForJobs(ids = job_ids, reg = reg)
 
-    # determine meta score
-    meta_scores = pmap_dbl(agg, function(problem, mean_score, ...) {
-      .problem = problem
-      score_rs_small = rs_reference[list(.problem), mean_best, on = "problem"]
-      score_rs_large= rs_reference[list(.problem), best, on = "problem"]
+#     # while(TRUE) {
+#     #   if (length(findExpired()$job.id)) {
+#     #     message("Resubmitting expired jobs")
+#     #     expired_ids = findExpired()
+#     #     resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_pure_numeric")
+#     #     waitForJobs(ids = resubmitted_ids, reg = reg)
+#     #   } else {
+#     #     break
+#     #   }
+#     # }
 
-      (score_rs_small - mean_score) / (score_rs_small - score_rs_large)
-    })
-    set(agg, j = "meta_score", value = meta_scores)
+#     res = rbindlist(reduceResultsList(ids = intersect(job_ids, findDone()$job.id), reg = reg))
 
-    # average meta score over problems
-    agg_meta_score = agg[, list(
-      mean_meta_score = mean(meta_score),
-      raw_meta_score = list(set_names(meta_score, problem)),
-      n_na = sum(is.na(meta_score)),
-      n = .N,
-      raw_mean_score = list(set_names(mean_score, problem)),
-      missing_instances = list(setdiff(reg$problems, problem))),
-      by = .(id)]
+#     # average score over replications
+#     agg = res[, list(mean_score = mean(score), raw_score = list(score), n_na = sum(is.na(score)), n = .N), by = list(id, problem)]
 
-    # if no meta score on all instances, set to -Inf
-    agg_meta_score[n < 8, mean_meta_score := -Inf]
+#     # determine meta score
+#     meta_scores = pmap_dbl(agg, function(problem, mean_score, ...) {
+#       .problem = problem
+#       score_rs_small = rs_reference[list(.problem), mean_best, on = "problem"]
+#       score_rs_large= rs_reference[list(.problem), best, on = "problem"]
 
-    agg_meta_score
-  },
-  domain = search_space,
-  codomain = ps(mean_meta_score = p_dbl(tags = "maximize")),
-  constants = constants,
-  check_values = FALSE
-)
+#       (score_rs_small - mean_score) / (score_rs_small - score_rs_large)
+#     })
+#     set(agg, j = "meta_score", value = meta_scores)
 
-objective$constants$set_values(
-  reg = reg,
-  rs_reference = readRDS("random_search/yahpo_pure_numeric_rs_reference.rds")
-)
+#     # average meta score over problems
+#     agg_meta_score = agg[, list(
+#       mean_meta_score = mean(meta_score),
+#       raw_meta_score = list(set_names(meta_score, problem)),
+#       n_na = sum(is.na(meta_score)),
+#       n = .N,
+#       raw_mean_score = list(set_names(mean_score, problem)),
+#       missing_instances = list(setdiff(reg$problems, problem))),
+#       by = .(id)]
 
-callback_backup = callback_batch("bbotk.backup",
-  label = "Backup Archive Callback",
-  man = "bbotk::bbotk.backup",
+#     # if no meta score on all instances, set to -Inf
+#     agg_meta_score[n < 8, mean_meta_score := -Inf]
 
-  on_optimizer_after_eval = function(callback, context) {
-    tmp_file = tempfile(tmpdir = dirname(callback$state$path), fileext = ".rds")
-    saveRDS(context$instance$archive$data, tmp_file)
-    unlink(callback$state$path)
-    file.rename(tmp_file, callback$state$path)
-  }
-)
+#     agg_meta_score
+#   },
+#   domain = search_space,
+#   codomain = ps(mean_meta_score = p_dbl(tags = "maximize")),
+#   constants = constants,
+#   check_values = FALSE
+# )
 
-state_path = "/glade/derecho/scratch/marcbecker/pure_numeric_intermediate_instance.rds"
-callback_backup$state$path = state_path
+# objective$constants$set_values(
+#   reg = reg,
+#   rs_reference = readRDS("random_search/yahpo_pure_numeric_rs_reference.rds")
+# )
 
-optim_instance = oi(
-  objective = objective,
-  terminator = trm("none"),
-  search_space = search_space,
-  check_values = FALSE,
-  callbacks = list(callback_backup)
-)
+# callback_backup = callback_batch("bbotk.backup",
+#   label = "Backup Archive Callback",
+#   man = "bbotk::bbotk.backup",
 
-if (file.exists(callback_backup$state$path)) {
-  data = readRDS(callback_backup$state$path)
-  optim_instance$archive$data = data
-}
+#   on_optimizer_after_eval = function(callback, context) {
+#     tmp_file = tempfile(tmpdir = dirname(callback$state$path), fileext = ".rds")
+#     saveRDS(context$instance$archive$data, tmp_file)
+#     unlink(callback$state$path)
+#     file.rename(tmp_file, callback$state$path)
+#   }
+# )
 
-optimizer = OptimizerBatchCoordinateDescent$new()
-optimizer$param_set$set_values(
-  n_generations = 1L,
-  start = init
-)
-optimizer$optimize(optim_instance)
+# state_path = "/glade/derecho/scratch/marcbecker/pure_numeric_intermediate_instance.rds"
+# callback_backup$state$path = state_path
 
-save_path = "/glade/derecho/scratch/marcbecker/pure_numeric_coordinate_descent.rds"
-saveRDS(optim_instance, save_path)
+# optim_instance = oi(
+#   objective = objective,
+#   terminator = trm("none"),
+#   search_space = search_space,
+#   check_values = FALSE,
+#   callbacks = list(callback_backup)
+# )
+
+# # if (file.exists(callback_backup$state$path)) {
+# #   data = readRDS(callback_backup$state$path)
+# #   optim_instance$archive$data = data
+# # } else {
+# #   optim_instance$eval_batch(init)
+# # }
+
+# optimizer = OptimizerBatchCoordinateDescent$new()
+# optimizer$param_set$set_values(
+#   n_generations = 1L,
+#   start = init
+# )
+# optimizer$optimize(optim_instance)
+
+# save_path = "/glade/derecho/scratch/marcbecker/pure_numeric_coordinate_descent.rds"
+# saveRDS(optim_instance, save_path)

@@ -279,8 +279,8 @@ if (FALSE) {
     surrogate              = p_fct(c("rf", "gp")),
     extratrees             = p_lgl(depends = surrogate == "rf"),
     trees                  = p_fct(c("10", "500"), depends = surrogate == "rf"),
-    variance_estimator     = p_fct(c("jackknife", "simple", "law_of_total_variance"), depends = surrogate == "rf"),
-    kernel                 = p_fct(c("rbf", "matern3_2", "matern5_2", "exp", "powexp"), depends = surrogate == "gp"),
+    variance_estimator     = p_fct(c("jack", "simple", "law_of_total_variance"), depends = surrogate == "rf"),
+    kernel                 = p_fct(c("gauss", "matern3_2", "matern5_2", "exp"), depends = surrogate == "gp"),
     nugget                 = p_fct(c("0", "1e-3", "1e-8"), depends = surrogate == "gp"),
     scaling                = p_lgl(depends = surrogate == "gp"),
     # acqf
@@ -289,7 +289,7 @@ if (FALSE) {
     epsilon_decay          = p_lgl(depends = acqf == "EI"),
     lambda_decay           = p_lgl(depends = acqf == "CB"),
     # acqopt
-    acqopt                 = p_fct(c("RS_1000", "RS", "FS", "LS", "DIRECT", "CMAES", "LBFGSB"))
+    acqopt                 = p_fct(c("RS_1000", "RS", "LS", "DIRECT", "CMAES", "LBFGSB"))
   )
 
   library(bbotk)
@@ -306,13 +306,13 @@ if (FALSE) {
     init = "random",
     init_size_fraction = "0.25",
     random_interleave_iter = "0",
-    surrogate = "rf",
-    extratrees = FALSE,
-    trees = "10",
-    variance_estimator = "jackknife",
-    kernel = NA_character_,
-    nugget = NA_character_,
-    scaling = NA,
+    surrogate = "gp",
+    extratrees = NA,
+    trees = NA_character_,
+    variance_estimator = NA_character_,
+    kernel = "gauss",
+    nugget = "0",
+    scaling = FALSE,
     acqf = "EI",
     lambda = NA_character_,
     epsilon_decay = FALSE,
@@ -320,9 +320,10 @@ if (FALSE) {
     acqopt = "RS_1000"
   )
 
+
   optimizer = OptimizerBatchCoordinateDescent$new()
-  optimizer$param_set$values$n_generations = 10
-  optimizer$param_set$values$start = start
+  optimizer$param_set$values$n_generations = 1
+  optimizer$param_set$values$start = init
 
   instance = oi(
     objective = objective,

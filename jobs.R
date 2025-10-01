@@ -1,4 +1,4 @@
-options(width = 200)
+options(width = 300)
 
 job_table = getJobTable()
 algo_pars = names(job_table$algo.pars[[1]])
@@ -8,4 +8,4 @@ head(job_table[, cns, with = FALSE][order(time.running, decreasing = TRUE)], 100
 
 errors = findErrors()
 
-job_table[errors, on = "job.id"]
+job_table[is.na(time.running)][, cns, with = FALSE]

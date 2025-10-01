@@ -4,8 +4,8 @@
 #PBS -A WYOM0202
 #PBS -j oe
 #PBS -k eod
-#PBS -q main
-#PBS -l select=1:ncpus=128
+#PBS -q develop
+#PBS -l select=1:ncpus=128:mem=235GB
 #PBS -l walltime=04:00:00
 #PBS -l job_priority=regular
 #PBS -o <%= log.file %>
