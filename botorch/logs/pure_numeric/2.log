@@ -1,0 +1,445 @@
+INFO  [10:58:42.025] [bbotk] Evaluating 100 configuration(s)
+INFO  [10:58:42.423] [bbotk] Result of batch 1:
+INFO  [10:58:42.427] [bbotk]   nrounds        eta      gamma     lambda        alpha subsample max_depth
+INFO  [10:58:42.427] [bbotk]  7.041699 -3.4850866 -0.7963762 -6.7576536 -2.428090727 0.5805779 12.097576
+INFO  [10:58:42.427] [bbotk]  2.531619 -3.8434113  1.2780987  5.0077464 -5.320221093 0.9494669 10.257632
+INFO  [10:58:42.427] [bbotk]  5.959931 -6.2517147 -4.7662944 -5.1232517  0.536912756 0.3401773 13.347399
+INFO  [10:58:42.427] [bbotk]  5.327757 -1.9655233 -3.6731010  4.2887977 -1.273067505 0.9107348  5.738875
+INFO  [10:58:42.427] [bbotk]  7.040805 -5.2758963 -1.1534342 -3.6582539  4.047298546 0.5875303 14.350018
+INFO  [10:58:42.427] [bbotk]  6.533074 -3.8547265 -2.2196367 -2.6410143  5.251956472 0.9939546 13.099674
+INFO  [10:58:42.427] [bbotk]  2.235000 -5.8710438 -7.7778172  0.6399707  2.724038909 0.2549212  5.565115
+INFO  [10:58:42.427] [bbotk]  2.938013 -4.8997555 -8.0693172  4.2237347  6.882307708 0.1515121  8.967071
+INFO  [10:58:42.427] [bbotk]  7.222924 -5.5186987 -6.1280024  6.9050666 -4.353440954 0.2732965 11.348357
+INFO  [10:58:42.427] [bbotk]  3.611202 -2.5458107 -6.5747744  3.5764089 -2.342390328 0.7440189  8.738679
+INFO  [10:58:42.427] [bbotk]  2.047587 -0.4341819 -4.6478327 -2.3780487 -3.479028417 0.2730549  4.348361
+INFO  [10:58:42.427] [bbotk]  2.022620 -2.8517668 -9.8521239  5.5846143  6.468763028 0.8626733  4.400077
+INFO  [10:58:42.427] [bbotk]  5.466160 -5.3238611 -4.8834743  6.0934842  5.234727983 0.8556819  6.433061
+INFO  [10:58:42.427] [bbotk]  3.049115 -1.7883593 -5.7372549  2.3477587  0.776449765 0.3356942 11.042678
+INFO  [10:58:42.427] [bbotk]  3.113717 -4.0752809 -2.2462261 -4.2781543 -0.467355317 0.2531496  6.257749
+INFO  [10:58:42.427] [bbotk]  7.211313 -1.1585744 -3.6213428  1.8284272 -0.498300184 0.8968960  4.206592
+INFO  [10:58:42.427] [bbotk]  6.959339 -6.2287835 -5.5488574  1.7983995 -1.394228160 0.6750297 12.763727
+INFO  [10:58:42.427] [bbotk]  7.176467 -1.5500013 -2.4006611 -2.7522163  2.697421169 0.6480947  7.680643
+INFO  [10:58:42.427] [bbotk]  3.989105 -0.1107177 -0.3602518 -5.2777927  5.324349820 0.1691634  5.083666
+INFO  [10:58:42.427] [bbotk]  4.563688 -1.8469029  0.5361966  4.7019543  5.363554399 0.9529422  2.221591
+INFO  [10:58:42.427] [bbotk]  4.297338 -2.5483172 -0.6447444 -5.0809565  5.087737989 0.6251584  4.912999
+INFO  [10:58:42.427] [bbotk]  3.768535 -1.6686106 -3.2722025 -6.5736439 -4.807383686 0.8793670 10.910876
+INFO  [10:58:42.427] [bbotk]  5.496587 -1.6565143 -8.7695946 -6.4654330 -6.021560400 0.6040355  9.363426
+INFO  [10:58:42.427] [bbotk]  4.074497 -6.2547585 -9.7045306 -5.3916861 -3.309075311 0.9074198 14.022185
+INFO  [10:58:42.427] [bbotk]  5.459956 -2.9449480 -3.5222186 -2.5152510 -5.385160413 0.2823584  6.195684
+INFO  [10:58:42.427] [bbotk]  2.026784 -3.4441712  0.2654842 -4.9268393 -4.147032845 0.4414520 13.379530
+INFO  [10:58:42.427] [bbotk]  5.137173 -3.3509557 -3.1612170 -2.7674101  5.122822693 0.2455479 14.274360
+INFO  [10:58:42.427] [bbotk]  7.486562 -5.9821754 -8.2047326 -6.5700729  3.743149575 0.3065441  6.376009
+INFO  [10:58:42.427] [bbotk]  3.330557 -1.6352422 -2.2585004  6.3193361  1.803637228 0.5501465  2.183731
+INFO  [10:58:42.427] [bbotk]  5.377216 -5.4169475  1.3333287  2.1940810 -3.398407638 0.7597493 13.374425
+INFO  [10:58:42.427] [bbotk]  4.209787 -5.9672643 -7.0007475 -4.8065317  0.290202023 0.9424749 14.054813
+INFO  [10:58:42.427] [bbotk]  4.988498 -0.5499919 -6.5497865 -2.7568245 -6.479205963 0.6505082  8.098065
+INFO  [10:58:42.427] [bbotk]  7.765546 -5.9242559  0.2523155  1.0198238 -4.866242488 0.6483127  6.799352
+INFO  [10:58:42.427] [bbotk]  3.867118 -6.2041420 -9.3062609  4.3162358  5.758956586 0.7222550 14.199648
+INFO  [10:58:42.427] [bbotk]  5.391296 -6.0269594  0.4715059 -6.8830618  6.794306868 0.3274625  1.285148
+INFO  [10:58:42.427] [bbotk]  3.777006 -1.8704252 -6.2660924 -5.2196778 -2.495596663 0.7507488  2.349228
+INFO  [10:58:42.427] [bbotk]  5.380446 -3.7725401 -4.3036013 -6.7548649 -3.268655827 0.6008810  8.383666
+INFO  [10:58:42.427] [bbotk]  4.101668 -6.5029959 -5.5192426 -5.3327061  6.725629444 0.7217158  8.261975
+INFO  [10:58:42.427] [bbotk]  7.196828 -1.9367085 -0.9666528 -3.5994182 -0.152922985 0.4765198  3.242352
+INFO  [10:58:42.427] [bbotk]  7.372884 -6.1368310  1.2421332  1.2626346 -5.701830010 0.2567081  6.630787
+INFO  [10:58:42.427] [bbotk]  2.524401 -5.7862540  0.4903536  5.5411554  3.630083312 0.8406410  5.091765
+INFO  [10:58:42.427] [bbotk]  7.484520 -6.6624826 -1.1731616 -5.7188902 -2.063858164 0.1091725 11.867230
+INFO  [10:58:42.427] [bbotk]  6.224361 -4.1687505 -1.2453426 -4.2920365  1.570404136 0.3937139  2.462556
+INFO  [10:58:42.427] [bbotk]  2.320582 -6.0575059 -5.4168186  6.8961344 -4.763365816 0.8462154  7.531098
+INFO  [10:58:42.427] [bbotk]  6.190804 -2.6651755 -3.0108768  1.3974178  2.978896888 0.5557077  6.468818
+INFO  [10:58:42.427] [bbotk]  2.167821 -6.7206534 -6.0064968 -6.3425026 -6.756877672 0.9325822  5.039024
+INFO  [10:58:42.427] [bbotk]  6.813633 -5.8834452 -5.2439075  4.6695714 -3.256389566 0.4526371  9.833847
+INFO  [10:58:42.427] [bbotk]  3.386295 -1.1175088 -3.7586064 -5.3902467 -3.037229452 0.3344988  9.202314
+INFO  [10:58:42.427] [bbotk]  5.574934 -6.9810420 -7.4302843  0.6893172  4.854176391 0.4650910 12.551318
+INFO  [10:58:42.427] [bbotk]  4.338619 -0.4008154 -6.2193837 -5.2129502 -3.734555648 0.1841326  5.043902
+INFO  [10:58:42.427] [bbotk]  4.623072 -2.3226260 -6.3455415 -5.9741467  4.414161900 0.1842109  5.296418
+INFO  [10:58:42.427] [bbotk]  6.698519 -1.5272566  0.9507925 -6.5441061  4.391877362 0.5499291 13.329087
+INFO  [10:58:42.427] [bbotk]  5.000406 -3.7643029 -2.7416897 -5.9393704  6.222395932 0.8626170  6.845072
+INFO  [10:58:42.427] [bbotk]  5.703054 -6.6239964 -2.5367090 -3.1642762 -5.095236834 0.9733537 14.003866
+INFO  [10:58:42.427] [bbotk]  2.367917 -2.3505443 -0.6873852 -3.4445092 -6.480554338 0.9665776  5.054236
+INFO  [10:58:42.427] [bbotk]  3.632561 -5.9424231 -3.5967573  2.5624180 -1.067481458 0.9153062  4.243089
+INFO  [10:58:42.427] [bbotk]  5.511862 -4.8108456 -9.1759528 -4.7769237  3.113101757 0.7071803  2.628384
+INFO  [10:58:42.427] [bbotk]  6.710111 -1.2830420 -1.5910284 -4.9361250  5.679974351 0.8408421  9.158831
+INFO  [10:58:42.427] [bbotk]  4.095232 -1.6761135 -6.1043559  6.8147135  1.343723201 0.2789742  2.658627
+INFO  [10:58:42.427] [bbotk]  5.307047 -6.0667887 -0.3881575 -4.5412877  2.397792410 0.7544047  4.723879
+INFO  [10:58:42.427] [bbotk]  7.353008 -0.5538630 -4.8007748  6.9921528 -4.499380787 0.2971895  3.980531
+INFO  [10:58:42.427] [bbotk]  6.885708 -4.6104057  1.0657711  4.6543321 -4.840745305 0.5413688  9.557460
+INFO  [10:58:42.427] [bbotk]  6.561905 -1.5558856 -6.6993201 -6.0633237  3.439744871 0.2950949  3.423296
+INFO  [10:58:42.427] [bbotk]  2.605068 -1.5152670 -9.2880636 -6.8825902 -5.400567590 0.4069802 13.921171
+INFO  [10:58:42.427] [bbotk]  6.957874 -5.5904473 -7.5678469 -0.1304625 -0.572163619 0.9903248  5.555900
+INFO  [10:58:42.427] [bbotk]  2.241894 -5.5321417 -8.5111049 -4.4980808 -1.151815910 0.6755056  4.574294
+INFO  [10:58:42.427] [bbotk]  2.793865 -6.0475393  0.5970718  6.0160849  1.419583051 0.8036260  4.949463
+INFO  [10:58:42.427] [bbotk]  7.718575 -2.5073339  0.3152200  5.1867953  4.858199148 0.9747284  1.408260
+INFO  [10:58:42.427] [bbotk]  4.491336 -4.1995483 -2.9023696 -3.1749920  0.635895273 0.7090833  1.563720
+INFO  [10:58:42.427] [bbotk]  3.634149 -1.8704284 -1.3067801  2.1364839  1.330596306 0.6050831 14.131549
+INFO  [10:58:42.427] [bbotk]  4.693415 -4.4695816 -4.4085872  4.6163263  4.184803473 0.2012727 11.982233
+INFO  [10:58:42.427] [bbotk]  2.874513 -3.6356549 -2.6488305 -0.8140949  4.350109571 0.8157943  4.836785
+INFO  [10:58:42.427] [bbotk]  7.606241 -1.8888717 -9.6626133 -4.0153038 -2.932023580 0.7562430 10.019476
+INFO  [10:58:42.427] [bbotk]  2.776521 -5.2113004 -0.2203667  2.9590580 -1.158177467 0.7614331 14.626815
+INFO  [10:58:42.427] [bbotk]  4.429320 -5.4367065 -3.9811239 -6.4594905  4.979592436 0.9142116 13.098116
+INFO  [10:58:42.427] [bbotk]  4.206219 -6.0627271 -3.1974687 -3.5046032 -0.488512330 0.7543402  7.357806
+INFO  [10:58:42.427] [bbotk]  3.138743 -6.3471960 -0.3819270 -0.9045259 -4.858094162 0.6624312 13.272239
+INFO  [10:58:42.427] [bbotk]  2.676643 -1.4494954  0.1615798  6.1420118  0.004712019 0.7090027  4.213630
+INFO  [10:58:42.427] [bbotk]  5.897365 -5.9207394 -4.5997826 -2.5082261 -4.682756035 0.4385902  6.386485
+INFO  [10:58:42.427] [bbotk]  3.260756 -4.4976560 -8.4534668 -4.1556405 -0.162248471 0.6044410 11.452805
+INFO  [10:58:42.427] [bbotk]  7.135028 -2.6334469 -9.5717359 -1.9763887 -6.396469385 0.3573902  2.687329
+INFO  [10:58:42.427] [bbotk]  7.988359 -4.9358984 -5.4080916 -6.3798042 -0.525894352 0.8202480  2.311905
+INFO  [10:58:42.427] [bbotk]  2.768009 -1.9614114 -5.2585730 -4.7291584 -5.522775310 0.9601663  5.043320
+INFO  [10:58:42.427] [bbotk]  2.347795 -3.9914280  0.1304321 -1.0419588  5.191070878 0.8686305 14.296235
+INFO  [10:58:42.427] [bbotk]  6.329329 -0.1404236 -5.8172498  4.1991807  2.923987020 0.2542144  6.694606
+INFO  [10:58:42.427] [bbotk]  5.836964 -5.1816348  0.6137839 -1.4559849 -2.752060032 0.7009556  6.172769
+INFO  [10:58:42.427] [bbotk]  3.769543 -0.2677331 -7.1335878  0.8626759  0.969854402 0.8894684  4.737839
+INFO  [10:58:42.427] [bbotk]  6.560952 -2.7757797 -5.5480936 -6.8019104 -4.420803851 0.1714821 14.998189
+INFO  [10:58:42.427] [bbotk]  7.836898 -0.6475986 -0.4724617  6.7041546  3.252942740 0.9124552  4.773457
+INFO  [10:58:42.427] [bbotk]  3.890055 -4.1609768 -1.5850924 -6.2533602  3.825675268 0.6014898 10.402280
+INFO  [10:58:42.427] [bbotk]  7.192704 -5.8456096 -2.1836257 -2.7617929  2.173499326 0.9537909  9.368759
+INFO  [10:58:42.427] [bbotk]  6.652423 -6.0811620 -0.6535156 -0.9503361 -2.265212118 0.8435046 14.512405
+INFO  [10:58:42.427] [bbotk]  6.936610 -5.3672700  0.6483394 -5.2924615  3.632654270 0.6211881  5.682453
+INFO  [10:58:42.427] [bbotk]  5.094216 -5.6603825  0.4702225 -4.7769361 -5.936358877 0.5553565  5.272362
+INFO  [10:58:42.427] [bbotk]  7.197967 -3.2714679 -6.7858504 -6.8829982 -2.719262229 0.5105911 10.083177
+INFO  [10:58:42.427] [bbotk]  4.869002 -5.8183984 -7.5787619  0.5520603  5.458675641 0.4928068  1.737205
+INFO  [10:58:42.427] [bbotk]  4.009240 -3.2078902 -8.8044627 -4.0978927 -1.032696973 0.6474805 13.961689
+INFO  [10:58:42.427] [bbotk]  6.442675 -1.8840005 -5.7542019  6.4591506  5.286138549 0.1804686 14.326193
+INFO  [10:58:42.427] [bbotk]  7.098924 -4.6460338 -8.0980615  5.8735253  6.874077585 0.3974374  9.023024
+INFO  [10:58:42.427] [bbotk]  6.044409 -3.4753510  0.2129961 -6.7358048 -1.455097462 0.3611710  5.870489
+INFO  [10:58:42.427] [bbotk]   nrounds        eta      gamma     lambda        alpha subsample max_depth
+INFO  [10:58:42.427] [bbotk]  min_child_weight colsample_bytree colsample_bylevel        acc
+INFO  [10:58:42.427] [bbotk]          4.774821       0.19487693        0.08998607 0.90655071
+INFO  [10:58:42.427] [bbotk]          3.644445       0.86519626        0.01689525 0.79746115
+INFO  [10:58:42.427] [bbotk]          3.987566       0.36633065        0.73988470 0.85559332
+INFO  [10:58:42.427] [bbotk]          1.486342       0.36776353        0.90104589 0.98757142
+INFO  [10:58:42.427] [bbotk]          1.319195       0.28166714        0.19193651 0.84118068
+INFO  [10:58:42.427] [bbotk]          2.924928       0.98510534        0.31977605 0.81029749
+INFO  [10:58:42.427] [bbotk]          1.152176       0.03265507        0.26323702 0.61938119
+INFO  [10:58:42.427] [bbotk]          3.987987       0.11315810        0.45741730 0.09241448
+INFO  [10:58:42.427] [bbotk]          2.567708       0.23549652        0.61285526 0.82656604
+INFO  [10:58:42.427] [bbotk]          2.419274       0.17062010        0.46169399 0.92086548
+INFO  [10:58:42.427] [bbotk]          4.842888       0.24125623        0.90385552 0.19833839
+INFO  [10:58:42.427] [bbotk]          2.560818       0.79152416        0.21308038 0.08283459
+INFO  [10:58:42.427] [bbotk]          1.876195       0.15041235        0.64978176 0.69928789
+INFO  [10:58:42.427] [bbotk]          3.904611       0.37541726        0.59300398 0.88780147
+INFO  [10:58:42.427] [bbotk]          2.281484       0.35532860        0.15859830 0.87750852
+INFO  [10:58:42.427] [bbotk]          1.841605       0.17579930        0.11936116 0.98319978
+INFO  [10:58:42.427] [bbotk]          3.863157       0.86474005        0.24738759 0.94043493
+INFO  [10:58:42.427] [bbotk]          3.776849       0.79610512        0.01043435 0.94901198
+INFO  [10:58:42.427] [bbotk]          3.295339       0.47489400        0.45564668 0.09352024
+INFO  [10:58:42.427] [bbotk]          2.728904       0.22691739        0.81554833 0.67813128
+INFO  [10:58:42.427] [bbotk]          2.004838       0.46172464        0.01377833 0.57435465
+INFO  [10:58:42.427] [bbotk]          2.920861       0.05368740        0.88776430 0.92820120
+INFO  [10:58:42.427] [bbotk]          4.269489       0.79953235        0.61217692 0.97062445
+INFO  [10:58:42.427] [bbotk]          2.629673       0.17723722        0.43432821 0.90234149
+INFO  [10:58:42.427] [bbotk]          4.514266       0.87339259        0.17360583 0.86610824
+INFO  [10:58:42.427] [bbotk]          2.302440       0.01325248        0.65115260 0.64280272
+INFO  [10:58:42.427] [bbotk]          2.212651       0.78794526        0.72596460 0.08671723
+INFO  [10:58:42.427] [bbotk]          3.808577       0.41489939        0.56931113 0.81391120
+INFO  [10:58:42.427] [bbotk]          4.319013       0.21755072        0.91086428 0.79562736
+INFO  [10:58:42.427] [bbotk]          2.117722       0.05430036        0.32775740 0.86158538
+INFO  [10:58:42.427] [bbotk]          3.641114       0.53669994        0.25124410 0.90132320
+INFO  [10:58:42.427] [bbotk]          2.986340       0.24220762        0.78966390 0.98341358
+INFO  [10:58:42.427] [bbotk]          3.373141       0.83663733        0.78607973 0.96597767
+INFO  [10:58:42.427] [bbotk]          3.139258       0.66147245        0.20665636 0.13226330
+INFO  [10:58:42.427] [bbotk]          3.328475       0.96041127        0.24099303 0.09318709
+INFO  [10:58:42.427] [bbotk]          3.047533       0.95714814        0.65012801 0.96735865
+INFO  [10:58:42.427] [bbotk]          4.760730       0.25446776        0.73765238 0.90273052
+INFO  [10:58:42.427] [bbotk]          2.046589       0.96758070        0.04902165 0.09197784
+INFO  [10:58:42.427] [bbotk]          1.001157       0.79702619        0.21001990 0.98526287
+INFO  [10:58:42.427] [bbotk]          2.908314       0.32922235        0.89807830 0.93202072
+INFO  [10:58:42.427] [bbotk]          1.490561       0.97229439        0.03507775 0.76499122
+INFO  [10:58:42.427] [bbotk]          4.873839       0.13717840        0.58568577 0.08969034
+INFO  [10:58:42.427] [bbotk]          4.467535       0.78676650        0.31092536 0.91077614
+INFO  [10:58:42.427] [bbotk]          3.878667       0.84682998        0.79637131 0.79225045
+INFO  [10:58:42.427] [bbotk]          2.549219       0.43000959        0.14465720 0.93565428
+INFO  [10:58:42.427] [bbotk]          4.339824       0.46807657        0.86768201 0.81922686
+INFO  [10:58:42.427] [bbotk]          3.050755       0.47980234        0.74653595 0.91817158
+INFO  [10:58:42.427] [bbotk]          1.435978       0.91497052        0.16891319 0.97946751
+INFO  [10:58:42.427] [bbotk]          1.386610       0.78108196        0.11836206 0.65871441
+INFO  [10:58:42.427] [bbotk]          4.053175       0.38148406        0.67509524 0.85778779
+INFO  [10:58:42.427] [bbotk]          1.445278       0.90828825        0.87530847 0.37684703
+INFO  [10:58:42.427] [bbotk]          4.840824       0.93151942        0.64107789 0.77333134
+INFO  [10:58:42.427] [bbotk]          1.703810       0.31242587        0.56943484 0.08123444
+INFO  [10:58:42.427] [bbotk]          2.421589       0.75593985        0.30950862 0.95364261
+INFO  [10:58:42.427] [bbotk]          1.633498       0.35890277        0.53545384 0.93862861
+INFO  [10:58:42.427] [bbotk]          1.233138       0.04651125        0.02259058 0.76986843
+INFO  [10:58:42.427] [bbotk]          1.911637       0.25464599        0.53516472 0.90328515
+INFO  [10:58:42.427] [bbotk]          2.783683       0.95028926        0.58538008 0.35052988
+INFO  [10:58:42.427] [bbotk]          2.911370       0.74635474        0.59898406 0.85235363
+INFO  [10:58:42.427] [bbotk]          3.538774       0.08954075        0.28215826 0.82522392
+INFO  [10:58:42.427] [bbotk]          4.317715       0.38687452        0.86686633 0.86554176
+INFO  [10:58:42.427] [bbotk]          1.712334       0.96469306        0.28733244 0.95227575
+INFO  [10:58:42.427] [bbotk]          2.119190       0.88871844        0.93203472 0.93841559
+INFO  [10:58:42.427] [bbotk]          2.756548       0.44322090        0.25678657 0.95674348
+INFO  [10:58:42.427] [bbotk]          3.028135       0.88785319        0.99340853 0.98072183
+INFO  [10:58:42.427] [bbotk]          3.302139       0.97038894        0.39479398 0.87768763
+INFO  [10:58:42.427] [bbotk]          3.538269       0.36905363        0.90018343 0.82883781
+INFO  [10:58:42.427] [bbotk]          3.556699       0.44392000        0.21790394 0.71777970
+INFO  [10:58:42.427] [bbotk]          2.696695       0.56700349        0.10556853 0.85715163
+INFO  [10:58:42.427] [bbotk]          4.930064       0.24082295        0.08303864 0.81105822
+INFO  [10:58:42.427] [bbotk]          4.107005       0.81448511        0.32447772 0.33583382
+INFO  [10:58:42.427] [bbotk]          4.287760       0.77931554        0.76369782 0.80180788
+INFO  [10:58:42.427] [bbotk]          3.250358       0.24362949        0.68132401 0.98420167
+INFO  [10:58:42.427] [bbotk]          2.255682       0.36551679        0.78611889 0.90409529
+INFO  [10:58:42.427] [bbotk]          3.292753       0.53744112        0.85471075 0.83283281
+INFO  [10:58:42.427] [bbotk]          3.695253       0.72340620        0.41625454 0.88416827
+INFO  [10:58:42.427] [bbotk]          4.389272       0.82949554        0.57452902 0.76809078
+INFO  [10:58:42.427] [bbotk]          2.370717       0.63029850        0.69501685 0.88009316
+INFO  [10:58:42.427] [bbotk]          3.023878       0.15568647        0.64925883 0.91015095
+INFO  [10:58:42.427] [bbotk]          1.853702       0.61519730        0.29461791 0.93857670
+INFO  [10:58:42.427] [bbotk]          1.293943       0.96261128        0.32109664 0.99109441
+INFO  [10:58:42.427] [bbotk]          2.574084       0.31183194        0.26081298 0.95950848
+INFO  [10:58:42.427] [bbotk]          2.168815       0.36937308        0.26515119 0.94645238
+INFO  [10:58:42.427] [bbotk]          3.083638       0.22302628        0.21900427 0.60202068
+INFO  [10:58:42.427] [bbotk]          3.982355       0.69559901        0.25911727 0.88351923
+INFO  [10:58:42.427] [bbotk]          2.506308       0.52788950        0.82076195 0.95896691
+INFO  [10:58:42.427] [bbotk]          3.894944       0.60456532        0.14273091 0.96006495
+INFO  [10:58:42.427] [bbotk]          2.377223       0.25340670        0.74299496 0.97790509
+INFO  [10:58:42.427] [bbotk]          2.814742       0.92042569        0.41852022 0.92833400
+INFO  [10:58:42.427] [bbotk]          2.423012       0.53093544        0.13893122 0.86412483
+INFO  [10:58:42.427] [bbotk]          4.178667       0.40254952        0.62570365 0.94129092
+INFO  [10:58:42.427] [bbotk]          2.941650       0.66075694        0.07597237 0.94229150
+INFO  [10:58:42.427] [bbotk]          3.727037       0.03148874        0.53815278 0.82427061
+INFO  [10:58:42.427] [bbotk]          3.039636       0.66723137        0.90441500 0.92326611
+INFO  [10:58:42.427] [bbotk]          1.862152       0.27287243        0.70765173 0.98834211
+INFO  [10:58:42.427] [bbotk]          4.629232       0.65757115        0.58728634 0.08316704
+INFO  [10:58:42.427] [bbotk]          2.002977       0.04564252        0.44470767 0.86255056
+INFO  [10:58:42.427] [bbotk]          2.125936       0.01513461        0.90956436 0.09155654
+INFO  [10:58:42.427] [bbotk]          2.380075       0.59424425        0.05268573 0.09293292
+INFO  [10:58:42.427] [bbotk]          3.768145       0.69443086        0.99894411 0.96419764
+INFO  [10:58:42.427] [bbotk]  min_child_weight colsample_bytree colsample_bylevel        acc
+INFO  [10:58:44.481] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:58:44.508] [bbotk] Result of batch 2:
+INFO  [10:58:44.510] [bbotk]  nrounds eta     gamma    lambda     alpha subsample max_depth min_child_weight
+INFO  [10:58:44.510] [bbotk]  5.72224   0 -9.243671 -2.164584 -2.438651 0.4243942        15                1
+INFO  [10:58:44.510] [bbotk]  colsample_bytree colsample_bylevel    acq_ei runtime_train_surrogate
+INFO  [10:58:44.510] [bbotk]                 1        0.06287574 0.3095533                   0.889
+INFO  [10:58:44.510] [bbotk]  runtime_acq_optimizer       acc
+INFO  [10:58:44.510] [bbotk]                   0.79 0.9846842
+INFO  [10:58:47.418] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:58:47.443] [bbotk] Result of batch 3:
+INFO  [10:58:47.445] [bbotk]   nrounds       eta     gamma lambda    alpha subsample max_depth
+INFO  [10:58:47.445] [bbotk]  5.386005 -3.971675 0.4196115     -7 4.347814         1  10.49439
+INFO  [10:58:47.445] [bbotk]  min_child_weight colsample_bytree colsample_bylevel    acq_ei
+INFO  [10:58:47.445] [bbotk]          1.706426                1         0.1355126 0.2069407
+INFO  [10:58:47.445] [bbotk]  runtime_train_surrogate runtime_acq_optimizer       acc
+INFO  [10:58:47.445] [bbotk]                    1.813                  0.82 0.9004555
+INFO  [10:58:50.692] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:58:50.716] [bbotk] Result of batch 4:
+INFO  [10:58:50.718] [bbotk]   nrounds        eta     gamma    lambda    alpha subsample max_depth
+INFO  [10:58:50.718] [bbotk]  5.041501 -0.1032105 -3.234613 -2.997757 -3.72046  0.271548  9.917518
+INFO  [10:58:50.718] [bbotk]  min_child_weight colsample_bytree colsample_bylevel    acq_ei
+INFO  [10:58:50.718] [bbotk]                 1        0.9420308        0.03015225 0.1787442
+INFO  [10:58:50.718] [bbotk]  runtime_train_surrogate runtime_acq_optimizer       acc
+INFO  [10:58:50.718] [bbotk]                    2.131                 0.834 0.9787709
+INFO  [10:58:53.218] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:58:53.242] [bbotk] Result of batch 5:
+INFO  [10:58:53.244] [bbotk]  nrounds eta gamma    lambda    alpha subsample max_depth min_child_weight
+INFO  [10:58:53.244] [bbotk]        8   0   -10 -1.817665 2.692698 0.4198047  11.38879         2.359051
+INFO  [10:58:53.244] [bbotk]  colsample_bytree colsample_bylevel     acq_ei runtime_train_surrogate
+INFO  [10:58:53.244] [bbotk]                 1         0.5861915 0.09232979                   1.336
+INFO  [10:58:53.244] [bbotk]  runtime_acq_optimizer       acc
+INFO  [10:58:53.244] [bbotk]                  0.889 0.9476735
+INFO  [10:58:56.959] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:58:56.987] [bbotk] Result of batch 6:
+INFO  [10:58:56.989] [bbotk]   nrounds        eta     gamma     lambda     alpha subsample max_depth
+INFO  [10:58:56.989] [bbotk]  6.731348 -0.4841539 0.2460677 -0.8779615 -1.303244 0.6657997  9.327557
+INFO  [10:58:56.989] [bbotk]  min_child_weight colsample_bytree colsample_bylevel    acq_ei
+INFO  [10:58:56.989] [bbotk]          3.869965        0.9801831                 1 0.1732222
+INFO  [10:58:56.989] [bbotk]  runtime_train_surrogate runtime_acq_optimizer       acc
+INFO  [10:58:56.989] [bbotk]                    2.502                  0.86 0.9726111
+INFO  [10:58:59.494] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:58:59.519] [bbotk] Result of batch 7:
+INFO  [10:58:59.522] [bbotk]   nrounds       eta     gamma   lambda     alpha subsample max_depth
+INFO  [10:58:59.522] [bbotk]  4.269704 -4.160529 -2.901172 6.676225 -1.364629 0.4051661  1.030079
+INFO  [10:58:59.522] [bbotk]  min_child_weight colsample_bytree colsample_bylevel    acq_ei
+INFO  [10:58:59.522] [bbotk]                 1        0.9813468                 1 0.1140799
+INFO  [10:58:59.522] [bbotk]  runtime_train_surrogate runtime_acq_optimizer       acc
+INFO  [10:58:59.522] [bbotk]                    1.352                 0.844 0.6852813
+INFO  [10:59:02.150] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:02.175] [bbotk] Result of batch 8:
+INFO  [10:59:02.178] [bbotk]  nrounds eta gamma    lambda     alpha subsample max_depth min_child_weight
+INFO  [10:59:02.178] [bbotk]        8   0   -10 -5.739621 -3.940955 0.3212329  8.084596                1
+INFO  [10:59:02.178] [bbotk]  colsample_bytree colsample_bylevel    acq_ei runtime_train_surrogate
+INFO  [10:59:02.178] [bbotk]         0.8642394         0.3632408 0.1429649                    1.46
+INFO  [10:59:02.178] [bbotk]  runtime_acq_optimizer       acc
+INFO  [10:59:02.178] [bbotk]                  0.855 0.9640929
+INFO  [10:59:04.572] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:04.596] [bbotk] Result of batch 9:
+INFO  [10:59:04.598] [bbotk]   nrounds eta    gamma lambda     alpha subsample max_depth min_child_weight
+INFO  [10:59:04.598] [bbotk]  7.062833   0 -5.24199     -7 -3.903935 0.5640215  12.11714           2.1654
+INFO  [10:59:04.598] [bbotk]  colsample_bytree colsample_bylevel     acq_ei runtime_train_surrogate
+INFO  [10:59:04.598] [bbotk]                 1         0.9418282 0.08015956                   1.201
+INFO  [10:59:04.598] [bbotk]  runtime_acq_optimizer       acc
+INFO  [10:59:04.598] [bbotk]                  0.873 0.9787933
+INFO  [10:59:07.260] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:07.301] [bbotk] Result of batch 10:
+INFO  [10:59:07.305] [bbotk]   nrounds eta     gamma    lambda     alpha subsample max_depth
+INFO  [10:59:07.305] [bbotk]  6.204095   0 -3.149736 -6.910127 -1.850552 0.7308082         1
+INFO  [10:59:07.305] [bbotk]  min_child_weight colsample_bytree colsample_bylevel    acq_ei
+INFO  [10:59:07.305] [bbotk]          2.233142                1         0.2562277 0.0690511
+INFO  [10:59:07.305] [bbotk]  runtime_train_surrogate runtime_acq_optimizer      acc
+INFO  [10:59:07.305] [bbotk]                    1.458                 0.896 0.980144
+INFO  [10:59:10.104] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:10.129] [bbotk] Result of batch 11:
+INFO  [10:59:10.132] [bbotk]   nrounds eta gamma lambda     alpha subsample max_depth min_child_weight
+INFO  [10:59:10.132] [bbotk]  5.505359   0   -10     -7 -5.513082 0.4414084  14.23141                1
+INFO  [10:59:10.132] [bbotk]  colsample_bytree colsample_bylevel     acq_ei runtime_train_surrogate
+INFO  [10:59:10.132] [bbotk]          0.553433         0.5592259 0.06707739                   1.585
+INFO  [10:59:10.132] [bbotk]  runtime_acq_optimizer       acc
+INFO  [10:59:10.132] [bbotk]                  0.859 0.9763712
+INFO  [10:59:12.486] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:12.511] [bbotk] Result of batch 12:
+INFO  [10:59:12.514] [bbotk]   nrounds        eta    gamma lambda     alpha subsample max_depth
+INFO  [10:59:12.514] [bbotk]  6.378427 -0.2047467 -8.21187     -7 -3.120985 0.6708051  1.873654
+INFO  [10:59:12.514] [bbotk]  min_child_weight colsample_bytree colsample_bylevel     acq_ei
+INFO  [10:59:12.514] [bbotk]          2.271484                1         0.1049072 0.06255202
+INFO  [10:59:12.514] [bbotk]  runtime_train_surrogate runtime_acq_optimizer       acc
+INFO  [10:59:12.514] [bbotk]                    1.198                 0.839 0.9814161
+INFO  [10:59:15.206] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:15.233] [bbotk] Result of batch 13:
+INFO  [10:59:15.235] [bbotk]   nrounds       eta     gamma lambda     alpha subsample max_depth
+INFO  [10:59:15.235] [bbotk]  5.594802 -2.747738 -7.995494     -7 -3.497906  0.349971  13.42236
+INFO  [10:59:15.235] [bbotk]  min_child_weight colsample_bytree colsample_bylevel     acq_ei
+INFO  [10:59:15.235] [bbotk]          1.060054        0.9763366         0.7097143 0.05024916
+INFO  [10:59:15.235] [bbotk]  runtime_train_surrogate runtime_acq_optimizer       acc
+INFO  [10:59:15.235] [bbotk]                    1.555                 0.845 0.9924791
+INFO  [10:59:18.047] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:18.072] [bbotk] Result of batch 14:
+INFO  [10:59:18.075] [bbotk]   nrounds eta     gamma  lambda      alpha subsample max_depth min_child_weight
+INFO  [10:59:18.075] [bbotk]  7.530103   0 -2.114795 2.73444 -0.7412196         1        15                1
+INFO  [10:59:18.075] [bbotk]  colsample_bytree colsample_bylevel     acq_ei runtime_train_surrogate
+INFO  [10:59:18.075] [bbotk]                 1                 1 0.07884001                   1.665
+INFO  [10:59:18.075] [bbotk]  runtime_acq_optimizer      acc
+INFO  [10:59:18.075] [bbotk]                  0.857 0.991743
+INFO  [10:59:20.143] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:20.170] [bbotk] Result of batch 15:
+INFO  [10:59:20.173] [bbotk]   nrounds eta gamma lambda     alpha subsample max_depth min_child_weight
+INFO  [10:59:20.173] [bbotk]  5.944527   0   -10     -7 -1.831764 0.7897653  8.593619         3.653011
+INFO  [10:59:20.173] [bbotk]  colsample_bytree colsample_bylevel     acq_ei runtime_train_surrogate
+INFO  [10:59:20.173] [bbotk]        0.06532323                 1 0.04796972                   0.856
+INFO  [10:59:20.173] [bbotk]  runtime_acq_optimizer       acc
+INFO  [10:59:20.173] [bbotk]                   0.92 0.9632988
+INFO  [10:59:22.452] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:22.477] [bbotk] Result of batch 16:
+INFO  [10:59:22.479] [bbotk]  nrounds eta gamma lambda     alpha subsample max_depth min_child_weight
+INFO  [10:59:22.479] [bbotk]  2.61815   0   -10     -7 -6.498762 0.3804543  11.80813         2.217707
+INFO  [10:59:22.479] [bbotk]  colsample_bytree colsample_bylevel     acq_ei runtime_train_surrogate
+INFO  [10:59:22.479] [bbotk]        0.07047456         0.4419331 0.03733668                   1.134
+INFO  [10:59:22.479] [bbotk]  runtime_acq_optimizer       acc
+INFO  [10:59:22.479] [bbotk]                  0.855 0.9108613
+INFO  [10:59:24.943] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:24.968] [bbotk] Result of batch 17:
+INFO  [10:59:24.970] [bbotk]   nrounds eta gamma lambda     alpha subsample max_depth min_child_weight
+INFO  [10:59:24.970] [bbotk]  6.892733   0   -10     -7 -6.321839 0.7898595  10.24034                1
+INFO  [10:59:24.970] [bbotk]  colsample_bytree colsample_bylevel     acq_ei runtime_train_surrogate
+INFO  [10:59:24.970] [bbotk]              0.01          0.195174 0.05226913                   1.276
+INFO  [10:59:24.970] [bbotk]  runtime_acq_optimizer       acc
+INFO  [10:59:24.970] [bbotk]                  0.873 0.9337947
+INFO  [10:59:27.135] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:27.160] [bbotk] Result of batch 18:
+INFO  [10:59:27.163] [bbotk]  nrounds eta    gamma lambda     alpha subsample max_depth min_child_weight
+INFO  [10:59:27.163] [bbotk]        8   0 -4.45209      7 0.4358569         1        15         2.077203
+INFO  [10:59:27.163] [bbotk]  colsample_bytree colsample_bylevel     acq_ei runtime_train_surrogate
+INFO  [10:59:27.163] [bbotk]                 1                 1 0.05599334                   1.009
+INFO  [10:59:27.163] [bbotk]  runtime_acq_optimizer       acc
+INFO  [10:59:27.163] [bbotk]                  0.871 0.9896286
+INFO  [10:59:29.491] [bbotk] Evaluating 1 configuration(s)
+INFO  [10:59:29.516] [bbotk] Result of batch 19:
+INFO  [10:59:29.518] [bbotk]   nrounds        eta gamma    lambda     alpha subsample max_depth
+INFO  [10:59:29.518] [bbotk]  5.032428 -0.4040856   -10 -6.245079 -5.879036 0.6788149         1
+INFO  [10:59:29.518] [bbotk]  min_child_weight colsample_bytree colsample_bylevel    acq_ei
+INFO  [10:59:29.518] [bbotk]          1.530263                1         0.6826025 0.0394796
+INFO  [10:59:29.518] [bbotk]  runtime_train_surrogate runtime_acq_optimizer       acc
+INFO  [10:59:29.518] [bbotk]                    1.097                 0.909 0.9851576
+
+42: (function (e) 
+    traceback(2L))()
+41: py_call_impl(callable, call_args$unnamed, call_args$named)
+40: botorch$fit$fit_gpytorch_mll(mll)
+39: .__LearnerRegrBotorchSingleTaskGP__.train(self = self, private = private, 
+        super = super, task = task)
+38: get_private(learner)$.train(task)
+37: .f(learner = <environment>, task = <environment>)
+36: eval(expr, p)
+35: eval(expr, p)
+34: eval.parent(expr, n = 1L)
+33: invoke(.f, .args = .args, .opts = .opts, .seed = .seed, .timeout = .timeout)
+32: encapsulate(learner$encapsulation["train"], .f = train_wrapper, 
+        .args = list(learner = learner, task = task), .pkgs = learner$packages, 
+        .seed = NA_integer_, .timeout = learner$timeout["train"], 
+        .compute = getOption("mlr3.mirai_encapsulation", "mlr3_encapsulation"))
+31: learner_train(learner, task, train_row_ids = train_row_ids, mode = mode)
+30: .__Learner__train(self = self, private = private, super = super, 
+        task = task, row_ids = row_ids)
+29: self$learner$train(task)
+28: .__SurrogateLearner__.update(self = self, private = private, 
+        super = super)
+27: private$.update()
+26: doTryCatch(return(expr), name, parentenv, handler)
+25: tryCatchOne(expr, names, parentenv, handlers[[1L]])
+24: tryCatchList(expr, classes, parentenv, handlers)
+23: tryCatch(private$.update(), error = function(error_condition) {
+        lg$warn(error_condition$message)
+        stop(set_class(list(message = error_condition$message, call = NULL), 
+            classes = c("surrogate_update_error", "mbo_error", "error", 
+                "condition")))
+    })
+22: .__Surrogate__update(self = self, private = private, super = super)
+21: acq_function$surrogate$update()
+20: system.time({
+        acq_function$surrogate$update()
+    })
+19: doTryCatch(return(expr), name, parentenv, handler)
+18: tryCatchOne(expr, names, parentenv, handlers[[1L]])
+17: tryCatchList(expr, classes, parentenv, handlers)
+16: tryCatch({
+        if (isTRUE((instance$archive$n_evals - init_design_size + 
+            1L)%%random_interleave_iter == 0)) {
+            stop(set_class(list(message = "Random interleaving", 
+                call = NULL), classes = c("random_interleave", "mbo_error", 
+                "error", "condition")))
+        }
+        runtime_train_surrogate = system.time({
+            acq_function$surrogate$update()
+        })
+        acq_function$update()
+        runtime_acq_optimizer = system.time({
+            res = acq_optimizer$optimize()
+        })
+        res
+    }, mbo_error = function(mbo_error_condition) {
+        lg$info(paste0(class(mbo_error_condition), collapse = " / "))
+        lg$info("Proposing a randomly sampled point")
+        generate_design_random(search_space, n = 1L)$data
+    })
+15: bayesopt_ego(optim_instance, surrogate = surrogate, acq_function = acq_function, 
+        acq_optimizer = acq_optimizer, random_interleave_iter = random_interleave_iter, 
+        init_design_size = init_design_size) at botorch_pure_numeric_local.R#221
+14: job$algorithm$fun(job = job, data = job$problem$data, instance = instance, 
+        ...)
+13: (function (...) 
+    job$algorithm$fun(job = job, data = job$problem$data, instance = instance, 
+        ...))(input_trafo = "none", output_trafo = "none", init = "random", 
+        init_size_fraction = "0.25", random_interleave_iter = "0", 
+        surrogate = "botorch", extratrees = NA, trees = NA_character_, 
+        variance_estimator = NA_character_, kernel = NA_character_, 
+        nugget = NA_character_, scaling = NA, acqf = "EI", lambda = NA_character_, 
+        epsilon_decay = FALSE, lambda_decay = NA, acqopt = "LS", 
+        id = 2L, config_hash = "21601683-3cbe-40c8-a101-5a17006c3ce6")
+12: do.call(wrapper, job$algo.pars, envir = .GlobalEnv)
+11: with_preserve_seed({
+        set_seed(list(seed = seed, rng_kind = rng_kind))
+        code
+    })
+10: with_seed(job$seed, do.call(wrapper, job$algo.pars, envir = .GlobalEnv))
+9: execJob.Experiment(job = makeJob(id, reg = reg))
+8: execJob(job = makeJob(id, reg = reg))
+7: force(code)
+6: with_dir(reg$work.dir, {
+       loadRegistryDependencies(reg, must.work = TRUE)
+       execJob(job = makeJob(id, reg = reg))
+   })
+5: testJob(2) at botorch_pure_numeric_local.R#300
+4: eval(ei, envir)
+3: eval(ei, envir)
+2: withVisible(eval(ei, envir))
+1: source("/home/marc/repositories/mbo_config/botorch/botorch_pure_numeric_local.R", 
+       encoding = "UTF-8")
+Timing stopped at: 0.017 0 0.017
