@@ -19,4 +19,4 @@ ml conda
 conda activate r-4.3
 
 ## Execute job
-Rscript coordinate_descent_pure_numeric.R
+Rscript coordinate_descent/coordinate_descent_pure_numeric.R

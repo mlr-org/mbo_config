@@ -3,7 +3,6 @@ library(checkmate)
 library(data.table)
 library(mlr3misc)
 
-# dependent parameter must contain the default of the parent parameter
 
 OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
   inherit = bbotk::OptimizerBatch,
@@ -42,10 +41,11 @@ OptimizerBatchCoordinateDescent = R6Class("OptimizerBatchCoordinateDescent",
         # fresh state
         # set incumbent to start configuration
         incumbent = self$param_set$values$start
+        n_batches = 0L
       }
 
       # iterate over all generations
-      for (i in seq(n_generations)) {
+      for (i in seq(n_batches + 1, n_generations)) {
 
         xdt = get_generation(inst, incumbent)
 

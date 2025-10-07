@@ -46,19 +46,30 @@ rs_wrapper = function(job, data, instance, ...) {
 addAlgorithm("rs", fun = rs_wrapper)
 
 if (YAHPO_BENCHMARK == "pure_numeric") {
-  setup = data.table(
-    benchmark = YAHPO_BENCHMARK,
-    scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
-    instance = c(
-        "167168", "189873", "189906",
-        "375", "458",
-        "14", "40499",
-        "16", "42",
-        "12", "1501", "16", "40499"
-    ),
-    target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
-    direction = rep("maximize", 13L),
-    budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L))
+  # setup = data.table(
+  #   benchmark = YAHPO_BENCHMARK,
+  #   scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
+  #   instance = c(
+  #       "167168", "189873", "189906",
+  #       "375", "458",
+  #       "14", "40499",
+  #       "16", "42",
+  #       "12", "1501", "16", "40499"
+  #   ),
+  #   target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
+  #   direction = rep("maximize", 13L),
+  #   budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L))
+  # )
+  setup = mlr3misc::rowwise_table(
+    ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
+    "pure_numeric", "lcbench", "167168", "val_accuracy", "maximize", 400L,
+    "pure_numeric", "lcbench", "189873", "val_accuracy", "maximize", 400L,
+    "pure_numeric", "lcbench", "189906", "val_accuracy", "maximize", 400L,
+    "pure_numeric", "rbv2_rpart", "14", "acc", "maximize", 400L,
+    "pure_numeric", "rbv2_rpart", "40499", "acc", "maximize", 400L,
+    "pure_numeric", "rbv2_xgboost", "12", "acc", "maximize", 400L,
+    "pure_numeric", "rbv2_xgboost", "1501", "acc", "maximize", 400L,
+    "pure_numeric", "rbv2_xgboost", "40499", "acc", "maximize", 400L
   )
 } else if (YAHPO_BENCHMARK == "mixed") {
     stop("TBD")
@@ -135,11 +146,11 @@ results = reduceResultsList(done, function(result, job) {
 })
 results = rbindlist(results, fill = TRUE)
 if (YAHPO_BENCHMARK == "pure_numeric") {
-  saveRDS(results, "yahpo_pure_numeric_rs_raw.rds")
+  saveRDS(results, "random_search/yahpo_pure_numeric_rs_raw.rds")
 } else if (YAHPO_BENCHMARK == "mixed") {
   stop("TBD")
 } else if (YAHPO_BENCHMARK == "mixed_deps") {
-  saveRDS(results, "yahpo_mixed_deps_rs_raw.rds")
+  saveRDS(results, "random_search/yahpo_mixed_deps_rs_raw.rds")
 }
 
 results_simulated = reduceResultsList(done, function(result, job) {
@@ -154,14 +165,14 @@ results_simulated = reduceResultsList(done, function(result, job) {
     tmp[, target := - target]
   }
   map_dtr(seq_len(n_repl), function(repl) {
-    subset = tmp[sample(.N, size = pars$prob.pars$budget, replace = FALSE), ]
+    subset = tmp[sample(.N, size = 400, replace = FALSE), ]
     subset[, best := cummin(target)]
     subset[, method := pars$algo.pars$algorithm]
     subset[, benchmark := pars$prob.pars$benchmark]
     subset[, scenario := pars$prob.pars$scenario]
     subset[, instance := pars$prob.pars$instance]
     subset[, target_variable := pars$prob.pars$target_variable]
-    subset[, budget := pars$prob.pars$budget]
+    subset[, budget := 400L]
     subset[, problem := paste0(scenario, "_", instance, "_", target_variable)]
     subset[, repl := repl]
     subset[, iter := seq_len(.N)]
@@ -180,10 +191,10 @@ if (YAHPO_BENCHMARK == "pure_numeric") {
 results_reference = results_simulated[iter == budget, .(mean_best = mean(best), se_best = sd(best) / sqrt(.N)), by = .(scenario, instance, target_variable, orig_direction, problem)]
 results_reference = merge(results_reference, results[iter == 10^6L, c("problem", "best")], by = "problem")
 if (YAHPO_BENCHMARK == "pure_numeric") {
-  saveRDS(results_reference, "yahpo_pure_numeric_rs_reference.rds")
+  saveRDS(results_reference, "random_search/yahpo_pure_numeric_rs_reference.rds")
 } else if (YAHPO_BENCHMARK == "mixed") {
   stop("TBD")
 } else if (YAHPO_BENCHMARK == "mixed_deps") {
-  saveRDS(results_reference, "yahpo_mixed_deps_rs_reference.rds")
+  saveRDS(results_reference, "random_search/yahpo_mixed_deps_rs_reference.rds")
 }
 

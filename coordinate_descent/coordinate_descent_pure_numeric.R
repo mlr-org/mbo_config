@@ -28,7 +28,6 @@ for (source_file in source_files) {
 }
 
 registry_name = "/glade/derecho/scratch/marcbecker/yahpo_pure_numeric_coordinate_descent"
-unlink(registry_name, recursive = TRUE)
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
@@ -47,18 +46,7 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 
 source("coordinate_descent/OptimizerCoordinateDescent.R")
 
-setup = mlr3misc::rowwise_table(
-    ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
-    "pure_numeric", "lcbench", "167168", "val_accuracy", "maximize", 400L,
-    "pure_numeric", "lcbench", "189873", "val_accuracy", "maximize", 400L,
-    "pure_numeric", "lcbench", "189906", "val_accuracy", "maximize", 400L,
-    "pure_numeric", "rbv2_rpart", "14", "acc", "maximize", 400L,
-    "pure_numeric", "rbv2_rpart", "40499", "acc", "maximize", 400L,
-    "pure_numeric", "rbv2_xgboost", "12", "acc", "maximize", 400L,
-    "pure_numeric", "rbv2_xgboost", "1501", "acc", "maximize", 400L,
-    "pure_numeric", "rbv2_xgboost", "40499", "acc", "maximize", 400L
-)
-setup[, id := seq_len(.N)]
+setup = readRDS("common/pure_numeric_instances.rds")
 
 # add problems
 prob_designs = map(seq_len(nrow(setup)), function(i) {
@@ -119,10 +107,6 @@ addAlgorithm(
     id,
     config_hash
     ) {
-    # file = file(sprintf("coordinate_descent/logs/pure_numeric/%i.log", id), open = "wt")
-    # sink(file)
-    # sink(file, type = "message")
-
     reticulate::use_condaenv("yahpo_gym", required = TRUE)
     library(yahpogym)
     logger = lgr::get_logger("mlr3/bbotk")
@@ -277,17 +261,6 @@ objective = ObjectiveRFunDt$new(
 
     waitForJobs(ids = job_ids, reg = reg)
 
-    # while(TRUE) {
-    #   if (length(findExpired()$job.id)) {
-    #     message("Resubmitting expired jobs")
-    #     expired_ids = findExpired()
-    #     resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_pure_numeric")
-    #     waitForJobs(ids = resubmitted_ids, reg = reg)
-    #   } else {
-    #     break
-    #   }
-    # }
-
     res = rbindlist(reduceResultsList(ids = intersect(job_ids, findDone()$job.id), reg = reg))
 
     # average score over replications
@@ -359,7 +332,7 @@ if (file.exists(callback_backup$state$path)) {
 
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$param_set$set_values(
-  n_generations = 1L,
+  n_generations = 6L,
   start = init
 )
 optimizer$optimize(optim_instance)

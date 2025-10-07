@@ -1,7 +1,3 @@
-determine_budget = function(d) {
-  ceiling(20 + 40 * sqrt(d))
-}
-
 make_optim_instance = function(instance) {
   benchmark = BenchmarkSet$new(instance$scenario, instance = instance$instance)
   benchmark$subset_codomain(instance$target)
@@ -11,9 +7,6 @@ make_optim_instance = function(instance) {
     objective = fix_objective_domain_constants_pure_numeric(instance$scenario, objective=objective)
     search_space = get_search_space_pure_numeric(instance$scenario)
   }
-  # if (instance$budget != determine_budget(search_space$length)) {
-  #   stop("Incorrect budget.")
-  # }
   optim_instance = OptimInstanceBatchSingleCrit$new(objective, search_space = search_space, terminator = trm("evals", n_evals = instance$budget))
   optim_instance
 }
@@ -27,9 +20,6 @@ make_optim_instance_rs = function(instance) {
   if (instance$benchmark == "pure_numeric") {
     objective = fix_objective_domain_constants_pure_numeric(instance$scenario, objective=objective)
     search_space = get_search_space_pure_numeric(instance$scenario)
-  }
-  if (instance$budget != determine_budget(search_space$length)) {
-    stop("Incorrect budget.")
   }
   optim_instance = OptimInstanceBatchSingleCrit$new(objective, search_space = search_space, terminator = trm("evals", n_evals = rs_budget))
   optim_instance
@@ -245,7 +235,6 @@ get_surrogate_pure_numeric = function(surrogate, extratrees, trees, variance_est
   }
 
   srlrn(learner)
-  #surrogate$param_set$values$catch_errors = FALSE
 }
 
 get_acq_optimizer_mixed_deps = function(acqopt, dim) {
@@ -264,7 +253,6 @@ get_acq_optimizer_mixed_deps = function(acqopt, dim) {
     optimizer$param_set$set_values(n_searches = 10L, n_steps = ceiling(budget / 300L), n_neighs = 30L)
     optimizer
   }
-  #acq_optimizer$param_set$values$catch_errors = FALSE
   acq_optimizer
 }
 
@@ -294,7 +282,9 @@ get_acq_optimizer_pure_numeric = function(acqopt, dim) {
   } else if (acqopt == "CMAES") {
     optimizer = AcqOptimizerCmaes$new()
     optimizer$param_set$set_values(
-      max_fevals = budget
+      max_fevals = budget,
+      max_restarts = 1000L
+
     )
     optimizer
   } else if (acqopt == "LBFGSB") {
@@ -306,7 +296,6 @@ get_acq_optimizer_pure_numeric = function(acqopt, dim) {
     )
     optimizer
   }
-  #acq_optimizer$param_set$values$catch_errors = FALSE
   acq_optimizer
 }
 

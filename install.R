@@ -36,6 +36,8 @@ init_local_config(data_path = "~/yahpo_data")
 b = BenchmarkSet$new("iaml_glmnet")
 obj = b$get_objective("40981", multifidelity = FALSE)
 
+conda_install(envname = "/glade/work/marcbecker/conda-envs/yahpo_gym", packages = c("botorch", "gpytorch"))
+
 # R packages for mlr3mbo
 renv::install(c(
   "batchtools",
@@ -58,7 +60,7 @@ renv::install(c(
 
 system("git clone --recursive https://github.com/mlr-org/libcmaesr.git /tmp/libcmaesr")
 renv::load(".")
-renv::install("languageserver") # Why?
+renv::install("languageserver")
 renv::install("/tmp/libcmaesr")
 
 # SMAC
@@ -76,7 +78,3 @@ conda_create("ax", python = "3.8", packages = c(
   "ConfigSpace"
 ), channel = "conda-forge")
 
-
-  # "mkl",
-  # "mkl-service",
-  # "intel-openmp",

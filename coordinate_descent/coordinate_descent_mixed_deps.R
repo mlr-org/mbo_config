@@ -27,8 +27,7 @@ for (source_file in source_files) {
   source(source_file)
 }
 
-registry_name = "/glade/derecho/scratch/marcbecker/yahpo_mixed_deps_coordinate_descent_2025_09_26"
-unlink(registry_name, recursive = TRUE, force = TRUE)
+registry_name = "/glade/derecho/scratch/marcbecker/yahpo_mixed_deps_coordinate_descent"
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
@@ -47,23 +46,7 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 
 source("coordinate_descent/OptimizerCoordinateDescent.R")
 
-setup = mlr3misc::rowwise_table(
-     ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
-     "mixed_deps", "lcbench", "167168", "val_accuracy", "maximize", 400L,
-     "mixed_deps", "lcbench", "189873", "val_accuracy", "maximize", 400L,
-     "mixed_deps", "lcbench", "189906", "val_accuracy", "maximize", 400L,
-     "mixed_deps", "nb301", "CIFAR10", "val_accuracy", "maximize", 400L,
-     "mixed_deps", "rbv2_rpart", "14", "acc", "maximize", 400L,
-     "mixed_deps", "rbv2_rpart", "40499", "acc", "maximize", 400L,
-     "mixed_deps", "rbv2_ranger", "16", "acc", "maximize", 400L,
-     "mixed_deps", "rbv2_ranger", "42", "acc", "maximize", 400L,
-     "mixed_deps", "rbv2_xgboost", "12", "acc", "maximize", 400L,
-     "mixed_deps", "rbv2_xgboost", "1501", "acc", "maximize", 400L,
-     "mixed_deps", "rbv2_xgboost", "16", "acc", "maximize", 400L,
-     "mixed_deps", "rbv2_super", "1457", "acc", "maximize", 400L,
-     "mixed_deps", "rbv2_super", "1063", "acc", "maximize", 400L,
-     "mixed_deps", "rbv2_super", "15", "acc", "maximize", 400L)
-setup[, id := seq_len(.N)]
+setup = readRDS("common/mixed_deps_instances.rds")
 
 # add problems
 prob_designs = map(seq_len(nrow(setup)), function(i) {
@@ -114,14 +97,14 @@ addAlgorithm(
     id,
     config_hash
     ) {
-    file = file(sprintf("coordinate_descent/logs/mixed_deps/%i.log", id), open = "wt")
-    sink(file)
-    sink(file, type = "message")
+    # file = file(sprintf("coordinate_descent/logs/mixed_deps/%i.log", id), open = "wt")
+    # sink(file)
+    # sink(file, type = "message")
 
     reticulate::use_condaenv("yahpo_gym", required = TRUE)
     library(yahpogym)
-    # logger = lgr::get_logger("mlr3/bbotk")
-    # logger$set_threshold("warn")
+    logger = lgr::get_logger("mlr3/bbotk")
+    logger$set_threshold("warn")
     data.table::setDTthreads(1L)
     future::plan("sequential")
 
@@ -241,16 +224,16 @@ objective = ObjectiveRFunDt$new(
     reg,
     rs_reference
     ) {
-    xdt_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_xdt_2025_09_26.rds"
-    job_ids_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_job_ids_2025_09_26.rds"
+    xdt_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_xdt.rds"
+    job_ids_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_job_ids.rds"
 
-    n_repls = 15L
+    n_repls = 30L
     xdt[, id := .I]
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
 
     ades = list(mbo = xdt)
     job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
-    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps_2025_09_26") # /glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps_2025_09_26
+    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps") # /glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps_2025_09_26
 
     tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
     saveRDS(xdt, tmp_file)
@@ -332,7 +315,7 @@ callback_backup = callback_batch("bbotk.backup",
   }
 )
 
-state_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_instance_2025_09_26.rds"
+state_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_instance.rds"
 callback_backup$state$path = state_path
 
 optim_instance = oi(
@@ -350,12 +333,12 @@ if (file.exists(callback_backup$state$path)) {
 
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$param_set$set_values(
-  n_generations = 5L,
+  n_generations = 3L,
   start = init
 )
 
 optimizer$optimize(optim_instance)
 
 
-save_path = "/glade/derecho/scratch/marcbecker/mixed_deps_coordinate_descent_2025_09_26.rds"
+save_path = "/glade/derecho/scratch/marcbecker/mixed_deps_coordinate_descent.rds"
 saveRDS(optim_instance, save_path)
