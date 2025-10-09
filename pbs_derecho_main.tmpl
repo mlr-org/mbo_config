@@ -1,0 +1,149 @@
+#!/bin/bash
+
+#PBS -N <%= job.name %>
+#PBS -A WYOM0202
+#PBS -j oe
+#PBS -k eod
+#PBS -q main
+#PBS -l select=1:ncpus=128
+#PBS -l walltime=11:30:00
+#PBS -l job_priority=regular
+#PBS -o <%= log.file %>
+
+## Set temp to scratch
+export TMPDIR=/glade/derecho/scratch/${USER}/tmp && mkdir -p ${TMPDIR}
+
+## Load required environment modules
+ml conda
+conda activate mbo_config
+
+## Run
+Rscript -e 'batchtools::doJobCollection("<%= uri_1 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_2 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_3 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_4 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_5 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_6 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_7 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_8 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_9 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_10 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_11 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_12 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_13 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_14 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_15 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_16 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_17 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_18 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_19 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_20 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_21 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_22 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_23 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_24 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_25 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_26 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_27 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_28 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_29 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_30 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_31 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_32 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_33 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_34 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_35 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_36 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_37 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_38 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_39 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_40 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_41 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_42 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_43 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_44 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_45 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_46 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_47 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_48 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_49 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_50 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_51 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_52 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_53 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_54 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_55 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_56 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_57 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_58 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_59 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_60 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_61 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_62 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_63 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_64 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_65 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_66 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_67 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_68 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_69 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_70 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_71 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_72 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_73 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_74 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_75 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_76 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_77 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_78 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_79 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_80 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_81 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_82 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_83 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_84 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_85 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_86 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_87 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_88 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_89 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_90 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_91 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_92 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_93 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_94 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_95 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_96 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_97 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_98 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_99 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_100 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_101 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_102 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_103 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_104 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_105 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_106 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_107 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_108 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_109 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_110 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_111 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_112 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_113 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_114 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_115 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_116 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_117 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_118 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_119 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_120 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_121 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_122 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_123 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_124 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_125 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_126 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_127 %>")' &
+Rscript -e 'batchtools::doJobCollection("<%= uri_128 %>")'
+wait

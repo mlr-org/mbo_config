@@ -1,0 +1,307 @@
+library(batchtools)
+library(data.table)
+library(mlr3)
+library(mlr3misc)
+library(mlr3mbo)
+library(mlr3pipelines)
+library(bbotk)
+library(paradox)
+library(R6)
+library(checkmate)
+library(reticulate)
+
+data.table::setDTthreads(1L)
+
+#source("submit_ncar.R")
+
+use_condaenv("yahpo_gym", required = TRUE)
+yahpo_gym = import("yahpo_gym")
+
+packages = c("data.table", "mlr3", "mlr3learners", "mlr3misc", "mlr3mbo", "mlr3pipelines", "bbotk", "paradox", "ranger", "R6", "checkmate")
+
+root = here::here()
+experiments_dir = file.path(root)
+
+source_files = map_chr(c("runtime/helper.R"), function(x) file.path(experiments_dir, x)) #!!
+for (source_file in source_files) {
+  source(source_file)
+}
+
+unlink(file.path(root, "yahpo_mixed_deps_coordinate_descent"), recursive = TRUE)
+
+registry_name = "yahpo_mixed_deps_coordinate_descent"
+reg = makeExperimentRegistry(
+  file.dir = registry_name,
+  conf.file = NA,
+  packages = packages,
+  source = source_files
+)
+saveRegistry(reg)
+
+setup = mlr3misc::rowwise_table(
+  ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
+  "mixed_deps", "rbv2_rpart", "14", "acc", "maximize", 110
+)
+setup[, id := seq_len(.N)]
+
+# add problems
+prob_designs = map(seq_len(nrow(setup)), function(i) {
+  prob_id = paste0(setup[i, ]$scenario, "_", setup[i, ]$instance, "_", setup[i, ]$target_variable)
+  addProblem(prob_id, data = list(benchmark = setup[i, ]$benchmark, scenario = setup[i, ]$scenario, instance = setup[i, ]$instance, target_variable = setup[i, ]$target_variable, direction = setup[i, ]$direction, budget = setup[i, ]$budget))
+  setNames(list(setup[i, ]), nm = prob_id)
+})
+prob_names = sapply(prob_designs, names)
+prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
+names(prob_designs) = prob_names
+
+search_space = ps(
+  input_trafo = p_fct(c("none", "unitcube")),
+  output_trafo = p_fct(c("none", "standardize", "log")),
+  init = p_fct(c("random", "lhs", "sobol")),
+  init_size_fraction = p_fct(c("0.05", "0.10", "0.25")),
+  random_interleave_iter = p_fct(c("0", "2", "4")),
+  surrogate = p_fct(
+    c("rf_var_jk_10", "rf_var_s_10", "rf_var_ltv_10",
+      "rf_et_jk_10", "rf_et_s_10", "rf_et_ltv_10",
+      "rf_var_jk_500", "rf_var_s_500", "rf_var_ltv_500",
+      "rf_et_jk_500", "rf_et_s_500", "rf_et_ltv_500",
+      "gp_rbf", "gp_3_2", "gp_5_2")),
+  acqf = p_fct(c("EI", "CB", "PI", "Mean")),
+  lambda = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
+  acqopt = p_fct(c("RS_1000", "RS", "FS", "LS")),
+  epsilon_decay = p_lgl(depends = acqf == "EI"),
+  lambda_decay = p_lgl(depends = acqf == "CB")
+)
+
+addAlgorithm(
+  name = "mbo",
+  fun = function(
+    job,
+    data,
+    instance,
+    input_trafo,
+    output_trafo,
+    init,
+    init_size_fraction,
+    random_interleave_iter,
+    surrogate,
+    acqf,
+    lambda,
+    acqopt,
+    epsilon_decay,
+    lambda_decay,
+    id,
+    config_hash
+    ) {
+
+
+    reticulate::use_condaenv("yahpo_gym", required = TRUE)
+    library(yahpogym)
+    logger = lgr::get_logger("mlr3")
+    logger$set_threshold("debug")
+    future::plan("sequential")
+
+    optim_instance = make_optim_instance(instance)
+
+    random_interleave_iter = as.numeric(random_interleave_iter)
+    init_size_fraction = as.numeric(init_size_fraction)
+    lambda = as.numeric(lambda)
+    init_design_size = ceiling(as.numeric(init_size_fraction) * instance$budget)
+    init_design = if (init == "random") {
+      generate_design_random(optim_instance$search_space, n = init_design_size)$data
+    } else if (init == "lhs") {
+      generate_design_lhs(optim_instance$search_space, n = init_design_size)$data
+    } else if (init == "sobol") {
+      generate_design_sobol(optim_instance$search_space, n = init_design_size)$data
+    }
+
+    optim_instance$eval_batch(init_design)
+
+    surrogate = get_surrogate_mixed_deps(surrogate)
+
+    if (input_trafo == "unitcube") {
+      surrogate$input_trafo = InputTrafoUnitcube$new()
+    }
+
+    if (output_trafo == "standardize") {
+      surrogate$output_trafo = OutputTrafoStandardize$new()
+    } else if (output_trafo == "log") {
+      surrogate$output_trafo = OutputTrafoLog$new(invert_posterior = FALSE)
+    }
+
+    acq_optimizer = get_acq_optimizer_mixed_deps(acqopt)
+
+    acq_function = if (acqf == "EI" && output_trafo == "log") {
+      AcqFunctionEILog$new()
+    } else if (acqf == "EI" && output_trafo != "log") {
+      AcqFunctionEI$new()
+    } else if (acqf == "CB") {
+      AcqFunctionCB$new(lambda = as.numeric(lambda))
+    } else if (acqf == "PI") {
+      AcqFunctionPI$new()
+    } else if (acqf == "Mean") {
+      AcqFunctionMean$new()
+    }
+
+    if (isTRUE(epsilon_decay)) {
+      acq_function$constants$values$epsilon = 0.1
+      callback_decay_epsilon = callback_batch("mlr3mbo.decay_epsilon",
+        on_optimization_end = function(callback, context) {
+          epsilon = context$instance$objective$constants$get_values()[["epsilon"]]
+          context$instance$objective$constants$set_values("epsilon" = epsilon * 0.99)
+        }
+      )
+      acq_function$callbacks = list(callback_decay_epsilon)
+    }
+
+    if (isTRUE(lambda_decay)) {
+      callback_decay_lambda = callback_batch("mlr3mbo.decay_lambda",
+        on_optimization_end = function(callback, context) {
+          lambda = context$instance$objective$constants$get_values()[["lambda"]]
+          context$instance$objective$constants$set_values("lambda" = lambda * 0.99)
+        }
+      )
+      acq_function$callbacks = list(callback_decay_lambda)
+    }
+
+    bayesopt_ego(
+        optim_instance,
+        surrogate = surrogate,
+        acq_function = acq_function,
+        acq_optimizer = acq_optimizer,
+        random_interleave_iter = random_interleave_iter,
+        init_design_size = init_design_size)
+
+    score = optim_instance$archive$best()[[instance$target_variable]]
+    if (instance$direction == "maximize") {
+      score = - score
+    }
+
+    data.table(
+      id = id,
+      replication = job$repl,
+      problem = job$problem$name,
+      scenario = instance$scenario,
+      instance = instance$instance,
+      target_variable = instance$target_variable,
+      direction= instance$direction,
+      budget = instance$budget,
+      score = score
+    )
+  }
+)
+
+constants = ps(
+  reg = p_uty(),
+  rs_reference = p_uty()
+)
+
+objective = ObjectiveRFunDt$new(
+  fun = function(
+    xdt,
+    reg,
+    rs_reference
+    ) {
+    xdt[, id := .I]
+    set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
+
+    ades = list(mbo = xdt)
+    job_ids = addExperiments(algo.designs = ades, repls = 1L, reg = reg)
+
+    #job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps")
+    submitJobs(ids = job_ids$job.id, reg = reg)
+
+    # tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
+    # saveRDS(xdt, tmp_file)
+    # unlink(xdt_path)
+    # file.rename(tmp_file, xdt_path)
+
+    # tmp_file = tempfile(tmpdir = dirname(job_ids_path), fileext = ".rds")
+    # saveRDS(job_ids, tmp_file)
+    # unlink(job_ids_path)
+    # file.rename(tmp_file, job_ids_path)
+
+    # job_ids = readRDS(job_ids_path)
+    # xdt = readRDS(xdt_path)
+
+    waitForJobs(ids = job_ids, reg = reg)
+
+    # while(TRUE) {
+    #   if (length(findExpired()$job.id)) {
+    #     message("Resubmitting expired jobs")
+    #     expired_ids = findExpired()
+    #     resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps")
+    #     waitForJobs(ids = resubmitted_ids, reg = reg)
+    #   } else {
+    #     break
+    #   }
+    # }
+
+
+    res = rbindlist(reduceResultsList(ids = intersect(job_ids$job.id, findDone()$job.id), reg = reg))
+
+    # average score over replications
+    agg = res[, list(mean_score = mean(score), raw_score = list(score), n_na = sum(is.na(score)), n = .N), by = list(id, problem)]
+
+    # determine meta score
+    meta_scores = pmap_dbl(agg, function(problem, mean_score, ...) {
+      .problem = problem
+      score_rs_small = rs_reference[list(.problem), mean_best, on = "problem"]
+      score_rs_large= rs_reference[list(.problem), best, on = "problem"]
+
+      (score_rs_small - mean_score) / (score_rs_small - score_rs_large)
+    })
+    set(agg, j = "meta_score", value = meta_scores)
+
+    # average meta score over problems
+    agg_meta_score = agg[, list(
+      mean_meta_score = mean(meta_score),
+      raw_meta_score = list(set_names(meta_score, problem)),
+      n_na = sum(is.na(meta_score)),
+      n = .N,
+      raw_mean_score = list(set_names(mean_score, problem)),
+      missing_instances = list(setdiff(reg$problems, problem))),
+      by = .(id)]
+
+    # if no meta score on all instances, set to -Inf
+    #agg_meta_score[n < 14, mean_meta_score := -Inf]
+
+    agg_meta_score
+  },
+  domain = search_space,
+  codomain = ps(mean_meta_score = p_dbl(tags = "maximize")),
+  constants = constants,
+  check_values = FALSE
+)
+
+objective$constants$set_values(
+  reg = reg,
+  rs_reference = readRDS("yahpo_mixed_deps_rs_reference.rds")
+)
+
+optim_instance = oi(
+  objective = objective,
+  terminator = trm("none"),
+  search_space = search_space,
+  check_values = FALSE
+)
+
+design = data.table(
+  input_trafo = "none",
+  output_trafo = "none",
+  init = "random",
+  init_size_fraction = "0.25",
+  random_interleave_iter = "0",
+  surrogate = "rf_var_s_500",
+  acqf = "EI",
+  lambda = NA_character_,
+  acqopt = "LS",
+  epsilon_decay = NA,
+  lambda_decay = NA)
+
+optimizer = opt("design_points", design = design)
+
+optimizer$optimize(optim_instance)
+
+
+# 9:55
