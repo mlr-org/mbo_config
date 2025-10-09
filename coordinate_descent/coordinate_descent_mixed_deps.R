@@ -333,7 +333,7 @@ if (file.exists(callback_backup$state$path)) {
 
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$param_set$set_values(
-  n_generations = 3L,
+  n_generations = 5L,
   start = init
 )
 
