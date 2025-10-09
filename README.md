@@ -4,6 +4,7 @@ Code to perform AC of [mlr3mbo](https://github.com/mlr-org/mlr3mbo) using proble
 
 ## Setup
 
+<<<<<<< HEAD
 * mlr3mbo@so_config_3 branch
 * YAHPO Gym 1.0.2 from PyPi and R version 1.0.2 from GitHub main branch
 * YAHPO Data from https://github.com/slds-lmu/yahpo_data @pure_numeric branch
@@ -11,6 +12,10 @@ Code to perform AC of [mlr3mbo](https://github.com/mlr-org/mlr3mbo) using proble
 * setup up `yahpo_venv` via `python3.10 -m venv "yahpo_venv"` and install and setup YAHPO Gym (python and R as described in its documentation)
 * for competitors: (TBD; create a similar venv and install as described)
 
+=======
+* Run `install.sh` to setup the environment on the ncar derecho cluster
+* Run `install.R` to install the R packages and python packages
+>>>>>>> v5
 
 ## Structure
 
