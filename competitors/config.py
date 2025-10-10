@@ -77,6 +77,6 @@ SCENARIO_META_DATA = {
     },
 }
 
-YAHPO_DATA_PATH = "/home/marc/yahpo_data/"
-YAHPO_SCRIPT_PATH = "/home/marc/repositories/mbo_config/competitor_wrapper/subprocess_yahpo.py"
-YAHPO_VENV_PATH = "/home/marc/miniconda/envs/yahpo_gym/bin/python"
+YAHPO_DATA_PATH = "/glade/u/home/marcbecker/yahpo_data/"
+YAHPO_SCRIPT_PATH = "/glade/u/home/marcbecker/mbo_config/competitors/subprocess_yahpo.py"
+YAHPO_VENV_PATH = "/glade/u/home/marcbecker/.local/share/r-miniconda/envs/yahpo_gym/bin/python"

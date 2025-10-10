@@ -4,9 +4,9 @@
 #PBS -A WYOM0202
 #PBS -j oe
 #PBS -k eod
-#PBS -q main
-#PBS -l select=1:ncpus=128
-#PBS -l walltime=11:30:00
+#PBS -q develop
+#PBS -l select=1:ncpus=128:mem=235GB
+#PBS -l walltime=06:00:00
 #PBS -l job_priority=regular
 #PBS -o <%= log.file %>
 
@@ -14,7 +14,7 @@
 export TMPDIR=/glade/derecho/scratch/${USER}/tmp && mkdir -p ${TMPDIR}
 
 ## Load required environment modules
-ml conda
+ml conda mkl openmpi
 conda activate mbo_config
 
 ## Run

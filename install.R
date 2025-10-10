@@ -64,17 +64,14 @@ renv::install("languageserver")
 renv::install("/tmp/libcmaesr")
 
 # SMAC
-conda_create("smac", python = "3.8", packages = c(
-  "smac"
-), channel = "conda-forge")
+conda_create("smac", python = "3.10")
+conda_install(envname = "smac", pip = TRUE, packages = c("smac"))
 
 # HEBO
-conda_create("hebo", python = "3.8")
+conda_create("hebo", python = "3.10")
 conda_install(envname = "hebo", pip = TRUE, packages = c("HEBO", "ConfigSpace"))
 
 # AX
-conda_create("ax", python = "3.8", packages = c(
-  "ax-platform",
-  "ConfigSpace"
-), channel = "conda-forge")
+conda_create("ax", python = "3.10")
+conda_install(envname = "ax", pip = TRUE, packages = c("ax-platform", "ConfigSpace"))
 

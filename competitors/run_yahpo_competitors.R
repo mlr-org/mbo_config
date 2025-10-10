@@ -3,54 +3,55 @@ library(paradox)
 library(mlr3misc)
 library(data.table)
 
-YAHPO_BENCHMARK = "mixed_deps"  # "pure_numeric", "mixed", "mixed_deps"
+YAHPO_BENCHMARK = "pure_numeric"  # "pure_numeric", "mixed", "mixed_deps"
 
 packages = c("data.table", "paradox")
 
 root = here::here()
 experiments_dir = file.path(root)
 
-source_files = map_chr(c("helper.R"), function(x) file.path(experiments_dir, x))
-for (source_file in source_files) {
-  source(source_file)
-}
+# source_files = map_chr(c("helper.R"), function(x) file.path(experiments_dir, x))
+# for (source_file in source_files) {
+#   source(source_file)
+# }
 
-registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/lschneider/yahpo_YAHPO_BENCHMARK_competitors")
-reg = makeExperimentRegistry(registry_name, packages = packages, source = source_files)
+registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/marcbecker/yahpo_YAHPO_BENCHMARK_competitors")
+unlink(registry_name, recursive = TRUE, force = TRUE)
+reg = makeExperimentRegistry(registry_name, packages = packages)
 saveRegistry(reg)
 # reg = loadRegistry(registry_name)
 
 smac4hpo_wrapper = function(job, data, instance, ...) {
-  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/smac_venv", required = TRUE)
+  reticulate::use_condaenv("smac", required = TRUE)
   library(reticulate)
-  py_run_file("smac_wrapper.py")
+  py_run_file("competitors/smac_wrapper.py")
   result = py$run_smac(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed, facade = "hpo")
   result = as.data.table(result)
   result
 }
 
 smac4bb_wrapper = function(job, data, instance, ...) {
-  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/smac_venv", required = TRUE)
+  reticulate::use_condaenv("smac", required = TRUE)
   library(reticulate)
-  py_run_file("smac_wrapper.py")
+  py_run_file("competitors/smac_wrapper.py")
   result = py$run_smac(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed, facade = "bb")
   result = as.data.table(result)
   result
 }
 
 hebo_wrapper = function(job, data, instance, ...) {
-  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/hebo_venv", required = TRUE)
+  reticulate::use_condaenv("hebo", required = TRUE)
   library(reticulate)
-  py_run_file("hebo_wrapper.py")
+  py_run_file("competitors/hebo_wrapper.py")
   result = py$run_hebo(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed)
   result = as.data.table(result)
   result
 }
 
 ax_wrapper = function(job, data, instance, ...) {
-  reticulate::use_virtualenv("/glade/u/home/lschneider/mbo_config/ax_venv", required = TRUE)
+  reticulate::use_condaenv("ax", required = TRUE)
   library(reticulate)
-  py_run_file("ax_wrapper.py")
+  py_run_file("competitors/ax_wrapper.py")
   result = py$run_ax(benchmark = instance$benchmark, scenario = instance$scenario, instance = instance$instance, target_variable = instance$target_variable, direction = instance$direction, budget = instance$budget, seed = job$seed)
   result = as.data.table(result)
   result
@@ -62,40 +63,12 @@ addAlgorithm("smac4bb", fun = smac4bb_wrapper)
 addAlgorithm("hebo", fun = hebo_wrapper)
 addAlgorithm("ax", fun = ax_wrapper)
 
-if (YAHPO_BENCHMARK == "pure_numeric") {
-  setup = data.table(
-    benchmark = YAHPO_BENCHMARK,
-    scenario = rep(c("lcbench", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost"))), c(3L, 2L, 2L, 2L, 4L)),
-    instance = c(
-        "167168", "189873", "189906",
-        "375", "458",
-        "14", "40499",
-        "16", "42",
-        "12", "1501", "16", "40499"
-    ),
-    target_variable = rep(c("val_accuracy", "acc"), c(3L, 10L)),
-    direction = rep("maximize", 13L),
-    budget = rep(c(126L, 77L, 100L, 100L, 147L), c(3L, 2L, 2L, 2L, 4L))
-  )
+setup =  if (YAHPO_BENCHMARK == "pure_numeric") {
+  readRDS("common/pure_numeric_instances.rds")
 } else if (YAHPO_BENCHMARK == "mixed") {
     stop("TBD")
 } else if (YAHPO_BENCHMARK == "mixed_deps") {
-    setup = data.table(
-    benchmark = YAHPO_BENCHMARK,
-    scenario = rep(c("lcbench", "nb301", paste0("rbv2_", c("glmnet", "rpart", "ranger", "xgboost", "super"))), c(3L, 1L, 2L, 2L, 2L, 4L, 6L)),
-    instance = c(
-        "167168", "189873", "189906",
-        "CIFAR10",
-        "375", "458",
-        "14", "40499",
-        "16", "42",
-        "12", "1501", "16", "40499",
-        "1053", "1457", "1063", "1479", "15", "1468"
-    ),
-    target_variable = rep(c("val_accuracy", "acc"), c(4L, 16L)),
-    direction = rep("maximize", 20L),
-    budget = rep(c(126L, 254L, 90L, 110L, 134L, 170L, 267L), c(3L, 1L, 2L, 2L, 2L, 4L, 6L))
-  )
+  readRDS("common/mixed_deps_instances.rds")
 }
 
 setup[, id := seq_len(.N)]
@@ -124,37 +97,54 @@ for (i in seq_len(nrow(optimizers))) {
   addJobTags(ids, as.character(optimizers[i, ]$algorithm))
 }
 
-jobs = findJobs()
-resources.default = list(walltime = 3600L * 1L, memory = 4000L, ntasks = 1L, ncpus = 1L, nodes = 1L)
-submitJobs(jobs, resources = resources.default)
+source("submit.R")
 
-done = findDone()
-results = reduceResultsList(done, function(result, job) {
-  # result should already be corrected for minimization
-  data = result
-  pars = job$pars
-  target_variable = pars$prob.pars$target_variable
-  tmp = data[, eval(target_variable), with = FALSE]
-  colnames(tmp) = "target"
-  tmp[, orig_direction := pars$prob.pars$direction]
-  tmp[, best := cummin(target)]
-  tmp[, method := pars$algo.pars$algorithm]
-  tmp[, benchmark := pars$prob.pars$benchmark]
-  tmp[, scenario := pars$prob.pars$scenario]
-  tmp[, instance := pars$prob.pars$instance]
-  tmp[, target_variable := pars$prob.pars$target_variable]
-  tmp[, budget := pars$prob.pars$budget]
-  tmp[, problem := paste0(scenario, "_", instance, "_", target_variable)]
-  tmp[, repl := job$repl]
-  tmp[, iter := seq_len(.N)]
-  tmp
-})
-results = rbindlist(results, fill = TRUE)
-if (YAHPO_BENCHMARK == "pure_numeric") {
-  saveRDS(results, "yahpo_pure_numeric_competitors_raw.rds")
-} else if (YAHPO_BENCHMARK == "mixed") {
-  stop("TBD")
-} else if (YAHPO_BENCHMARK == "mixed_deps") {
-  saveRDS(results, "yahpo_mixed_deps_competitors_raw.rds")
-}
+job_ids = findJobs()$job.id
+job_ids = sample(job_ids, 128L)
+
+submit(
+  job_ids, 
+  reg, 
+  template = "pbs_derecho_main.tmpl", 
+  jobs_per_node = 128L, 
+  chunk_size = 1L, 
+  max_concurrent_nodes = 1L,  
+  log_dir = ".", 
+  log_prefix = "competitors", 
+  shuffle = FALSE) 
+
+# 
+# resources.default = list(walltime = 3600L * 1L, memory = 4000L, ntasks = 1L, ncpus = 1L, nodes = 1L)
+# submitJobs(jobs, resources = resources.default)
+
+# done = findDone()
+# results = reduceResultsList(done, function(result, job) {
+#   # result should already be corrected for minimization
+#   data = result
+#   pars = job$pars
+#   target_variable = pars$prob.pars$target_variable
+#   tmp = data[, eval(target_variable), with = FALSE]
+#   colnames(tmp) = "target"
+#   tmp[, orig_direction := pars$prob.pars$direction]
+#   tmp[, best := cummin(target)]
+#   tmp[, method := pars$algo.pars$algorithm]
+#   tmp[, benchmark := pars$prob.pars$benchmark]
+#   tmp[, scenario := pars$prob.pars$scenario]
+#   tmp[, instance := pars$prob.pars$instance]
+#   tmp[, target_variable := pars$prob.pars$target_variable]
+#   tmp[, budget := pars$prob.pars$budget]
+#   tmp[, problem := paste0(scenario, "_", instance, "_", target_variable)]
+#   tmp[, repl := job$repl]
+#   tmp[, iter := seq_len(.N)]
+#   tmp
+# })
+
+# results = rbindlist(results, fill = TRUE)
+# if (YAHPO_BENCHMARK == "pure_numeric") {
+#   saveRDS(results, "yahpo_pure_numeric_competitors_raw.rds")
+# } else if (YAHPO_BENCHMARK == "mixed") {
+#   stop("TBD")
+# } else if (YAHPO_BENCHMARK == "mixed_deps") {
+#   saveRDS(results, "yahpo_mixed_deps_competitors_raw.rds")
+# }
 
