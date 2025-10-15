@@ -1,6 +1,8 @@
 ml conda cmake
 conda activate mbo_config
 
+export PATH=$HOME/mbo_config/hyperqueue/target/release:$PATH
+
 # ----------------------
 # Git Aliases
 # ----------------------
@@ -32,7 +34,7 @@ alias gpo='git push origin'
 alias gr='git rebase'
 alias gs='git status'
 alias gss='git status --short'
-alias gst='git stash'n
+alias gst='git stash'
 
 alias gsta='git stash apply'
 alias gstd='git stash drop'
