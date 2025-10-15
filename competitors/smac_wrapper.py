@@ -223,3 +223,31 @@ def run_smac(
 
     shutil.rmtree(output_directory)
     return data
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--benchmark", required=True, choices=["pure_numeric", "mixed", "mixed_deps"])
+    parser.add_argument("--scenario", required=True)
+    parser.add_argument("--instance", required=True)
+    parser.add_argument("--target_variable", required=True)
+    parser.add_argument("--direction", required=True, choices=["minimize", "maximize"])
+    parser.add_argument("--budget", required=True, type=int)
+    parser.add_argument("--seed", required=True, type=int)
+    parser.add_argument("--output_path", required=True)
+    parser.add_argument("--facade", required=True, choices=["hpo", "bb"])
+    args = parser.parse_args()
+
+    data = run_smac(
+        benchmark=args.benchmark,
+        scenario=args.scenario,
+        instance=args.instance,
+        target_variable=args.target_variable,
+        direction=args.direction,
+        budget=args.budget,
+        seed=args.seed,
+        facade=args.facade,
+    )
+
+    data.to_csv(args.output_path, index=False)
+

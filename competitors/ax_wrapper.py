@@ -225,3 +225,28 @@ def run_ax(
     data.rename(columns={"target": target_variable}, inplace=True)
 
     return data
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--benchmark", required=True, choices=["pure_numeric", "mixed", "mixed_deps"])
+    parser.add_argument("--scenario", required=True)
+    parser.add_argument("--instance", required=True)
+    parser.add_argument("--target_variable", required=True)
+    parser.add_argument("--direction", required=True, choices=["minimize", "maximize"])
+    parser.add_argument("--budget", required=True, type=int)
+    parser.add_argument("--seed", required=True, type=int)
+    parser.add_argument("--output_path", required=True)
+    args = parser.parse_args()
+
+    data = run_ax(
+        benchmark=args.benchmark,
+        scenario=args.scenario,
+        instance=args.instance,
+        target_variable=args.target_variable,
+        direction=args.direction,
+        budget=args.budget,
+        seed=args.seed,
+    )
+
+    data.to_csv(args.output_path, index=False)

@@ -15,7 +15,7 @@ experiments_dir = file.path(root)
 #   source(source_file)
 # }
 
-registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/marcbecker/yahpo_YAHPO_BENCHMARK_competitors")
+registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "registry/yahpo_YAHPO_BENCHMARK_competitors")
 unlink(registry_name, recursive = TRUE, force = TRUE)
 reg = makeExperimentRegistry(registry_name, packages = packages)
 saveRegistry(reg)
@@ -99,21 +99,23 @@ for (i in seq_len(nrow(optimizers))) {
 
 source("submit.R")
 
-job_ids = findJobs()$job.id
-job_ids = sample(job_ids, 128L)
+testJob(951)
 
-submit(
-  job_ids, 
-  reg, 
-  template = "pbs_derecho_main.tmpl", 
-  jobs_per_node = 128L, 
-  chunk_size = 1L, 
-  max_concurrent_nodes = 1L,  
-  log_dir = ".", 
-  log_prefix = "competitors", 
-  shuffle = FALSE) 
+# job_ids = findJobs()$job.id
+# job_ids = sample(job_ids, 128L)
 
-# 
+# submit(
+#   job_ids,
+#   reg,
+#   template = "pbs_derecho_main.tmpl",
+#   jobs_per_node = 128L,
+#   chunk_size = 1L,
+#   max_concurrent_nodes = 1L,
+#   log_dir = ".",
+#   log_prefix = "competitors",
+#   shuffle = FALSE)
+
+# #
 # resources.default = list(walltime = 3600L * 1L, memory = 4000L, ntasks = 1L, ncpus = 1L, nodes = 1L)
 # submitJobs(jobs, resources = resources.default)
 
