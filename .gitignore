@@ -18,3 +18,5 @@ log_nodes_mixed_deps
 coordinate_descent/logs/
 *.log
 hyperqueue/
+nohup.out
+logs

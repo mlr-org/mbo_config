@@ -21,7 +21,6 @@ from config import (
 )
 from configspace_utils import fix_config, remove_hyperparameters
 
-
 def target_function(
     config,
     seed,
@@ -43,7 +42,7 @@ def target_function(
         max_fidelity=max_fidelity,
     )
     input_data = {"X": X}
-    with tempfile.NamedTemporaryFile(mode="w+", delete=False) as f:
+    with tempfile.NamedTemporaryFile(mode="w+", delete=False, dir="/glade/derecho/scratch/marcbecker/tmp/smac") as f:
         json.dump(input_data, f)
         input_path = f.name
 
@@ -143,11 +142,9 @@ def run_smac(
     fidelity_param_id = SCENARIO_META_DATA[scenario]["fidelity_param_id"]
     on_integer_scale = SCENARIO_META_DATA[scenario]["on_integer_scale"]
     max_fidelity = SCENARIO_META_DATA[scenario]["max_fidelity"]
-    output_directory = (
-        f"smac4{facade}_tmp_"
-        + str(seed)
-        + "_"
-        + str(random.randrange(49152, 65535 + 1))
+    output_directory = os.path.join(
+        "/glade/derecho/scratch/marcbecker/tmp/smac",
+        f"smac4{facade}_tmp_{seed}_{random.randrange(49152, 65535 + 1)}",
     )
 
     smac_scenario = Scenario(

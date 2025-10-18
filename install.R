@@ -58,8 +58,6 @@ renv::install(c(
 ))
 
 system("git clone --recursive https://github.com/mlr-org/libcmaesr.git /tmp/libcmaesr")
-renv::load(".")
-renv::install("languageserver")
 renv::install("/tmp/libcmaesr")
 
 # SMAC
@@ -73,3 +71,7 @@ conda_install(envname = sprintf("%s/hebo", conda_dir), pip = TRUE, packages = c(
 # AX
 conda_create(sprintf("%s/ax", conda_dir), python = "3.8")
 conda_install(envname = sprintf("%s/ax", conda_dir), pip = TRUE, packages = c("ax-platform", "ConfigSpace"))
+
+# OPTUNA
+conda_create(sprintf("%s/optuna", conda_dir), python = "3.8")
+conda_install(envname = sprintf("%s/optuna", conda_dir), pip = TRUE, packages = c("optuna", "ConfigSpace", "pandas"))

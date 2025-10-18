@@ -10,4 +10,14 @@ setup = mlr3misc::rowwise_table(
     "pure_numeric", "rbv2_xgboost", "40499", "acc", "maximize", 400L
 )
 setup[, id := seq_len(.N)]
+
+source("common/pure_numeric_objective.R")
+
+dimensions = pmap_dbl(setup, function(scenario, instance, target_variable, budget, ...) {
+  search_space = get_search_space_pure_numeric(scenario)
+  search_space$length
+})
+
+setup[, dim := dimensions]
+
 saveRDS(setup, "common/pure_numeric_instances.rds")

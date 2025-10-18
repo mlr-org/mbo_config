@@ -228,6 +228,7 @@ def run_hebo(
         configs.append(config)
         targets.append(target)
         hebo_fallbacks.append(hebo_fallback)
+        print(f'After {i} iterations, best objective is {hebo.y.min():.2f}', flush=(i % 10 == 0))
 
     trial_data = []
     for i in range(budget):
