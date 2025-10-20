@@ -8,74 +8,47 @@ library(bbotk)
 library(paradox)
 library(R6)
 library(checkmate)
-library(reticulate)
+source("coordinate_descent/OptimizerCoordinateDescent.R")
 
-data.table::setDTthreads(1L)
+registry_name = "/glade/derecho/scratch/marcbecker/mbo_config/registries/coordinate_descent_mixed_deps"
+# unlink(registry_name, recursive = TRUE)
+packages = c(
+  "data.table",
+  "mlr3",
+  "mlr3learners",
+  "mlr3misc",
+  "mlr3mbo",
+  "mlr3pipelines",
+  "bbotk",
+  "paradox",
+  "ranger",
+  "R6",
+  "checkmate",
+  "yahpogym",
+  "renv")
 
-source("submit_ncar.R")
-
-use_condaenv("yahpo_gym", required = TRUE)
-yahpo_gym = import("yahpo_gym")
-
-packages = c("data.table", "mlr3", "mlr3learners", "mlr3misc", "mlr3mbo", "mlr3pipelines", "bbotk", "paradox", "ranger", "R6", "checkmate")
-
-root = here::here()
-experiments_dir = file.path(root)
-
-source_files = map_chr(c("coordinate_descent/helper.R"), function(x) file.path(experiments_dir, x))
-for (source_file in source_files) {
-  source(source_file)
-}
-
-registry_name = "/glade/derecho/scratch/marcbecker/yahpo_mixed_deps_coordinate_descent"
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
-    conf.file = "batchtools.conf.main.R",
     packages = packages,
-    source = source_files
+    source = c("common/mixed_deps_objective.R", "common/submit.R")
   )
   saveRegistry(reg)
 } else {
   reg = loadRegistry(
     file.dir = registry_name,
-    conf.file = "batchtools.conf.main.R",
     writeable = TRUE
   )
 }
 
-source("coordinate_descent/OptimizerCoordinateDescent.R")
-
+# problems
 setup = readRDS("common/mixed_deps_instances.rds")
-
-# add problems
-prob_designs = map(seq_len(nrow(setup)), function(i) {
-  prob_id = paste0(setup[i, ]$scenario, "_", setup[i, ]$instance, "_", setup[i, ]$target_variable)
-  addProblem(prob_id, data = list(benchmark = setup[i, ]$benchmark, scenario = setup[i, ]$scenario, instance = setup[i, ]$instance, target_variable = setup[i, ]$target_variable, direction = setup[i, ]$direction, budget = setup[i, ]$budget))
-  setNames(list(setup[i, ]), nm = prob_id)
+pwalk(setup, function(benchmark, scenario, instance, target_variable, budget, direction, ...) {
+  id = sprintf("%s_%s", scenario, instance)
+  addProblem(id, data = list(benchmark = benchmark, scenario = scenario, instance = instance, target_variable = target_variable, budget = budget, direction = direction))
 })
-prob_names = sapply(prob_designs, names)
-prob_designs = unlist(prob_designs, recursive = FALSE, use.names = FALSE)
-names(prob_designs) = prob_names
 
-search_space = ps(
-  input_trafo            = p_fct(c("none", "unitcube")),
-  output_trafo           = p_fct(c("none", "standardize", "log")),
-  init                   = p_fct(c("random", "lhs", "sobol")),
-  init_size_fraction     = p_fct(c("0.05", "0.10", "0.25")),
-  random_interleave_iter = p_fct(c("0", "2", "4")),
-  # surrogate
-  trees                  = p_fct(c("10", "500")),
-  variance_estimator     = p_fct(c("jack", "ensemble_standard_deviation", "law_of_total_variance")),
-  # acqf
-  acqf                   = p_fct(c("EI", "CB", "PI", "Mean")),
-  lambda                 = p_fct(c("1", "3", "10"), depends = acqf == "CB"),
-  epsilon_decay          = p_lgl(depends = acqf == "EI"),
-  lambda_decay           = p_lgl(depends = acqf == "CB"),
-  # acqopt
-  acqopt                 = p_fct(c("RS_1000", "RS", "LS"))
-)
-
+# algorithm
 addAlgorithm(
   name = "mbo",
   fun = function(
@@ -97,87 +70,24 @@ addAlgorithm(
     id,
     config_hash
     ) {
-    # file = file(sprintf("coordinate_descent/logs/mixed_deps/%i.log", id), open = "wt")
-    # sink(file)
-    # sink(file, type = "message")
-
-    reticulate::use_condaenv("yahpo_gym", required = TRUE)
-    library(yahpogym)
+    renv::load(".")
     logger = lgr::get_logger("mlr3/bbotk")
     logger$set_threshold("warn")
-    data.table::setDTthreads(1L)
-    future::plan("sequential")
 
-    optim_instance = make_optim_instance(instance)
-
-    random_interleave_iter = as.numeric(random_interleave_iter)
-    init_size_fraction = as.numeric(init_size_fraction)
-    lambda = as.numeric(lambda)
-    init_design_size = ceiling(as.numeric(init_size_fraction) * instance$budget)
-    init_design = if (init == "random") {
-      generate_design_random(optim_instance$search_space, n = init_design_size)$data
-    } else if (init == "lhs") {
-      generate_design_lhs(optim_instance$search_space, n = init_design_size)$data
-    } else if (init == "sobol") {
-      generate_design_sobol(optim_instance$search_space, n = init_design_size)$data
-    }
-
-    optim_instance$eval_batch(init_design)
-
-    surrogate = get_surrogate_mixed_deps(trees, variance_estimator)
-
-    if (input_trafo == "unitcube") {
-      surrogate$input_trafo = InputTrafoUnitcube$new()
-    }
-
-    if (output_trafo == "standardize") {
-      surrogate$output_trafo = OutputTrafoStandardize$new()
-    } else if (output_trafo == "log") {
-      surrogate$output_trafo = OutputTrafoLog$new(invert_posterior = FALSE)
-    }
-
-    acq_optimizer = get_acq_optimizer_mixed_deps(acqopt, dim = optim_instance$search_space$length)
-
-    acq_function = if (acqf == "EI" && output_trafo == "log") {
-      AcqFunctionEILog$new()
-    } else if (acqf == "EI" && output_trafo != "log") {
-      AcqFunctionEI$new()
-    } else if (acqf == "CB") {
-      AcqFunctionCB$new(lambda = as.numeric(lambda))
-    } else if (acqf == "PI") {
-      AcqFunctionPI$new()
-    } else if (acqf == "Mean") {
-      AcqFunctionMean$new()
-    }
-
-    if (isTRUE(epsilon_decay)) {
-      acq_function$constants$values$epsilon = 0.1
-      callback_decay_epsilon = callback_batch("mlr3mbo.decay_epsilon",
-        on_optimization_end = function(callback, context) {
-          epsilon = context$instance$objective$constants$get_values()[["epsilon"]]
-          context$instance$objective$constants$set_values("epsilon" = epsilon * 0.99)
-        }
-      )
-      acq_function$callbacks = list(callback_decay_epsilon)
-    }
-
-    if (isTRUE(lambda_decay)) {
-      callback_decay_lambda = callback_batch("mlr3mbo.decay_lambda",
-        on_optimization_end = function(callback, context) {
-          lambda = context$instance$objective$constants$get_values()[["lambda"]]
-          context$instance$objective$constants$set_values("lambda" = lambda * 0.99)
-        }
-      )
-      acq_function$callbacks = list(callback_decay_lambda)
-    }
-
-    bayesopt_ego(
-        optim_instance,
-        surrogate = surrogate,
-        acq_function = acq_function,
-        acq_optimizer = acq_optimizer,
-        random_interleave_iter = random_interleave_iter,
-        init_design_size = init_design_size)
+    optim_instance = invoke(mixed_deps_objective,
+      input_trafo = input_trafo,
+      output_trafo = output_trafo,
+      init = init,
+      init_size_fraction = init_size_fraction,
+      random_interleave_iter = random_interleave_iter,
+      trees = trees,
+      variance_estimator = variance_estimator,
+      acqf = acqf,
+      lambda = lambda,
+      acqopt = acqopt,
+      epsilon_decay = epsilon_decay,
+      lambda_decay = lambda_decay,
+      .args = instance)
 
     score = optim_instance$archive$best()[[instance$target_variable]]
     if (instance$direction == "maximize") {
@@ -198,26 +108,10 @@ addAlgorithm(
   }
 )
 
-init = data.table(
-  input_trafo = "none",
-  output_trafo = "none",
-  init = "random",
-  init_size_fraction = "0.25",
-  random_interleave_iter = "0",
-  trees = "500",
-  variance_estimator = "ensemble_standard_deviation",
-  acqf = "EI",
-  lambda = NA_character_,
-  epsilon_decay = FALSE,
-  lambda_decay = NA,
-  acqopt = "RS_1000"
-)
+# coordinate descent search space
+search_space = readRDS("common/mixed_deps_search_space.R")
 
-constants = ps(
-  reg = p_uty(),
-  rs_reference = p_uty()
-)
-
+# coordinate descent objective
 objective = ObjectiveRFunDt$new(
   fun = function(
     xdt,
@@ -229,7 +123,8 @@ objective = ObjectiveRFunDt$new(
 
     n_repls = 30L
     xdt[, id := .I]
-    set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))  # make experiments unique to avoid skipping
+    # make experiments unique to avoid skipping
+    set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))
 
     ades = list(mbo = xdt)
     job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
@@ -250,16 +145,6 @@ objective = ObjectiveRFunDt$new(
 
     waitForJobs(ids = job_ids, reg = reg)
 
-    # while(TRUE) {
-    #   if (length(findExpired()$job.id)) {
-    #     message("Resubmitting expired jobs")
-    #     expired_ids = findExpired()
-    #     resubmitted_ids = submit_ncar(expired_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps_2025_09_26")
-    #     waitForJobs(ids = resubmitted_ids, reg = reg)
-    #   } else {
-    #     break
-    #   }
-    # }
     res = rbindlist(reduceResultsList(ids = intersect(job_ids, findDone()$job.id), reg = reg))
 
     # average score over replications
@@ -292,7 +177,7 @@ objective = ObjectiveRFunDt$new(
   },
   domain = search_space,
   codomain = ps(mean_meta_score = p_dbl(tags = "maximize")),
-  constants = constants,
+  constants = ps(reg = p_uty(), rs_reference = p_uty()),
   check_values = FALSE
 )
 
@@ -301,6 +186,7 @@ objective$constants$set_values(
   rs_reference = readRDS("random_search/yahpo_mixed_deps_rs_reference.rds")
 )
 
+# backup archive after each coordinate descent iteration
 callback_backup = callback_batch("bbotk.backup",
   label = "Backup Archive Callback",
   man = "bbotk::bbotk.backup",
@@ -314,7 +200,6 @@ callback_backup = callback_batch("bbotk.backup",
     message(sprintf("Saving intermediate results took %s seconds", difftime(Sys.time(), start_time, units = "s")))
   }
 )
-
 state_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_instance.rds"
 callback_backup$state$path = state_path
 
@@ -331,6 +216,22 @@ if (file.exists(callback_backup$state$path)) {
   optim_instance$archive$data = data
 }
 
+init = data.table(
+  input_trafo = "none",
+  output_trafo = "none",
+  init = "random",
+  init_size_fraction = "0.25",
+  random_interleave_iter = "0",
+  trees = "500",
+  variance_estimator = "ensemble_standard_deviation",
+  acqf = "EI",
+  lambda = NA_character_,
+  epsilon_decay = FALSE,
+  lambda_decay = NA,
+  acqopt = "RS_1000"
+)
+
+
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$param_set$set_values(
   n_generations = 5L,
@@ -338,7 +239,6 @@ optimizer$param_set$set_values(
 )
 
 optimizer$optimize(optim_instance)
-
 
 save_path = "/glade/derecho/scratch/marcbecker/mixed_deps_coordinate_descent.rds"
 saveRDS(optim_instance, save_path)

@@ -25,7 +25,7 @@ for (source_file in source_files) {
 
 
 registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/lschneider/yahpo_YAHPO_BENCHMARK_rs")
-reg = makeExperimentRegistry(registry_name, packages = packages, source = source_files)
+reg = makeExperimentRegistry(registry_name, packages = packages, source = c(source_files, "common/pure_numeric_helper.R")
 saveRegistry(reg)
 # reg = loadRegistry(registry_name)
 
@@ -35,6 +35,18 @@ rs_wrapper = function(job, data, instance, ...) {
   logger = lgr::get_logger("bbotk")
   logger$set_threshold("warn")
   future::plan("sequential")
+
+  rs_budget = 10^6L
+  benchmark = BenchmarkSet$new(instance$scenario, instance = instance$instance)
+  benchmark$subset_codomain(instance$target)
+  objective = benchmark$get_objective(instance$instance, multifidelity = FALSE)
+  search_space = benchmark$get_search_space(drop_fidelity_params = TRUE)
+  if (instance$benchmark == "pure_numeric") {
+    objective = fix_objective_domain_constants_pure_numeric(instance$scenario, objective=objective)
+    search_space = get_search_space_pure_numeric(instance$scenario)
+  }
+  optim_instance = oi(objective, search_space = search_space, terminator = trm("evals", n_evals = rs_budget))
+  optim_instance
 
   optim_instance = make_optim_instance_rs(instance)
   optimizer = opt("random_search", batch_size = 10^4L)
