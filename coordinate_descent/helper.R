@@ -1,15 +1,15 @@
-# make_optim_instance = function(instance) {
-#   benchmark = BenchmarkSet$new(instance$scenario, instance = instance$instance)
-#   benchmark$subset_codomain(instance$target)
-#   objective = benchmark$get_objective(instance$instance, multifidelity = FALSE)
-#   search_space = benchmark$get_search_space(drop_fidelity_params = TRUE)
-#   if (instance$benchmark == "pure_numeric") {
-#     objective = fix_objective_domain_constants_pure_numeric(instance$scenario, objective=objective)
-#     search_space = get_search_space_pure_numeric(instance$scenario)
-#   }
-#   optim_instance = OptimInstanceBatchSingleCrit$new(objective, search_space = search_space, terminator = trm("evals", n_evals = instance$budget))
-#   optim_instance
-# }
+make_optim_instance = function(instance) {
+  benchmark = BenchmarkSet$new(instance$scenario, instance = instance$instance)
+  benchmark$subset_codomain(instance$target)
+  objective = benchmark$get_objective(instance$instance, multifidelity = FALSE)
+  search_space = benchmark$get_search_space(drop_fidelity_params = TRUE)
+  if (instance$benchmark == "pure_numeric") {
+    objective = fix_objective_domain_constants_pure_numeric(instance$scenario, objective=objective)
+    search_space = get_search_space_pure_numeric(instance$scenario)
+  }
+  optim_instance = OptimInstanceBatchSingleCrit$new(objective, search_space = search_space, terminator = trm("evals", n_evals = instance$budget))
+  optim_instance
+}
 
 make_optim_instance_rs = function(instance) {
   rs_budget = 10^6L
