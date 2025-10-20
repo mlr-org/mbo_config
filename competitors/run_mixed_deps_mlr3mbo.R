@@ -3,7 +3,7 @@ library(data.table)
 source("common/submit.R")
 source("common/mixed_deps_objective.R")
 
-registry_name = "/glade/derecho/scratch/marcbecker/competitors_mlr3mbo_mixed_deps"
+registry_name = "/glade/derecho/scratch/marcbecker/mbo_config/registries/competitors_mlr3mbo_mixed_deps"
 unlink(registry_name, recursive = TRUE)
 packages = c(
   "data.table", 
