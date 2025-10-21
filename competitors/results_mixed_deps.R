@@ -40,7 +40,7 @@ runtimes_competitors = map_dtr(job_table$batch_id, function(i) {
   start_time = sub("(\\.[0-9]{6})[0-9]*", "\\1", start_time)
   start_time = as.POSIXct(start_time, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC")
 
-  end_time = sub("Z$", "", res$finished_at) 
+  end_time = sub("Z$", "", res$finished_at)
   end_time = sub("(\\.[0-9]{6})[0-9]*", "\\1", end_time)
   end_time = as.POSIXct(end_time, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC")
 
@@ -95,20 +95,32 @@ aggr_results[, rank := rank(-meta_score), by = c("scenario", "instance", "iter")
 
 # average over scenarios and instances
 data = aggr_results[, list(
-  mean_meta_score = mean(meta_score), 
+  mean_meta_score = mean(meta_score),
   se_meta_score = sd(meta_score) / sqrt(.N),
-  mean_rank = mean(rank), 
+  mean_rank = mean(rank),
   se_rank = sd(rank) / sqrt(.N)), by = c("algorithm", "iter")]
 
 fwrite(data, "competitors/results/mixed_deps.csv")
 
+data = fread("competitors/results/mixed_deps.csv")
+
+# plots
 library(ggplot2)
-pdf("competitors/results/mixed_deps_mean_meta_score.pdf", width = 10, height = 10)
+
+data = fread("competitors/results/mixed_deps.csv")
+job_table = readRDS("competitors/job_table_competitors_mixed_deps.rds")
+bt_job_table = readRDS("competitors/job_table_mlr3mbo_mixed_deps.rds")
+algo_colors = c("#00BA38", "#B79F00", "#F8766D", "#00BFC4", "#F564E3", "#619CFF")
+algo_colors = setNames(algo_colors, c("mlr3mbo", "ax", "hebo", "optuna", "smac4hpo", "smac4bb"))
+
+pdf("competitors/results/mixed_deps_mean_meta_score.pdf", width = 10, height = 5)
 ggplot(data, aes(x = iter, y = mean_meta_score, color = algorithm, fill = algorithm)) +
   geom_line() +
   geom_ribbon(aes(min = mean_meta_score - se_meta_score, max = mean_meta_score + se_meta_score), colour = NA, alpha = 0.3) +
   ylim(-1, 1) +
   labs(x = "Iteration", y = "Mean Meta Score") +
+  scale_color_manual(values = algo_colors) +
+  scale_fill_manual(values = algo_colors) +
   theme_minimal()
 dev.off()
 
@@ -117,10 +129,11 @@ ggplot(data, aes(x = iter, y = mean_rank, color = algorithm)) +
   geom_line() +
   geom_ribbon(aes(ymin = mean_rank - se_rank, ymax = mean_rank + se_rank, fill = algorithm), colour = NA, alpha = 0.2) +
   labs(x = "Iteration", y = "Mean Rank") +
+  scale_color_manual(values = algo_colors) +
+  scale_fill_manual(values = algo_colors) +
   theme_minimal()
 dev.off()
 
-job_table = job_table[setup[, list(benchmark, scenario, instance, dim)], on = c("benchmark", "scenario", "instance")]
 mean_runtimes_competitors = job_table[, list(mean_runtime = as.numeric(mean(runtime))), by = c("algorithm", "dim")]
 mean_runtimes_mlr3mbo = bt_job_table[, list(mean_runtime = as.numeric(mean(runtime, na.rm = TRUE))), by = "dim"]
 set(mean_runtimes_mlr3mbo, j = "algorithm", value = "mlr3mbo")
@@ -130,6 +143,39 @@ mean_runtimes[, dim := as.factor(dim)]
 pdf("competitors/results/mixed_deps_runtimes.pdf", width = 10, height = 10)
 ggplot(mean_runtimes, aes(x = dim, y = mean_runtime, fill = algorithm)) +
   geom_bar(position = "dodge", stat = "identity") +
-  labs(x = "Dimension", y = "Mean Runtime", fill = "Algorithm") +
+  labs(x = "Search Space Dimension", y = "Mean Runtime [h]", fill = "Algorithm") +
+  scale_color_manual(values = algo_colors) +
+  scale_fill_manual(values = algo_colors) +
   theme_minimal()
+dev.off()
+
+# figures paper
+pdf("competitors/results/paper/mixed_deps_mean_meta_score.pdf", width = 10, height = 10)
+ggplot(data, aes(x = iter, y = mean_meta_score, color = algorithm, fill = algorithm)) +
+  geom_line(show.legend = FALSE) +
+  geom_ribbon(aes(min = mean_meta_score - se_meta_score, max = mean_meta_score + se_meta_score), colour = NA, alpha = 0.3, show.legend = FALSE) +
+  ylim(-1, 1) +
+  labs(x = "Iteration", y = "Mean Meta Score", color = "Algorithm", fill = "Algorithm") +
+  scale_color_manual(values = algo_colors) +
+  scale_fill_manual(values = algo_colors) +
+  theme_minimal(base_size = 16)
+dev.off()
+
+pdf("competitors/results/paper/mixed_deps_ranking.pdf", width = 10, height = 10)
+ggplot(data, aes(x = iter, y = mean_rank, color = algorithm)) +
+  geom_line() +
+  geom_ribbon(aes(ymin = mean_rank - se_rank, ymax = mean_rank + se_rank, fill = algorithm), colour = NA, alpha = 0.2) +
+  labs(x = "Iteration", y = "Mean Rank", color = "Algorithm", fill = "Algorithm") +
+  scale_color_manual(values = algo_colors) +
+  scale_fill_manual(values = algo_colors) +
+  theme_minimal(base_size = 16)
+dev.off()
+
+pdf("competitors/results/paper/mixed_deps_runtimes.pdf", width = 10, height = 10)
+ggplot(mean_runtimes, aes(x = dim, y = mean_runtime, fill = algorithm)) +
+  geom_bar(position = "dodge", stat = "identity") +
+  labs(x = "Search Space Dimension", y = "Mean Runtime [h]", fill = "Algorithm") +
+  scale_color_manual(values = algo_colors) +
+  scale_fill_manual(values = algo_colors) +
+  theme_minimal(base_size = 16)
 dev.off()
