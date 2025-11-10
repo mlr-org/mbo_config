@@ -41,7 +41,7 @@ obj = b$get_objective("40981", multifidelity = FALSE)
 
 # R packages for mlr3mbo
 renv::install(c(
-  "batchtools",
+  "mlr-org/batchtools@hyperqueue",
   "here",
   "mlr3",
   "mlr3learners",

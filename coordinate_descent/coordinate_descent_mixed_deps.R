@@ -9,9 +9,10 @@ library(paradox)
 library(R6)
 library(checkmate)
 source("coordinate_descent/OptimizerCoordinateDescent.R")
+source("common/submit.R")
 
 registry_name = "/glade/derecho/scratch/marcbecker/mbo_config/registries/coordinate_descent_mixed_deps"
-# unlink(registry_name, recursive = TRUE)
+#unlink(registry_name, recursive = TRUE)
 packages = c(
   "data.table",
   "mlr3",
@@ -30,6 +31,7 @@ packages = c(
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
+    conf.file = "coordinate_descent/batchtools.conf.R",
     packages = packages,
     source = c("common/mixed_deps_objective.R", "common/submit.R")
   )
@@ -37,6 +39,7 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 } else {
   reg = loadRegistry(
     file.dir = registry_name,
+    conf.file = "coordinate_descent/batchtools.conf.R",
     writeable = TRUE
   )
 }
@@ -74,7 +77,11 @@ addAlgorithm(
     logger = lgr::get_logger("mlr3/bbotk")
     logger$set_threshold("warn")
 
-    optim_instance = invoke(mixed_deps_objective,
+    optim_instance = mixed_deps_objective(
+      scenario = instance$scenario,
+      instance = instance$instance,
+      target_variable = instance$target_variable,
+      budget = instance$budget,
       input_trafo = input_trafo,
       output_trafo = output_trafo,
       init = init,
@@ -86,8 +93,7 @@ addAlgorithm(
       lambda = lambda,
       acqopt = acqopt,
       epsilon_decay = epsilon_decay,
-      lambda_decay = lambda_decay,
-      .args = instance)
+      lambda_decay = lambda_decay)
 
     score = optim_instance$archive$best()[[instance$target_variable]]
     if (instance$direction == "maximize") {
@@ -109,7 +115,7 @@ addAlgorithm(
 )
 
 # coordinate descent search space
-search_space = readRDS("common/mixed_deps_search_space.R")
+search_space = readRDS("common/mixed_deps_search_space.rds")
 
 # coordinate descent objective
 objective = ObjectiveRFunDt$new(
@@ -127,8 +133,13 @@ objective = ObjectiveRFunDt$new(
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))
 
     ades = list(mbo = xdt)
-    job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
-    job_ids = submit_ncar(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps") # /glade/derecho/scratch/marcbecker/mbo_config/log_nodes_mixed_deps_2025_09_26
+    job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)$job.id
+    submit(
+      job_ids, 
+      reg, 
+      template = "coordinate_descent/pbs_derecho_main.tmpl", 
+      jobs_per_node = 128L, 
+      log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/logs/coordinate_descent_mixed_deps/nodes")
 
     tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
     saveRDS(xdt, tmp_file)
@@ -151,6 +162,7 @@ objective = ObjectiveRFunDt$new(
     agg = res[, list(mean_score = mean(score), raw_score = list(score), n_na = sum(is.na(score)), n = .N), by = list(id, problem)]
 
     # determine meta score
+    rs_reference[, problem := paste0(scenario, "_", instance)]
     meta_scores = pmap_dbl(agg, function(problem, mean_score, ...) {
       .problem = problem
       score_rs_small = rs_reference[list(.problem), mean_best, on = "problem"]
@@ -192,12 +204,10 @@ callback_backup = callback_batch("bbotk.backup",
   man = "bbotk::bbotk.backup",
 
   on_optimizer_after_eval = function(callback, context) {
-    start_time = Sys.time()
     tmp_file = tempfile(tmpdir = dirname(callback$state$path), fileext = ".rds")
     saveRDS(context$instance$archive$data, tmp_file)
     unlink(callback$state$path)
     file.rename(tmp_file, callback$state$path)
-    message(sprintf("Saving intermediate results took %s seconds", difftime(Sys.time(), start_time, units = "s")))
   }
 )
 state_path = "/glade/derecho/scratch/marcbecker/mixed_deps_intermediate_instance.rds"
@@ -234,7 +244,7 @@ init = data.table(
 
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$param_set$set_values(
-  n_generations = 5L,
+  n_generations = 6L,
   start = init
 )
 

@@ -30,6 +30,7 @@ packages = c(
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
+    conf.file = "coordinate_descent/batchtools.conf.R",
     packages = packages,
     source = c("common/pure_numeric_objective.R", "common/submit.R")
   )
@@ -37,6 +38,7 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 } else {
   reg = loadRegistry(
     file.dir = registry_name,
+    conf.file = "coordinate_descent/batchtools.conf.R",
     writeable = TRUE
   )
 }
@@ -79,7 +81,11 @@ addAlgorithm(
     logger = lgr::get_logger("mlr3/bbotk")
     logger$set_threshold("warn")
 
-    optim_instance = invoke(pure_numeric_objective,
+    optim_instance = pure_numeric_objective(
+      scenario = instance$scenario,
+      instance = instance$instance,
+      target_variable = instance$target_variable,
+      budget = instance$budget,
       input_trafo = input_trafo,
       output_trafo = output_trafo,
       init = init,
@@ -96,8 +102,7 @@ addAlgorithm(
       lambda = lambda,
       acqopt = acqopt,
       epsilon_decay = epsilon_decay,
-      lambda_decay = lambda_decay,
-      .args = instance)
+      lambda_decay = lambda_decay)
 
     score = optim_instance$archive$best()[[instance$target_variable]]
     if (instance$direction == "maximize") {
@@ -119,7 +124,7 @@ addAlgorithm(
 )
 
 # coordinate descent search space
-search_space = readRDS("common/pure_numeric_search_space.R")
+search_space = readRDS("common/pure_numeric_search_space.rds")
 
 # coordinate descent objective
 objective = ObjectiveRFunDt$new(
@@ -137,8 +142,13 @@ objective = ObjectiveRFunDt$new(
     set(xdt, j = "config_hash", value = uuid::UUIDgenerate(n = nrow(xdt)))
 
     ades = list(mbo = xdt)
-    job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)
-    job_ids = submit(job_ids$job.id, reg, template = "pbs_derecho_main.tmpl", n_jobs = 128L, log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/log_nodes_pure_numeric")
+    job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)$job.id
+     submit(
+      job_ids, 
+      reg, 
+      template = "coordinate_descent/pbs_derecho_main.tmpl", 
+      jobs_per_node = 128L, 
+      log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/logs/coordinate_descent_pure_numeric/nodes")
 
     tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
     saveRDS(xdt, tmp_file)
@@ -161,6 +171,7 @@ objective = ObjectiveRFunDt$new(
     agg = res[, list(mean_score = mean(score), raw_score = list(score), n_na = sum(is.na(score)), n = .N), by = list(id, problem)]
 
     # determine meta score
+    rs_reference[, problem := paste0(scenario, "_", instance)]
     meta_scores = pmap_dbl(agg, function(problem, mean_score, ...) {
       .problem = problem
       score_rs_small = rs_reference[list(.problem), mean_best, on = "problem"]
