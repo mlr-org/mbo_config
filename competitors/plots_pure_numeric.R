@@ -20,7 +20,7 @@ pdf("competitors/results/pure_numeric_mean_meta_score.pdf", width = 10, height =
 ggplot(data, aes(x = iter, y = mean_meta_score, color = algorithm, fill = algorithm)) +
   geom_line() +
   geom_ribbon(aes(min = mean_meta_score - se_meta_score, max = mean_meta_score + se_meta_score), colour = NA, alpha = 0.3) +
-  ylim(-1, 1) +
+  ylim(-1, 1.5) +
   labs(x = "Iteration", y = "Mean RSNS", color = "Algorithm", fill = "Algorithm") +
   scale_color_manual(values = algo_colors) +
   scale_fill_manual(values = algo_colors) +
