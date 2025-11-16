@@ -106,3 +106,17 @@ data = aggr_results[, list(
   se_rank = sd(rank) / sqrt(.N)), by = c("algorithm", "iter")]
 
 fwrite(data, "competitors/results/pure_numeric.csv")
+
+# friedman test
+data = fread("competitors/results/pure_numeric_aggr.csv")
+
+data = data[iter == 200]
+data[, problem := paste0(scenario, "_", instance)]
+data = data[, list(algorithm, problem, meta_score)]
+data[, algorithm := factor(algorithm)]
+data[, problem := factor(problem)]
+
+friedman.test(meta_score ~ algorithm | problem, data = data)
+
+frdAllPairsNemenyiTest(meta_score ~ algorithm | problem, data = data)
+
