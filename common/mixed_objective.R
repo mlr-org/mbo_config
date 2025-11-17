@@ -1,6 +1,6 @@
 library(paradox)
 
-mixed_deps_objective = function(
+mixed_objective = function(
   scenario,
   instance,
   target_variable,
@@ -178,5 +178,5 @@ if (FALSE) {
     lambda_decay = FALSE
   )
 
-  mlr3misc::invoke(mixed_deps_objective, .args = xs)
+  mlr3misc::invoke(mixed_objective, .args = xs)
 }

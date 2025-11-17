@@ -25,7 +25,7 @@ for (source_file in source_files) {
 
 
 registry_name = gsub("YAHPO_BENCHMARK", replacement = YAHPO_BENCHMARK, x = "/glade/derecho/scratch/lschneider/yahpo_YAHPO_BENCHMARK_rs")
-reg = makeExperimentRegistry(registry_name, packages = packages, source = c(source_files, "common/pure_numeric_helper.R")
+reg = makeExperimentRegistry(registry_name, packages = packages, source = c(source_files, "common/pure_numeric_helper.R"))
 saveRegistry(reg)
 # reg = loadRegistry(registry_name)
 
@@ -133,80 +133,3 @@ for (i in seq_len(nrow(optimizers))) {
 jobs = findJobs()
 resources.default = list(walltime = 3600L * 6L, memory = 16000L, ntasks = 1L, ncpus = 1L, nodes = 1L)
 submitJobs(jobs, resources = resources.default)
-
-done = findDone()
-results = reduceResultsList(done, function(result, job) {
-  data = result$archive$data
-  pars = job$pars
-  target_variable = pars$prob.pars$target_variable
-  tmp = data[, eval(target_variable), with = FALSE]
-  colnames(tmp) = "target"
-  tmp[, orig_direction := pars$prob.pars$direction]
-  if (pars$prob.pars$direction == "maximize") {
-    tmp[, target := - target]
-  }
-  tmp[, best := cummin(target)]
-  tmp[, method := pars$algo.pars$algorithm]
-  tmp[, benchmark := pars$prob.pars$benchmark]
-  tmp[, scenario := pars$prob.pars$scenario]
-  tmp[, instance := pars$prob.pars$instance]
-  tmp[, target_variable := pars$prob.pars$target_variable]
-  tmp[, problem := paste0(scenario, "_", instance, "_", target_variable)]
-  tmp[, repl := job$repl]
-  tmp[, iter := seq_len(.N)]
-  tmp
-})
-results = rbindlist(results, fill = TRUE)
-if (YAHPO_BENCHMARK == "pure_numeric") {
-  saveRDS(results, "random_search/yahpo_pure_numeric_rs_raw.rds")
-} else if (YAHPO_BENCHMARK == "mixed") {
-  stop("TBD")
-} else if (YAHPO_BENCHMARK == "mixed_deps") {
-  saveRDS(results, "random_search/yahpo_mixed_deps_rs_raw.rds")
-}
-
-results_simulated = reduceResultsList(done, function(result, job) {
-  n_repl = 30L
-  data = result$archive$data
-  pars = job$pars
-  target_variable = pars$prob.pars$target_variable
-  tmp = data[, eval(target_variable), with = FALSE]
-  colnames(tmp) = "target"
-  tmp[, orig_direction := pars$prob.pars$direction]
-  if (pars$prob.pars$direction == "maximize") {
-    tmp[, target := - target]
-  }
-  map_dtr(seq_len(n_repl), function(repl) {
-    subset = tmp[sample(.N, size = 400, replace = FALSE), ]
-    subset[, best := cummin(target)]
-    subset[, method := pars$algo.pars$algorithm]
-    subset[, benchmark := pars$prob.pars$benchmark]
-    subset[, scenario := pars$prob.pars$scenario]
-    subset[, instance := pars$prob.pars$instance]
-    subset[, target_variable := pars$prob.pars$target_variable]
-    subset[, budget := 400L]
-    subset[, problem := paste0(scenario, "_", instance, "_", target_variable)]
-    subset[, repl := repl]
-    subset[, iter := seq_len(.N)]
-    subset
-  })
-})
-results_simulated = rbindlist(results_simulated, fill = TRUE)
-if (YAHPO_BENCHMARK == "pure_numeric") {
-  saveRDS(results_simulated, "yahpo_pure_numeric_rs_simulated.rds")
-} else if (YAHPO_BENCHMARK == "mixed") {
-  stop("TBD")
-} else if (YAHPO_BENCHMARK == "mixed_deps") {
-  saveRDS(results_simulated, "yahpo_mixed_deps_rs_simulated.rds")
-}
-
-results_reference = results_simulated[iter == budget, .(mean_best = mean(best), se_best = sd(best) / sqrt(.N)), by = .(scenario, instance, target_variable, orig_direction, problem)]
-results_reference = merge(results_reference, results[iter == 10^6L, c("problem", "best")], by = "problem")
-if (YAHPO_BENCHMARK == "pure_numeric") {
-  saveRDS(results_reference, "random_search/yahpo_pure_numeric_rs_reference.rds")
-} else if (YAHPO_BENCHMARK == "mixed") {
-  stop("TBD")
-} else if (YAHPO_BENCHMARK == "mixed_deps") {
-  saveRDS(results_reference, "random_search/yahpo_mixed_deps_rs_reference.rds")
-}
-

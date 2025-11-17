@@ -5,9 +5,9 @@
 #PBS -j oe
 #PBS -k eod
 #PBS -q main
-#PBS -l select=2:ncpus=128
+#PBS -l select=1:ncpus=128
 #PBS -l walltime=12:00:00
-#PBS -l job_priority=regular
+#PBS -l job_priority=premium
 #PBS -o competitors/workers.log
 
 ## Set temp to scratch
@@ -17,6 +17,6 @@ export TMPDIR=/glade/derecho/scratch/${USER}/tmp && mkdir -p ${TMPDIR}
 ml conda mkl openmpi
 conda activate mbo_config
 
-pbsdsh -- /glade/u/home/marcbecker/mbo_config/hyperqueue/target/release/hq worker start --manager pbs --cpus 128 --idle-timeout 5m
+/glade/u/home/marcbecker/mbo_config/hyperqueue/target/release/hq worker start --manager pbs --cpus 128 --idle-timeout 5m
 
 

@@ -1,8 +1,8 @@
 library(paradox)
 
-source("common/pure_numeric_helper.R")
+source("common/numeric_helper.R")
 
-pure_numeric_objective = function(
+numeric_objective = function(
   scenario,
   instance,
   target_variable,
@@ -228,5 +228,5 @@ if (FALSE) {
     lambda_decay = FALSE
   )
 
-  mlr3misc::invoke(pure_numeric_objective, .args = xs)
+  mlr3misc::invoke(numeric_objective, .args = xs)
 }

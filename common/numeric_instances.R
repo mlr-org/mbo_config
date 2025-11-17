@@ -1,0 +1,13 @@
+instances = mlr3misc::rowwise_table(
+    ~scenario,      ~instance, ~target_variable,  ~direction,   ~dim,   ~name,
+    "lcbench",      "167168",  "val_accuracy",    "maximize",   7,      "vehicle",
+    "lcbench",      "189873",  "val_accuracy",    "maximize",   7,      "dionis",
+    "lcbench",      "189906",  "val_accuracy",    "maximize",   7,      "segment",
+    "rbv2_rpart",   "14",      "acc",             "maximize",   4,      "mfeat-fourier",
+    "rbv2_rpart",   "40499",   "acc",             "maximize",   4,      "texture",
+    "rbv2_xgboost", "12",      "acc",             "maximize",   10,     "mfeat-factors",
+    "rbv2_xgboost", "1501",    "acc",             "maximize",   10,     "semeion",
+    "rbv2_xgboost", "40499",   "acc",             "maximize",   10,     "texture"
+)
+
+fwrite(instances, "common/numeric_instances.csv", quote = TRUE)

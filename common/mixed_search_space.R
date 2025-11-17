@@ -18,4 +18,4 @@ search_space = ps(
   acqopt                 = p_fct(c("RS_1000", "RS", "LS"))
 )
 
-saveRDS(search_space, "common/mixed_deps_search_space.rds")
+saveRDS(search_space, "common/mixed_search_space.rds")
