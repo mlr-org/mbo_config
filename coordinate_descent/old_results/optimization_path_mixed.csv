@@ -1,0 +1,10 @@
+input_trafo,output_trafo,init,init_size_fraction,random_interleave_iter,trees,variance_estimator,acqf,lambda,epsilon_decay,lambda_decay,acqopt,parameter,iteration,id,mean_meta_score,n_na,n,batch_nr
+none,none,random,0.25,0,500,ensemble_standard_deviation,EI,,FALSE,,RS_1000,start_config,1,1,0.371492748957058,0,14,0
+none,log,random,0.25,0,500,ensemble_standard_deviation,EI,,FALSE,,RS_1000,output_trafo,1,4,0.505114885018147,0,14,1
+none,log,random,0.25,0,500,ensemble_standard_deviation,EI,,FALSE,,LS,acqopt,2,23,0.683507688899183,0,14,2
+none,log,random,0.25,0,500,law_of_total_variance,EI,,FALSE,,LS,variance_estimator,3,12,0.761972345417703,0,14,3
+none,log,random,0.05,0,500,law_of_total_variance,EI,,FALSE,,LS,init_size_fraction,4,6,0.792692150044183,0,14,4
+none,log,sobol,0.05,0,500,law_of_total_variance,EI,,FALSE,,LS,init,5,5,0.807425983526882,0,14,5
+none,log,sobol,0.05,0,500,law_of_total_variance,CB,3,,FALSE,LS,acqf,6,19,0.814736846760874,0,14,6
+none,log,random,0.05,0,500,law_of_total_variance,CB,3,,FALSE,LS,init,7,4,0.807138104855077,0,14,7
+none,log,lhs,0.05,0,500,law_of_total_variance,CB,3,,FALSE,LS,init,8,4,0.806657120503187,0,14,8

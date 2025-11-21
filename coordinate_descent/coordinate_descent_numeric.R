@@ -10,7 +10,7 @@ library(R6)
 library(checkmate)
 source("coordinate_descent/OptimizerCoordinateDescent.R")
 
-registry_name = "/glade/derecho/scratch/marcbecker/mbo_config/registries/coordinate_descent_pure_numeric"
+registry_name = "/glade/derecho/scratch/marcbecker/mbo_config/registries/coordinate_descent_numeric"
 # unlink(registry_name, recursive = TRUE)
 packages = c(
   "data.table",
@@ -32,7 +32,7 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
     file.dir = registry_name,
     conf.file = "coordinate_descent/batchtools.conf.R",
     packages = packages,
-    source = c("common/pure_numeric_objective.R", "common/submit.R")
+    source = c("common/numeric_objective.R", "common/submit.R")
   )
   saveRegistry(reg)
 } else {
@@ -44,7 +44,8 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
 }
 
 # problems
-setup = readRDS("common/pure_numeric_instances.rds")
+instance = fread("common/numeric_instances.csv", colClasses = c("instance" = "character"))
+instance[, budget := 400L]
 pwalk(setup, function(benchmark, scenario, instance, target_variable, budget, direction, ...) {
   id = sprintf("%s_%s", scenario, instance)
   addProblem(id, data = list(benchmark = benchmark, scenario = scenario, instance = instance, target_variable = target_variable, budget = budget, direction = direction))
@@ -81,7 +82,7 @@ addAlgorithm(
     logger = lgr::get_logger("mlr3/bbotk")
     logger$set_threshold("warn")
 
-    optim_instance = pure_numeric_objective(
+    optim_instance = numeric_objective(
       scenario = instance$scenario,
       instance = instance$instance,
       target_variable = instance$target_variable,
@@ -124,7 +125,7 @@ addAlgorithm(
 )
 
 # coordinate descent search space
-search_space = readRDS("common/pure_numeric_search_space.rds")
+search_space = readRDS("common/numeric_search_space.rds")
 
 # coordinate descent objective
 objective = ObjectiveRFunDt$new(
@@ -174,8 +175,8 @@ objective = ObjectiveRFunDt$new(
     rs_reference[, problem := paste0(scenario, "_", instance)]
     meta_scores = pmap_dbl(agg, function(problem, mean_score, ...) {
       .problem = problem
-      score_rs_small = rs_reference[list(.problem), mean_best, on = "problem"]
-      score_rs_large= rs_reference[list(.problem), best, on = "problem"]
+      score_rs_small = rs_reference[list(.problem), rs_small, on = "problem"]
+      score_rs_large= rs_reference[list(.problem), rs_large, on = "problem"]
 
       (score_rs_small - mean_score) / (score_rs_small - score_rs_large)
     })
@@ -204,7 +205,7 @@ objective = ObjectiveRFunDt$new(
 
 objective$constants$set_values(
   reg = reg,
-  rs_reference = readRDS("random_search/yahpo_pure_numeric_rs_reference.rds")
+  rs_reference = fread("random_search/results/numeric_rs_reference.csv", colClasses = c("instance" = "character"))
 )
 
 # backup archive after each coordinate descent iteration
@@ -262,5 +263,5 @@ optimizer$param_set$set_values(
 )
 optimizer$optimize(optim_instance)
 
-save_path = "/glade/derecho/scratch/marcbecker/pure_numeric_coordinate_descent.rds"
+save_path = "/glade/derecho/scratch/marcbecker/numeric_coordinate_descent.rds"
 saveRDS(optim_instance, save_path)

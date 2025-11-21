@@ -54,7 +54,8 @@ renv::install(c(
   "nloptr",
   "cmaes",
   "fastGHQuad",
-  "lhs"
+  "lhs",
+  "mlr-org/bbotk@any_condition"
 ))
 
 system("git clone --recursive https://github.com/mlr-org/libcmaesr.git /tmp/libcmaesr")

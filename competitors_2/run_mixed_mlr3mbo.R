@@ -1,3 +1,7 @@
+con = file("competitors_2_mixed.log")
+sink(con, append=TRUE)
+sink(con, append=TRUE, type="message")
+
 library(batchtools)
 library(data.table)
 source("common/submit.R")
@@ -48,14 +52,14 @@ addAlgorithm("mlr3mbo", fun = function(job, data, instance, ...) {
 
   xs = list(
     input_trafo = "none",
-    output_trafo = "none",
-    init = "random",
-    init_size_fraction = 0.25,
+    output_trafo = "log",
+    init = "sobol",
+    init_size_fraction = 0.05,
     random_interleave_iter = 0,
     trees = 500,
-    variance_estimator = "jack",
+    variance_estimator = "law_of_total_variance",
     acqf = "CB",
-    lambda = 1,
+    lambda = 3,
     acqopt = "LS",
     epsilon_decay = NA,
     lambda_decay = FALSE
