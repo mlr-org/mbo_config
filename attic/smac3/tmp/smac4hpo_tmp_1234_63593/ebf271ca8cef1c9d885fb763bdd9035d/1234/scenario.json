@@ -1,0 +1,193 @@
+{
+    "name": "ebf271ca8cef1c9d885fb763bdd9035d",
+    "deterministic": true,
+    "objectives": "cost",
+    "crash_cost": Infinity,
+    "termination_cost_threshold": Infinity,
+    "walltime_limit": Infinity,
+    "cputime_limit": Infinity,
+    "trial_walltime_limit": null,
+    "trial_memory_limit": null,
+    "n_trials": 170,
+    "use_default_config": false,
+    "instances": null,
+    "instance_features": null,
+    "min_budget": null,
+    "max_budget": null,
+    "seed": 1234,
+    "n_workers": 1,
+    "_meta": {
+        "facade": {
+            "name": "HyperparameterOptimizationFacade"
+        },
+        "runner": {
+            "name": "TargetFunctionRunner",
+            "code": "b't\\x00|\\x00|\\x02|\\x03|\\x07|\\x08|\\td\\x01\\x8d\\x06}\\nd\\x02|\\ni\\x01}\\x0bt\\x01j\\x02d\\x03d\\x04d\\x05d\\x06\\x8d\\x03\\x8f\\x11}\\x0ct\\x03\\xa0\\x04|\\x0b|\\x0c\\xa1\\x02\\x01\\x00|\\x0cj\\x05}\\rW\\x00d\\x00\\x04\\x00\\x04\\x00\\x83\\x03\\x01\\x00n\\x081\\x00s*w\\x01\\x01\\x00\\x01\\x00\\x01\\x00Y\\x00\\x01\\x00t\\x06}\\x0et\\x07}\\x0f|\\x0f|\\x0ed\\x07|\\rd\\x08|\\x03d\\t|\\x04d\\n|\\x05d\\x0bt\\x08|\\x01\\x83\\x01g\\x0c}\\x10t\\tj\\n|\\x10t\\tj\\x0bt\\tj\\x0bd\\x0cd\\r\\x8d\\x04}\\x11t\\x0c\\xa0\\r|\\r\\xa1\\x01\\x01\\x00|\\x11j\\x0ed\\x0ek\\x03rdt\\x0fd\\x0f|\\x11j\\x10\\x9b\\x00d\\x10|\\x11j\\x11\\x9b\\x00\\x9d\\x04\\x83\\x01\\x82\\x01t\\x12\\xa0\\x13d\\x11|\\x11j\\x10\\xa0\\x14\\xa1\\x00t\\x12j\\x15\\xa1\\x03}\\x12|\\x12syt\\x0fd\\x12|\\x11j\\x10\\x9b\\x00\\x9d\\x02\\x83\\x01\\x82\\x01z\\nt\\x03\\xa0\\x16|\\x12\\xa0\\x17d\\x13\\xa1\\x01\\xa1\\x01}\\x13W\\x00n\\x1a\\x04\\x00t\\x03j\\x18y\\x9d\\x01\\x00}\\x14\\x01\\x00z\\rt\\x0fd\\x14|\\x12\\xa0\\x17d\\x13\\xa1\\x01\\x9b\\x00d\\x15|\\x14\\x9b\\x00\\x9d\\x04\\x83\\x01\\x82\\x01d\\x00}\\x14~\\x14w\\x01w\\x00|\\x06d\\x16k\\x02r\\xa5d\\x17}\\x15n\\x06|\\x06d\\x18k\\x02r\\xabd\\x19}\\x15|\\x15|\\x13|\\x05\\x19\\x00\\x14\\x00S\\x00'",
+            "code-partial-args": "<function target_function at 0x7fd9add63d90>"
+        },
+        "model": {
+            "name": "RandomForest",
+            "types": [
+                0,
+                3,
+                0,
+                0,
+                3,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0
+            ],
+            "bounds": [
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    3,
+                    NaN
+                ],
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    3,
+                    NaN
+                ],
+                [
+                    0,
+                    1.0
+                ],
+                [
+                    -1.0,
+                    1.0
+                ],
+                [
+                    -1.0,
+                    1.0
+                ],
+                [
+                    -1.0,
+                    1.0
+                ],
+                [
+                    -1.0,
+                    1.0
+                ],
+                [
+                    -1.0,
+                    1.0
+                ],
+                [
+                    -1.0,
+                    1.0
+                ],
+                [
+                    -1.0,
+                    1.0
+                ],
+                [
+                    -1.0,
+                    1.0
+                ]
+            ],
+            "pca_components": 7,
+            "n_trees": 10,
+            "n_points_per_tree": -1,
+            "ratio_features": 1.0,
+            "min_samples_split": 2,
+            "min_samples_leaf": 1,
+            "max_depth": 1048576,
+            "eps_purity": 1e-08,
+            "max_nodes": 1048576,
+            "bootstrapping": true
+        },
+        "acquisition_maximizer": {
+            "name": "LocalAndSortedRandomSearch",
+            "acquisition_function": {
+                "name": "EI",
+                "xi": 0.0,
+                "log": true
+            },
+            "challengers": 10000,
+            "seed": 1234,
+            "random_search": {
+                "name": "RandomSearch",
+                "acquisition_function": {
+                    "name": "EI",
+                    "xi": 0.0,
+                    "log": true
+                },
+                "challengers": 5000,
+                "seed": 1234
+            },
+            "local_search": {
+                "name": "LocalSearch",
+                "acquisition_function": {
+                    "name": "EI",
+                    "xi": 0.0,
+                    "log": true
+                },
+                "challengers": 5000,
+                "seed": 1234,
+                "max_steps": null,
+                "n_steps_plateau_walk": 10,
+                "vectorization_min_obtain": 2,
+                "vectorization_max_obtain": 64
+            }
+        },
+        "acquisition_function": {
+            "name": "EI",
+            "xi": 0.0,
+            "log": true
+        },
+        "intensifier": {
+            "name": "Intensifier",
+            "max_incumbents": 10,
+            "max_config_calls": 1,
+            "seed": 1234
+        },
+        "initial_design": {
+            "name": "SobolInitialDesign",
+            "n_configs": 42,
+            "n_configs_per_hyperparameter": 10,
+            "additional_configs": [],
+            "seed": 1234
+        },
+        "random_design": {
+            "name": "ProbabilityRandomDesign",
+            "seed": 1234,
+            "probability": 0.2
+        },
+        "runhistory_encoder": {
+            "name": "RunHistoryLogScaledEncoder",
+            "considered_states": [
+                1,
+                2,
+                4
+            ],
+            "lower_budget_states": [],
+            "scale_percentage": 5,
+            "seed": 1234
+        },
+        "multi_objective_algorithm": null,
+        "config_selector": {
+            "name": "ConfigSelector",
+            "retrain_after": 8,
+            "retries": 16,
+            "min_trials": 1
+        },
+        "version": "2.3.1"
+    },
+    "output_directory": "/home/marc/repositories/mbo_config/smac3/tmp/smac4hpo_tmp_1234_63593/ebf271ca8cef1c9d885fb763bdd9035d/1234"
+}
