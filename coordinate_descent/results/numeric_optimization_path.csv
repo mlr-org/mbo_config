@@ -1,8 +1,10 @@
 input_trafo,output_trafo,init,init_size_fraction,random_interleave_iter,surrogate,extratrees,trees,variance_estimator,kernel,nugget,scaling,acqf,lambda,epsilon_decay,lambda_decay,acqopt,parameter,iteration,id,mean_meta_score,n_na,n,batch_nr
-none,none,random,0.25,0,gp,,,,gauss,0,FALSE,EI,,FALSE,,RS_1000,start_config,1,1,0.788661947845629,0,8,0
-none,none,random,0.25,0,gp,,,,gauss,0,FALSE,EI,,FALSE,,CMAES,acqopt,1,58,1.02937372327947,0,8,1
-none,none,lhs,0.25,0,gp,,,,gauss,0,FALSE,EI,,FALSE,,CMAES,init,2,4,1.15277313599582,0,8,2
-none,log,lhs,0.25,0,gp,,,,gauss,0,FALSE,EI,,FALSE,,CMAES,output_trafo,3,3,1.16282795521921,0,8,3
-none,log,lhs,0.25,0,gp,,,,matern3_2,1e-8,FALSE,EI,,FALSE,,CMAES,surrogate,4,42,1.22730284168084,0,8,4
-none,log,lhs,0.05,0,gp,,,,matern3_2,1e-8,FALSE,EI,,FALSE,,CMAES,init_size_fraction,5,6,1.23791020021834,0,8,5
-none,log,lhs,0.10,0,gp,,,,matern3_2,1e-8,FALSE,EI,,FALSE,,CMAES,init_size_fraction,6,6,1.23394440067613,0,8,6
+none,none,random,0.25,0,gp,,,,gauss,0,FALSE,EI,,FALSE,,RS_1000,start_config,1,1,0.756604416308967,0,8,0
+none,none,random,0.25,0,gp,,,,gauss,0,FALSE,EI,,FALSE,,CMAES,acqopt,1,58,0.993091490189289,0,8,1
+none,log,random,0.25,0,gp,,,,gauss,0,FALSE,EI,,FALSE,,CMAES,output_trafo,2,3,1.08218156258673,0,8,2
+none,log,random,0.25,0,gp,,,,matern3_2,0,FALSE,EI,,FALSE,,CMAES,surrogate,3,34,1.14057244899576,0,8,3
+none,log,random,0.25,0,gp,,,,matern3_2,0,FALSE,CB,3,,FALSE,CMAES,acqf,4,51,1.177084616541,0,8,4
+none,log,random,0.25,0,gp,,,,matern3_2,1e-8,FALSE,CB,3,,FALSE,CMAES,surrogate,5,42,1.18388288814251,0,8,5
+none,log,random,0.05,0,gp,,,,matern3_2,1e-8,FALSE,CB,3,,FALSE,CMAES,init_size_fraction,6,6,1.18831535098808,0,8,6
+none,log,sobol,0.05,0,gp,,,,matern3_2,1e-8,FALSE,CB,3,,FALSE,CMAES,init,7,5,1.1801748278239,0,8,7
+unitcube,log,sobol,0.05,0,gp,,,,matern3_2,1e-8,FALSE,CB,3,,FALSE,CMAES,input_trafo,8,1,1.18188242043686,0,8,8

@@ -12,7 +12,8 @@ pwalk(list(
   reg = loadRegistry(registry_name)
 
   instances = fread(sprintf("common/%s_instances.csv", benchmark), colClasses = c("instance" = "character"))
-  instances[, budget := as.integer(20 + 40 * sqrt(dim))]
+  instances[, budget_20 := as.integer(20 + 40 * sqrt(dim))]
+  instances[, budget_100 := as.integer(100 + 40 * sqrt(dim))]
 
   # read in results from large random search
   results = reduceResultsList(findDone(), function(result, job) {
@@ -38,14 +39,14 @@ pwalk(list(
   fwrite(results, sprintf("random_search/results/%s_rs_archive.csv", benchmark))
 
   # simulate small random search
-  results_simulated = pmap_dtr(instances, function(scenario, instance, target_variable, budget, ...) {
+  results_simulated_20 = pmap_dtr(instances, function(scenario, instance, target_variable, budget_20, ...) {
     .scenario = scenario
     .instance = instance
 
     tmp = results[list(.scenario, .instance), on = c("scenario", "instance")]
 
     map_dtr(seq_len(30L), function(repl) {
-      subset = tmp[sample(.N, size = budget, replace = FALSE), ]
+      subset = tmp[sample(.N, size = budget_20, replace = FALSE), ]
       subset[, best := cummin(target)]
       subset[, repl := repl]
       subset[, iter := seq_len(.N)]
@@ -53,16 +54,16 @@ pwalk(list(
     })
   })
 
-  fwrite(results_simulated, sprintf("random_search/results/%s_rs_simulated.csv", benchmark))
+  fwrite(results_simulated_20, sprintf("random_search/results/%s_rs_simulated_20.csv", benchmark))
 
-  results_simulated_400 = pmap_dtr(instances, function(scenario, instance, target_variable, budget, ...) {
+  results_simulated_100 = pmap_dtr(instances, function(scenario, instance, target_variable, budget_100, ...) {
     .scenario = scenario
     .instance = instance
 
     tmp = results[list(.scenario, .instance), on = c("scenario", "instance")]
 
     map_dtr(seq_len(30L), function(repl) {
-      subset = tmp[sample(.N, size = 400L, replace = FALSE), ]
+      subset = tmp[sample(.N, size = budget_100, replace = FALSE), ]
       subset[, best := cummin(target)]
       subset[, repl := repl]
       subset[, iter := seq_len(.N)]
@@ -70,28 +71,28 @@ pwalk(list(
     })
   })
 
-  fwrite(results_simulated_400, sprintf("random_search/results/%s_rs_simulated_400.csv", benchmark))
+  fwrite(results_simulated_100, sprintf("random_search/results/%s_rs_simulated_100.csv", benchmark))
 
   # extract best value from small and large random search
-  results_reference = pmap_dtr(instances, function(scenario, instance, target_variable, budget, ...) {
+  results_reference_20 = pmap_dtr(instances, function(scenario, instance, target_variable, budget_20, ...) {
     .scenario = scenario
     .instance = instance
-    tmp_small = results_simulated[list(.scenario, .instance, budget), , on = c("scenario", "instance", "iter")][, list(rs_small = mean(best), se_rs_small = sd(best) / sqrt(.N)), by = c("scenario", "instance", "target_variable", "orig_direction")]
+    tmp_small = results_simulated_20[list(.scenario, .instance, budget_20), , on = c("scenario", "instance", "iter")][, list(rs_small = mean(best), se_rs_small = sd(best) / sqrt(.N)), by = c("scenario", "instance", "target_variable", "orig_direction")]
     tmp_large = results[list(.scenario, .instance, 1e6L), list(rs_large = best), on = c("scenario", "instance", "iter")]
     cbind(tmp_small, tmp_large)
   })
 
-  fwrite(results_reference, sprintf("random_search/results/%s_rs_reference.csv", benchmark))
+  fwrite(results_reference_20, sprintf("random_search/results/%s_rs_reference_20.csv", benchmark))
 
-  results_reference_400 = pmap_dtr(instances, function(scenario, instance, target_variable, budget, ...) {
+  results_reference_100 = pmap_dtr(instances, function(scenario, instance, target_variable, budget_100, ...) {
     .scenario = scenario
     .instance = instance
-    tmp_small = results_simulated_400[list(.scenario, .instance, budget), , on = c("scenario", "instance", "iter")][, list(rs_small = mean(best), se_rs_small = sd(best) / sqrt(.N)), by = c("scenario", "instance", "target_variable", "orig_direction")]
+    tmp_small = results_simulated_100[list(.scenario, .instance, budget_100), , on = c("scenario", "instance", "iter")][, list(rs_small = mean(best), se_rs_small = sd(best) / sqrt(.N)), by = c("scenario", "instance", "target_variable", "orig_direction")]
     tmp_large = results[list(.scenario, .instance, 1e6L), list(rs_large = best), on = c("scenario", "instance", "iter")]
     cbind(tmp_small, tmp_large)
   })
 
-  fwrite(results_reference_400, sprintf("random_search/results/%s_rs_reference_400.csv", benchmark))
+  fwrite(results_reference_100, sprintf("random_search/results/%s_rs_reference_100.csv", benchmark))
 })
 
 

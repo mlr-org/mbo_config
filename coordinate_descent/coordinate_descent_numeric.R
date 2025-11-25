@@ -1,3 +1,7 @@
+con = file("coordinate_descent_numeric.log")
+sink(con, append=TRUE)
+sink(con, append=TRUE, type="message")
+
 library(batchtools)
 library(data.table)
 library(mlr3)
@@ -11,7 +15,7 @@ library(checkmate)
 source("coordinate_descent/OptimizerCoordinateDescent.R")
 
 registry_name = "/glade/derecho/scratch/marcbecker/mbo_config/registries/coordinate_descent_numeric"
-# unlink(registry_name, recursive = TRUE)
+unlink(registry_name, recursive = TRUE)
 packages = c(
   "data.table",
   "mlr3",
@@ -30,25 +34,28 @@ packages = c(
 if (!file.exists(file.path(registry_name, "registry.rds"))) {
   reg = makeExperimentRegistry(
     file.dir = registry_name,
-    conf.file = "coordinate_descent/batchtools.conf.R",
+    conf.file = NA,
     packages = packages,
-    source = c("common/numeric_objective.R", "common/submit.R")
+    source = "common/numeric_objective.R",
+    seed = 7832
   )
+  reg$cluster.functions = makeClusterFunctionsHyperQueue()
   saveRegistry(reg)
 } else {
   reg = loadRegistry(
     file.dir = registry_name,
-    conf.file = "coordinate_descent/batchtools.conf.R",
+    conf.file = NA,
     writeable = TRUE
   )
+  reg$cluster.functions = makeClusterFunctionsHyperQueue()
 }
 
 # problems
-instance = fread("common/numeric_instances.csv", colClasses = c("instance" = "character"))
-instance[, budget := 400L]
-pwalk(setup, function(benchmark, scenario, instance, target_variable, budget, direction, ...) {
+instances = fread("common/numeric_instances.csv", colClasses = c("instance" = "character"))
+instances[, budget := as.integer(100 + 40 * sqrt(dim))]
+pwalk(instances, function(scenario, instance, target_variable, budget, direction, ...) {
   id = sprintf("%s_%s", scenario, instance)
-  addProblem(id, data = list(benchmark = benchmark, scenario = scenario, instance = instance, target_variable = target_variable, budget = budget, direction = direction))
+  addProblem(id, data = list(scenario = scenario, instance = instance, target_variable = target_variable, budget = budget, direction = direction))
 })
 
 # algorithm
@@ -79,8 +86,6 @@ addAlgorithm(
     config_hash
     ) {
     renv::load(".")
-    logger = lgr::get_logger("mlr3/bbotk")
-    logger$set_threshold("warn")
 
     optim_instance = numeric_objective(
       scenario = instance$scenario,
@@ -144,12 +149,7 @@ objective = ObjectiveRFunDt$new(
 
     ades = list(mbo = xdt)
     job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)$job.id
-     submit(
-      job_ids, 
-      reg, 
-      template = "coordinate_descent/pbs_derecho_main.tmpl", 
-      jobs_per_node = 128L, 
-      log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/logs/coordinate_descent_pure_numeric/nodes")
+    submitJobs(job_ids, resources = list(ncpus = 1L, walltime = 14400L), reg = reg)
 
     tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
     saveRDS(xdt, tmp_file)
@@ -205,7 +205,7 @@ objective = ObjectiveRFunDt$new(
 
 objective$constants$set_values(
   reg = reg,
-  rs_reference = fread("random_search/results/numeric_rs_reference.csv", colClasses = c("instance" = "character"))
+  rs_reference = fread("random_search/results/numeric_rs_reference_100.csv", colClasses = c("instance" = "character"))
 )
 
 # backup archive after each coordinate descent iteration
@@ -220,7 +220,7 @@ callback_backup = callback_batch("bbotk.backup",
     file.rename(tmp_file, callback$state$path)
   }
 )
-state_path = "/glade/derecho/scratch/marcbecker/pure_numeric_intermediate_instance.rds"
+state_path = "/glade/derecho/scratch/marcbecker/numeric_intermediate_instance.rds"
 callback_backup$state$path = state_path
 
 optim_instance = oi(
@@ -258,7 +258,7 @@ init = data.table(
 
 optimizer = OptimizerBatchCoordinateDescent$new()
 optimizer$param_set$set_values(
-  n_generations = 6L,
+  n_generations = 8L,
   start = init
 )
 optimizer$optimize(optim_instance)

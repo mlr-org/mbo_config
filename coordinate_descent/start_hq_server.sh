@@ -1,1 +1,2 @@
 nohup hq server start --journal /glade/derecho/scratch/marcbecker/mbo_config/journals/coordinate_descent_mixed
+nohup hq server start --journal /glade/derecho/scratch/marcbecker/mbo_config/journals/coordinate_descent_numeric

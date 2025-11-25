@@ -13,10 +13,9 @@ library(paradox)
 library(R6)
 library(checkmate)
 source("coordinate_descent/OptimizerCoordinateDescent.R")
-source("common/submit.R")
 
 registry_name = "/glade/derecho/scratch/marcbecker/mbo_config/registries/coordinate_descent_mixed"
-#unlink(registry_name, recursive = TRUE)
+unlink(registry_name, recursive = TRUE)
 packages = c(
   "data.table",
   "mlr3",
@@ -37,7 +36,8 @@ if (!file.exists(file.path(registry_name, "registry.rds"))) {
     file.dir = registry_name,
     conf.file = NA,
     packages = packages,
-    source = c("common/mixed_objective.R", "common/submit.R")
+    source = "common/mixed_objective.R",
+    seed = 7832
   )
   reg$cluster.functions = makeClusterFunctionsHyperQueue()
   saveRegistry(reg)
@@ -81,8 +81,6 @@ addAlgorithm(
     config_hash
     ) {
     renv::load(".")
-    # logger = lgr::get_logger("mlr3/bbotk")
-    # logger$set_threshold("warn")
 
     optim_instance = mixed_objective(
       scenario = instance$scenario,
@@ -141,14 +139,7 @@ objective = ObjectiveRFunDt$new(
 
     ades = list(mbo = xdt)
     job_ids = addExperiments(algo.designs = ades, repls = n_repls, reg = reg)$job.id
-    submitJobs(job_ids, resources = list(ncpus = 1L), reg = reg)
-
-    # submit(
-    #   job_ids, 
-    #   reg, 
-    #   template = "coordinate_descent/pbs_derecho_main.tmpl", 
-    #   jobs_per_node = 128L, 
-    #   log_dir = "/glade/derecho/scratch/marcbecker/mbo_config/logs/coordinate_descent_mixed_deps/nodes")
+    submitJobs(job_ids, resources = list(ncpus = 1L, walltime = 21600L), reg = reg)
 
     tmp_file = tempfile(tmpdir = dirname(xdt_path), fileext = ".rds")
     saveRDS(xdt, tmp_file)
@@ -204,7 +195,7 @@ objective = ObjectiveRFunDt$new(
 
 objective$constants$set_values(
   reg = reg,
-  rs_reference = fread("random_search/results/mixed_rs_reference.csv", colClasses = c("instance" = "character"))
+  rs_reference = fread("random_search/results/mixed_rs_reference_100.csv", colClasses = c("instance" = "character"))
 )
 
 # backup archive after each coordinate descent iteration

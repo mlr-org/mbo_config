@@ -1,0 +1,1 @@
+nohup hq server start --journal /glade/derecho/scratch/marcbecker/mbo_config/journals/mbo_config
