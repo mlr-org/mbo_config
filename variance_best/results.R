@@ -3,8 +3,8 @@ library(mlr3misc)
 library(batchtools)
 
 pwalk(list(
-  benchmark = c("numeric"), # , "budget_mixed"
-  rs_reference = c("numeric")), # "mixed"
+  benchmark = c("numeric", "budget_mixed"), 
+  rs_reference = c("numeric", "mixed")),
   function(benchmark, rs_reference) {
 
   registry_name = sprintf("/glade/derecho/scratch/marcbecker/mbo_config/registries/competitors_mlr3mbo_%s_variance", benchmark)

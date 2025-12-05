@@ -1,0 +1,8 @@
+input_trafo,output_trafo,init,init_size_fraction,random_interleave_iter,trees,variance_estimator,acqf,lambda,epsilon_decay,lambda_decay,acqopt,parameter,iteration,id,mean_meta_score,n_na,n,batch_nr
+none,none,random,0.25,0,500,ensemble_standard_deviation,EI,,FALSE,,RS_1000,start_config,1,1,0.351135549908732,0,14,0
+none,none,random,0.25,0,500,ensemble_standard_deviation,EI,,FALSE,,LS,acqopt,1,24,0.742119218990471,0,14,1
+none,none,random,0.25,0,500,ensemble_standard_deviation,CB,1,,FALSE,LS,acqf,2,18,0.880891017465044,0,14,2
+none,none,random,0.25,0,500,jack,CB,1,,FALSE,LS,variance_estimator,3,11,0.910812971198099,0,14,3
+none,none,random,0.25,4,500,jack,CB,1,,FALSE,LS,random_interleave_iter,4,9,0.919437175013643,0,14,4
+none,none,sobol,0.25,4,500,jack,CB,1,,FALSE,LS,init,5,5,0.903748979959308,0,14,5
+none,none,lhs,0.25,4,500,jack,CB,1,,FALSE,LS,init,6,5,0.926784556511,0,14,6
