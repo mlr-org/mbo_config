@@ -3,8 +3,6 @@ library(ggplot2)
 library(scmamp)
 library(mlr3misc)
 
-benchmark = "numeric"
-
 walk(c("numeric", "mixed", "budget_mixed"), function(benchmark) {
 
   data = fread(sprintf("competitors/results/%s_result.csv", benchmark))
