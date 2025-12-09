@@ -4,6 +4,13 @@ library(mlr3misc)
 library(data.table)
 library(jsonlite)
 
+benchmark = "numeric"
+instance = "numeric"
+rs_reference = "numeric"
+hq_registry_dir = "numeric"
+hq_job_table = "numeric"
+bt_registry = "numeric"
+
 pwalk(list(
   benchmark = c("numeric", "mixed", "budget_mixed"),
   instance = c("numeric", "mixed", "mixed"),
@@ -15,13 +22,15 @@ pwalk(list(
 
   instances = fread(sprintf("common/%s_instances.csv", instance), colClasses = c("instance" = "character"))
   rs_reference = fread(sprintf("random_search/results/%s_rs_reference_20.csv", rs_reference), colClasses = c("instance" = "character"))
-  hq_registry_dir = sprintf("/glade/derecho/scratch/marcbecker/mbo_config/registries/competitors_%s_2", hq_registry_dir)
+  hq_registry_dir = sprintf("/glade/derecho/scratch/marcbecker/mbo_config/registries/competitors_%s", hq_registry_dir)
   hq_job_table = readRDS(sprintf("%s/%s_job_table_competitors.rds", hq_registry_dir, hq_job_table))
   bt_registry = loadRegistry(sprintf("/glade/derecho/scratch/marcbecker/mbo_config/registries/competitors_mlr3mbo_%s", bt_registry))
 
+  browser()
+
   # competitors
-  results_competitors = pmap_dtr(hq_job_table, function(benchmark, scenario, instance, target_variable, budget, seed, repl, algorithm, ...) {
-      experiment_id = sprintf("%s_%s_%s_%s_%s", benchmark, algorithm, scenario, instance, repl)
+  results_competitors = pmap_dtr(hq_job_table, function(scenario, instance, target_variable, budget, seed, repl, algorithm, ...) {
+      experiment_id = sprintf("%s_%s_%s_%s", algorithm, scenario, instance, repl)
       print(experiment_id)
       file = sprintf("%s/%s.csv", hq_registry_dir, experiment_id)
 
@@ -41,28 +50,27 @@ pwalk(list(
       archive[, list(algorithm, scenario, instance, iter, repl, incumbent, score)]
   })
 
-  # runtimes_competitors = map_dtr(job_table$batch_id, function(i) {
-  #   print(i)
-  #   res = system(sprintf("hq job info %i --output-mode json", i), intern = TRUE)
-  #   res = fromJSON(res)
+  runtimes_competitors = map_dtr(hq_job_table$batch_id, function(i) {
+    print(i)
+    res = system(sprintf("hq job info %i --output-mode json", i), intern = TRUE)
+    res = fromJSON(res)
 
-  #   start_time = sub("Z$", "", res$tasks[[1]]$started_at)
-  #   start_time = sub("(\\.[0-9]{6})[0-9]*", "\\1", start_time)
-  #   start_time = as.POSIXct(start_time, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC")
+    start_time = sub("Z$", "", res$tasks[[1]]$started_at)
+    start_time = sub("(\\.[0-9]{6})[0-9]*", "\\1", start_time)
+    start_time = as.POSIXct(start_time, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC")
 
-  #   end_time = sub("Z$", "", res$tasks[[1]]$finished_at)
-  #   end_time = sub("(\\.[0-9]{6})[0-9]*", "\\1", end_time)
-  #   end_time = as.POSIXct(end_time, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC")
+    end_time = sub("Z$", "", res$tasks[[1]]$finished_at)
+    end_time = sub("(\\.[0-9]{6})[0-9]*", "\\1", end_time)
+    end_time = as.POSIXct(end_time, format = "%Y-%m-%dT%H:%M:%OS", tz = "UTC")
 
-  #   data.table(
-  #     batch_id = i,
-  #     state = res$tasks[[1]]$state,
-  #     runtime = difftime(end_time, start_time, units = "mins")
-  #   )
-  # })
+    data.table(
+      batch_id = i,
+      state = res$tasks[[1]]$state,
+      runtime = as.integer(round(as.numeric(difftime(end_time, start_time, units = "secs"), units = "secs")))
+    )
+  })
 
-  # hq_job_table = hq_job_table[runtimes_competitors, on = "batch_id"]
-  hq_job_table[, runtime := as.integer(round(as.numeric(runtime, units = "secs")))]
+  hq_job_table = hq_job_table[runtimes_competitors, on = "batch_id"]
 
   # mlr3mbo
   results_mlr3mbo = rbindlist(reduceResultsList(fun = function(archive, job) {

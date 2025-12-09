@@ -3,6 +3,8 @@ library(ggplot2)
 library(scmamp)
 library(mlr3misc)
 
+benchmark = "numeric"
+
 walk(c("numeric", "mixed", "budget_mixed"), function(benchmark) {
 
   data = fread(sprintf("competitors/results/%s_result.csv", benchmark))
@@ -96,7 +98,7 @@ walk(c("numeric", "mixed", "budget_mixed"), function(benchmark) {
   dev.off()
 
   # critical difference 
-  pdf(sprintf("competitors/results/%s_cd.pdf", benchmark), width = 10, height = 5)
+  pdf(sprintf("competitors/results/%s_cd.pdf", benchmark), width = 14, height = 5)
   plotCD(data_final[, -c("problem")], alpha = 0.05, cex = 1.8)
   dev.off()
 })
