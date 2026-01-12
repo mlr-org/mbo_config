@@ -6,7 +6,7 @@ walk(c("numeric", "mixed"), function(benchmark) {
   search_space = readRDS(sprintf("common/%s_search_space.rds", benchmark))
   instance = readRDS(sprintf("/glade/derecho/scratch/marcbecker/%s_coordinate_descent.rds", benchmark))
   file.copy(sprintf("/glade/derecho/scratch/marcbecker/%s_coordinate_descent.rds", benchmark), sprintf("coordinate_descent/results/%s_instance.rds", benchmark))
-  
+
   data = instance$archive$data
   data$x_domain = NULL
   fwrite(data[, -c("raw_meta_score", "raw_mean_score", "missing_instances", "timestamp")], sprintf("coordinate_descent/results/%s_archive.csv", benchmark))
@@ -22,7 +22,7 @@ walk(c("numeric", "mixed"), function(benchmark) {
   set(init, j = "parameter", value = "start_config")
   optimization_path = data[order(mean_meta_score)][, tail(.SD, 1), by = batch_nr][order(batch_nr)]
   optimization_path = rbind(init, optimization_path)
-  
+
   fwrite(optimization_path[, -c("raw_meta_score", "raw_mean_score", "missing_instances",  "timestamp")], sprintf("coordinate_descent/results/%s_optimization_path.csv", benchmark))
 
   data_long = melt(

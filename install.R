@@ -37,8 +37,6 @@ init_local_config(data_path = "~/yahpo_data")
 b = BenchmarkSet$new("iaml_glmnet")
 obj = b$get_objective("40981", multifidelity = FALSE)
 
-#conda_install(envname = sprintf("%s/yahpo_gym", conda_dir), packages = c("botorch", "gpytorch"))
-
 # R packages for mlr3mbo
 renv::install(c(
   "mlr-org/batchtools@hyperqueue",

@@ -42,7 +42,7 @@ walk(c("numeric", "mixed", "budget_mixed"), function(benchmark) {
   data_final = dcast(data_final, problem ~ algorithm, value.var = "meta_score")
 
   # mean runtime
-  mean_runtimes = runtimes[, list(mean_runtime = mean(runtime) / 60), by = c("algorithm", "dim")]
+  mean_runtimes = runtimes[, list(mean_runtime = mean(runtime / 60) , sd_runtime = sd(runtime / 60)), by = c("algorithm", "dim")]
 
   # mean RSNS
   pdf(sprintf("competitors/results/%s_performance.pdf", benchmark), width = 10, height = 10)
@@ -95,7 +95,7 @@ walk(c("numeric", "mixed", "budget_mixed"), function(benchmark) {
   print(gg)
   dev.off()
 
-  # critical difference 
+  # critical difference
   pdf(sprintf("competitors/results/%s_cd.pdf", benchmark), width = 14, height = 5)
   plotCD(data_final[, -c("problem")], alpha = 0.05, cex = 1.8)
   dev.off()

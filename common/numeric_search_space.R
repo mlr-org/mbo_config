@@ -16,12 +16,12 @@ search_space = ps(
   scaling                = p_lgl(depends = surrogate == "gp"),
   # acqf
   acqf                   = p_fct(c("EI", "CB", "PI", "Mean")),
-  lambda                 = p_fct(c("1", "3", "10"), depends = = "CB", trafo = as.integer),
-  epsilon_decay          = p_lgl(depends = = "EI"),
-  lambda_decay           = p_lgl(depends = = "CB"),
+  lambda                 = p_fct(c("1", "3", "10"), depends = acqf == "CB", trafo = as.integer),
+  epsilon_decay          = p_lgl(depends = acqf == "EI"),
+  lambda_decay           = p_lgl(depends = acqf == "CB"),
   # acqopt
   acqopt                 = p_fct(c("RS_1000", "RS", "LS", "DIRECT", "CMAES", "LBFGSB"))
 )
 
-saveRDS(search_space, "common/pure_numeric_search_space.rds")
+saveRDS(search_space, "common/numeric_search_space.rds")
 
