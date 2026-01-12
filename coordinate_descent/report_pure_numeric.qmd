@@ -16,7 +16,7 @@ library(dplyr)
 library(gt)
 
 here::i_am("coordinate_descent/report_pure_numeric.qmd")
-archive = readRDS(here::here("coordinate_descent/results/archive_pure_numeric.rds"))
+archive = readRDS(here::here("coordinate_descent/results/numeric_archive.rds"))
 
 archive[, min_meta_score := map_dbl(raw_meta_score, min)]
 archive[, q05_meta_score := map_dbl(raw_meta_score, quantile, 0.05)]
@@ -81,26 +81,6 @@ search_space = ps(
   acqopt                 = p_fct(c("RS_1000", "RS", "LS", "DIRECT", "CMAES", "LBFGSB"))
 )
 
-```
-
-## Instances
-
-For the search space of the 8 pure numeric YAHPO-SO v1 instances, see `helper.R`.
-
-```{r}
-#| eval: false
-
-mlr3misc::rowwise_table(
-  ~benchmark, ~scenario, ~instance, ~target_variable, ~direction, ~budget,
-  "pure_numeric", "lcbench", "167168", "val_accuracy", "maximize", 400L,
-  "pure_numeric", "lcbench", "189873", "val_accuracy", "maximize", 400L,
-  "pure_numeric", "lcbench", "189906", "val_accuracy", "maximize", 400L,
-  "pure_numeric", "rbv2_rpart", "14", "acc", "maximize", 400L,
-  "pure_numeric", "rbv2_rpart", "40499", "acc", "maximize", 400L,
-  "pure_numeric", "rbv2_xgboost", "12", "acc", "maximize", 400L,
-  "pure_numeric", "rbv2_xgboost", "1501", "acc", "maximize", 400L,
-  "pure_numeric", "rbv2_xgboost", "40499", "acc", "maximize", 400L
-)
 ```
 
 # Results
