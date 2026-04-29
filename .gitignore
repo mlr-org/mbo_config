@@ -1,7 +1,7 @@
 yahpo_venv/
 smac_venv/
 hebo_venv/
-ax_venv/ee 
+ax_venv/ee
 renv/
 .Rprofile
 *.rds
@@ -28,4 +28,6 @@ random_search/results/mixed_rs_simulated_400.csv
 random_search/results/mixed_rs_simulated.csv
 competitors_2/results/numeric_archive.csv
 competitors_2/results/mixed_archive.csv
+gam/figure_*
+gam/*_files*
 
